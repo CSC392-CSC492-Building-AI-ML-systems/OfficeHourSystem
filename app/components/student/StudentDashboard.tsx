@@ -1,5 +1,6 @@
 // components/student/StudentDashboard.tsx
 import { Bell, UserCircle, Calendar, Bug, Users } from "lucide-react";
+import { Navbar } from "./Navbar";
 import { DropInCard } from "./cards/DropInCard";
 import { QueueCard } from "./cards/QueueCard";
 import { GroupTopicCard } from "./cards/GroupTopicCard";
@@ -9,20 +10,7 @@ export default function StudentDashboard() {
   return (
     <div className="max-w-7xl mx-auto p-6">
       {/* Top Navigation */}
-      <header className="flex justify-between items-center border-b pb-4 mb-8">
-        <div className="flex items-center space-x-6">
-          <h1 className="text-2xl font-bold text-slate-900">OHMS</h1>
-          <nav>
-            <span className="text-slate-900 font-medium border-b-2 border-red-600 pb-5">
-              Dashboard
-            </span>
-          </nav>
-        </div>
-        <div className="flex space-x-4 text-slate-600">
-          <Bell className="w-6 h-6 cursor-pointer hover:text-slate-900 transition-colors" />
-          <UserCircle className="w-6 h-6 cursor-pointer hover:text-slate-900 transition-colors" />
-        </div>
-      </header>
+      <Navbar userName="Alex" />
 
       {/* Welcome Section
       <section className="mb-8">
