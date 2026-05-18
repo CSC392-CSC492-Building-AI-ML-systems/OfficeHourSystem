@@ -1,13 +1,141 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// This is your Prisma schema
 
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- ENUMS ---
+
+enum Role {
+  STUDENT
+  TA
+  INSTRUCTOR
+}
+
+enum SessionType {
+  DROP_IN
+  DEBUGGING   // Triggers Virtual Queue & T-Card Scan logic
+  GROUP_TOPIC
+}
+
+enum AttendanceStatus {
+  WAITING      // Scanned in, in virtual queue
+  BEING_HELPED // TA has clicked "Start Help"
+  PRESENT      // Successfully helped and scanned out
+  NO_SHOW      // Dismissed from queue or never scanned out
+}
+
+// --- MODELS ---
+
+model User {
+  id              String   @id @default(uuid())
+  utorid          String   @unique
+  email           String   @unique
+  name            String
+  role            Role     @default(STUDENT)
+  defaultLocation String?
+  createdAt       DateTime @default(now())
+
+  // Relations
+  memberships         CourseMember[]
+  hostedSessions      Session[]        @relation("SessionHosts")
+  recurringAssignedTo RecurringBlock[] @relation("PreAssignedTAs")
+  studentAttendance   Attendance[]     @relation("StudentAttendance")
+  taAuditLog          Attendance[]     @relation("TAAttendanceRecord")
+  interests           Interest[]
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  title       String
+  term        String
+  isArchived  Boolean  @default(false)
+
+  // Relations
+  members         CourseMember[]
+  sessions        Session[]
+  recurringBlocks RecurringBlock[]
+}
+
+model CourseMember {
+  id       String @id @default(uuid())
+  userId   String
+  courseId String
+  user     User   @relation(fields: [userId], references: [id])
+  course   Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+}
+
+model RecurringBlock {
+  id          String      @id @default(uuid())
+  courseId    String
+  type        SessionType
+  daysOfWeek  String      
+  startTime   String      
+  endTime     String      
+  location    String      
+  topic       String?
+
+  // Relations
+  course         Course    @relation(fields: [courseId], references: [id])
+  sessions       Session[] 
+  preAssignedTAs User[]    @relation("PreAssignedTAs")
+}
+
+model Session {
+  id               String      @id @default(uuid())
+  courseId         String
+  recurringBlockId String?     
+  type             SessionType
+  topic            String?     
+  location         String      
+  startTime        DateTime
+  endTime          DateTime
+  isActive         Boolean     @default(true) 
+
+  // Relations
+  course         Course          @relation(fields: [courseId], references: [id])
+  recurringBlock RecurringBlock? @relation(fields: [recurringBlockId], references: [id])
+  hosts          User[]          @relation("SessionHosts")
+  attendances    Attendance[]    
+  interests      Interest[]      
+}
+
+model Attendance {
+  id        String           @id @default(uuid())
+  sessionId String
+  studentId String
+  taId      String?          // Nullable: Filled when TA clicks "Start Help"
+  status    AttendanceStatus @default(WAITING)
+  
+  // Timestamps for Metrics
+  checkIn   DateTime         @default(now()) // Physical Scan In (Entrance)
+  helpStart DateTime?        // TA clicks "Start Help"
+  helpEnd   DateTime?        // TA clicks "End Help"
+  checkOut  DateTime?        // Physical Scan Out (Exit) or Implied Checkout
+
+  // Relations
+  session   Session @relation(fields: [sessionId], references: [id])
+  student   User    @relation("StudentAttendance", fields: [studentId], references: [id])
+  ta        User?   @relation("TAAttendanceRecord", fields: [taId], references: [id])
+}
+
+model Interest {
+  id        String   @id @default(uuid())
+  userId    String
+  sessionId String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id])
+  session Session @relation(fields: [sessionId], references: [id])
+
+  @@unique([userId, sessionId])
 }
