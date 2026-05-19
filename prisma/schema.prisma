@@ -1,7 +1,17 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// This is my understanding:
+// 1. Before everything starts, insert all possible courses to COURSES
+// 2. Before each term, Offering of each course(if exists) should be pushed to Offering
+// 3. After step 2 but before term starts, Offering Member relation should be formed (e.g who is instructor, TA, students)
+// 4. After step 3 but before term starts, instructors should set office hour schedule and system would generate detailed sessions
+// 5. After term starts, students will be able to see the sessions they can attend in that week, if they click "Interetsed",
+//    system would push data to Interest table and teaching team can check the stats
+// 6. In the term, instructors can add temporary session(e.g debugging session), can cancel a session
+// 7. During Office hour, Students' Tcards will be scanned and students' info will be pushed to Session Attendance
+      queue will be ranked by checkin-time. Students can check their rank in the queue.
+// 8. During office hours, TAs/Instructors can see the queue as well, and deal with one student at a time. By clicking, start
+      answering to start with a student and click "finish" when student has no more to ask. System would update time started and
+      ended and update status of the attendance. TAs/Instructors can also click "Not shown" to skip a student. System will also
+      update the related status of Attendance Table.
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +20,265 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  // @id == PRIMARY KEY @unique == UNIQUE
+  id Int @id @default(autoincrement())
+  publicId String @unique @default(cuid())
+
+  utorid String @unique
+  email String
+  firstName String
+  lastName String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // OfferingMember table can have multiple Users
+  memberships OfferingMember[]
+  interests OfficeHourInterest[]
+
+  // OfficeHourAttendance table can record multiple users
+  visits OfficeHourAttendance[] @relation("StudentVisits")
+
+  scheduleHosts OfficeHourScheduleHost[]
+  sessionHosts OfficeHourSessionHost[]
+}
+
+model Course {
+  id Int @id @default(autoincrement())
+
+  code String @unique
+
+  // e.g Intro to SWE
+  name String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  offerings CourseOffering[]
+}
+
+model CourseOffering {
+  id       Int    @id @default(autoincrement())
+  publicId String @unique @default(cuid())
+
+  courseId Int
+  course Course @relation(fields: [courseId], references: [id])
+
+  // e.g. "2026F", "2026W" ? Idk for sure
+  termCode String
+
+  // e.g. "LEC0101".
+  // Use DEFAULT instead of nullable value so @@unique works reliably.
+  sectionCode String @default("DEFAULT")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members OfferingMember[]
+  schedules OfficeHourSchedule[]
+  sessions OfficeHourSession[]
+
+  @@unique([courseId, termCode, sectionCode])
+  @@index([termCode])
+}
+
+model OfferingMember {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  offeringId Int
+  role CourseRole
+
+  user User @relation(fields: [userId], references: [id])
+  offering CourseOffering @relation(fields: [offeringId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // One user has one role per offering for MVP.
+  // If multiple roles are needed later, change to @@unique([userId, offeringId, role]).
+  @@unique([userId, offeringId])
+  @@index([offeringId, role])
+}
+
+model OfficeHourSchedule {
+  id Int @id @default(autoincrement())
+  publicId String @unique @default(cuid())
+
+  offeringId Int
+  offering CourseOffering @relation(fields: [offeringId], references: [id])
+
+  title String
+  type OfficeHourType
+
+  // 0 = Sunday, 1 = Monday, ..., 6 = Saturday. can change this later...
+  dayOfWeek Int
+
+  // Minutes after midnight.
+  // Example: 14:30 = 870.
+  startMinute Int
+  endMinute Int
+
+  location String?
+
+  // Date range during which this weekly schedule is valid.
+  validFrom DateTime?
+  validUntil DateTime?
+
+  isActive Boolean @default(true)
+
+  hosts OfficeHourScheduleHost[]
+
+  sessions OfficeHourSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([offeringId, isActive])
+}
+
+model OfficeHourScheduleHost {
+  // This indicates that who is default host of a scheduled regular OH
+  // e.g TA Peter will be hosting Friday MAT223 OH at 2-3pm
+  // e.g TA Mary will be hosting Friday MAT223 OH at 2-3pm
+  // e,g Instructor Dr. xxx will be hosting Friday MAT223 OH at 2-3pm
+  // my point is that an OH session can have several hosts
+  id Int @id @default(autoincrement())
+
+  scheduleId Int
+  userId Int
+
+  // This sounds like a redundancy, but I would have this to ensure efficiency
+  role CourseRole
+
+  schedule OfficeHourSchedule @relation(fields: [scheduleId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([scheduleId, userId])
+  @@index([userId])
+}
+
+model OfficeHourSession {
+  id Int @id @default(autoincrement())
+  publicId String @unique @default(cuid())
+
+  offeringId Int
+  offering CourseOffering @relation(fields: [offeringId], references: [id])
+
+  // If generated from a recurring schedule, store the source schedule.
+  scheduleId Int?
+  schedule OfficeHourSchedule? @relation(fields: [scheduleId], references: [id])
+
+  title String
+  type OfficeHourType
+
+  startsAt DateTime
+  endsAt DateTime
+
+  location String?
+  status OfficeHourSessionStatus @default(SCHEDULED)
+
+  interests OfficeHourInterest[]
+  attendances OfficeHourAttendance[]
+  hosts OfficeHourSessionHost[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([offeringId, startsAt])
+  @@index([status])
+}
+
+model OfficeHourSessionHost {
+  // By default this would be the same as OfficeHourScheduleHost.
+  // If a temporal change of host or a debugging session starts. This would be useful.
+  // e.g TA Peter will be hosting Friday MAT223 OH at 2-3pm
+  //     Peter cannot come, so Mary will be there.
+  id Int @id @default(autoincrement())
+
+  sessionId Int
+  userId Int
+  role CourseRole
+
+  session OfficeHourSession @relation(fields: [sessionId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  helpedAttendances OfficeHourAttendance[]
+
+  @@unique([sessionId, userId])
+  @@index([userId])
+}
+
+model OfficeHourInterest {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  sessionId Int
+
+  user User @relation(fields: [userId], references: [id])
+  session OfficeHourSession @relation(fields: [sessionId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  // A user can only click interested once per session.
+  @@unique([userId, sessionId])
+  @@index([sessionId])
+}
+
+model OfficeHourAttendance {
+  id Int @id @default(autoincrement())
+  publicId String @unique @default(cuid())
+
+  sessionId Int
+  session OfficeHourSession @relation(fields: [sessionId], references: [id])
+
+  studentId Int
+  student User @relation("StudentVisits", fields: [studentId], references: [id])
+
+  helpedByHostId Int?
+  helpedByHost OfficeHourSessionHost? @relation(fields: [helpedByHostId], references: [id])
+
+  checkedInAt DateTime @default(now())
+  helpStartedAt DateTime?
+  helpEndedAt DateTime?
+  checkedOutAt DateTime?
+
+  note String?
+
+  status AttendanceStatus @default(WAITING)
+
+  @@index([sessionId, status, checkedInAt])
+  @@index([studentId])
+  @@index([helpedByHostId])
+}
+
+enum OfficeHourSessionStatus {
+  SCHEDULED
+  ACTIVE
+  DELAYED
+  CANCELLED
+  COMPLETED
+}
+
+enum AttendanceStatus {
+  WAITING
+  IN_HELP
+  COMPLETED
+  NO_SHOW
+  CANCELLED
+}
+
+enum CourseRole {
+  STUDENT
+  TA
+  INSTRUCTOR
+}
+
+enum OfficeHourType {
+  REGULAR
+  GROUP
+  DEBUGGING
 }
