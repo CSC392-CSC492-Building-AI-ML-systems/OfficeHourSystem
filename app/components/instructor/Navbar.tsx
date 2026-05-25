@@ -14,7 +14,7 @@ const navLinks: Array<{
   href: string;
 }> = [
   { key: "dashboard", label: "Dashboard", href: "/instructor" },
-  { key: "queues", label: "My Queues", href: "#" },
+  { key: "queues", label: "My Queues", href: "/instructor/my-queues" },
   { key: "schedule", label: "Schedule", href: "/instructor/schedule" },
 ];
 
