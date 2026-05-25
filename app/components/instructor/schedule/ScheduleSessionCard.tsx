@@ -39,9 +39,9 @@ export function ScheduleSessionCard({
       type="button"
       style={style}
       onClick={() => onSelect(session.id)}
-      className={`relative z-10 overflow-hidden rounded-2xl border p-3 text-left shadow-[0_18px_36px_-24px_rgba(7,31,65,0.7)] transition hover:-translate-y-0.5 ${variant.card} ${
+      className={`relative z-10 overflow-hidden rounded-2xl border px-3 py-3 text-left shadow-[0_18px_36px_-24px_rgba(7,31,65,0.7)] transition hover:-translate-y-0.5 ${variant.card} ${
         isSelected
-          ? "border-white/80 ring-2 ring-[#c8102e]/75 ring-offset-2 ring-offset-[#fbfdff]"
+          ? "border-white/80 ring-2 ring-[#c8102e]/75 ring-offset-2 ring-offset-[#fbfdff] shadow-[0_24px_48px_-24px_rgba(7,31,65,0.9)]"
           : "border-slate-200/40"
       }`}
     >
@@ -49,7 +49,7 @@ export function ScheduleSessionCard({
         className={`absolute inset-y-0 left-0 w-1.5 rounded-l-2xl ${variant.accent}`}
       />
 
-      <div className="ml-1.5 flex h-full min-h-[96px] flex-col justify-between gap-3 whitespace-normal break-words">
+      <div className="ml-1.5 flex h-full flex-col justify-between gap-3 whitespace-normal break-words">
         <div className="flex items-start justify-between gap-2">
           <p className="text-[11px] font-semibold tracking-[0.18em] opacity-85">
             {session.calendarLabel}
@@ -60,7 +60,7 @@ export function ScheduleSessionCard({
         </div>
 
         <div className="space-y-2">
-          <p className="text-sm leading-tight font-semibold whitespace-normal break-words">
+          <p className="whitespace-normal break-words text-sm font-semibold leading-tight">
             {session.title}
           </p>
           {session.hasLocationOverride ? (

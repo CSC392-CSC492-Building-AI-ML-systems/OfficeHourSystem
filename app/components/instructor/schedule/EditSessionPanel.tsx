@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { CalendarClock, ChevronDown } from "lucide-react";
 import type { ScheduleSession } from "./types";
 
@@ -14,6 +17,33 @@ function formatSelectedBlockTitle(session: ScheduleSession) {
 }
 
 export function EditSessionPanel({ selectedSession }: EditSessionPanelProps) {
+  const [hasLocationOverride, setHasLocationOverride] = useState(
+    selectedSession.hasLocationOverride ?? false,
+  );
+  const [locationValue, setLocationValue] = useState(
+    selectedSession.overrideLocation ?? selectedSession.location,
+  );
+  const [savedMessage, setSavedMessage] = useState("");
+
+  const defaultLocation = selectedSession.location;
+  const overrideLocation =
+    selectedSession.overrideLocation ?? selectedSession.location;
+
+  const handleToggleOverride = () => {
+    setSavedMessage("");
+    const nextValue = !hasLocationOverride;
+    setHasLocationOverride(nextValue);
+    setLocationValue(nextValue ? overrideLocation : defaultLocation);
+  };
+
+  const handleSaveOverride = () => {
+    setSavedMessage(
+      hasLocationOverride
+        ? "Override details are stored locally for this selected session preview."
+        : "This session is currently using the default recurring location.",
+    );
+  };
+
   return (
     <section className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
       <div className="flex items-center gap-3">
@@ -57,38 +87,64 @@ export function EditSessionPanel({ selectedSession }: EditSessionPanelProps) {
             <label className="block text-sm font-medium text-[#071f41]">
               Location Override
             </label>
-            <span
-              className={`relative inline-flex h-7 w-12 rounded-full p-1 ${
-                selectedSession.hasLocationOverride
-                  ? "bg-[#c8102e]"
-                  : "bg-slate-300"
+            <button
+              type="button"
+              aria-pressed={hasLocationOverride}
+              onClick={handleToggleOverride}
+              className={`relative inline-flex h-7 w-12 rounded-full p-1 transition ${
+                hasLocationOverride ? "bg-[#c8102e]" : "bg-slate-300"
               }`}
             >
               <span
                 className={`h-5 w-5 rounded-full bg-white shadow-sm transition ${
-                  selectedSession.hasLocationOverride ? "ml-auto" : ""
+                  hasLocationOverride ? "ml-auto" : ""
                 }`}
               />
-            </span>
+            </button>
           </div>
 
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-            <span>
-              {selectedSession.overrideLocation ?? selectedSession.location}
-            </span>
+          <div
+            className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
+              hasLocationOverride
+                ? "border-slate-200 bg-white text-slate-700"
+                : "border-slate-200 bg-slate-50 text-slate-500"
+            }`}
+          >
+            <input
+              type="text"
+              value={hasLocationOverride ? locationValue : defaultLocation}
+              onChange={(event) => setLocationValue(event.target.value)}
+              disabled={!hasLocationOverride}
+              className="w-full bg-transparent outline-none disabled:cursor-not-allowed"
+            />
             <ChevronDown className="h-4 w-4 text-slate-400" />
           </div>
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            {hasLocationOverride
+              ? "This override only affects this specific session occurrence."
+              : "This session is using the default recurring location."}
+          </p>
         </div>
       </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <button className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0f2942]">
+        <button
+          type="button"
+          onClick={handleSaveOverride}
+          className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
+        >
           Save Override
         </button>
-        <button className="inline-flex items-center justify-center rounded-full border border-[#c8102e] px-5 py-3 text-sm font-semibold text-[#c8102e] transition hover:bg-[#fff1f2]">
+        <button
+          type="button"
+          className="inline-flex items-center justify-center rounded-full border border-[#c8102e] px-5 py-3 text-sm font-semibold text-[#c8102e] transition hover:bg-[#fff1f2]"
+        >
           Cancel Session
         </button>
       </div>
+      {savedMessage ? (
+        <p className="mt-3 text-sm text-slate-500">{savedMessage}</p>
+      ) : null}
     </section>
   );
 }
