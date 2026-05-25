@@ -15,7 +15,7 @@ export default function Home() {
           dashboard implementations with mock data.
         </p>
 
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
+        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <Link
             href="/student"
             className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
@@ -59,6 +59,36 @@ export default function Home() {
             <p className="mt-2 text-sm text-slate-600">
               Review the weekly calendar, session overrides, and recurring rules
               UI.
+            </p>
+          </Link>
+
+          <Link
+            href="/instructor/my-queues"
+            className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
+          >
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Queues
+            </p>
+            <p className="mt-3 text-2xl font-semibold text-[#071f41]">
+              My Queues
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              Review upcoming queue sessions and open the active workspace.
+            </p>
+          </Link>
+
+          <Link
+            href="/instructor/my-queues/active"
+            className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
+          >
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Workspace
+            </p>
+            <p className="mt-3 text-2xl font-semibold text-[#071f41]">
+              Active Queue
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              Open the live queue workspace directly for local UI testing.
             </p>
           </Link>
         </div>
