@@ -57,8 +57,8 @@ export default function Home() {
               Master Schedule
             </p>
             <p className="mt-2 text-sm text-slate-600">
-              Review the weekly calendar, session overrides, and recurring
-              rules UI.
+              Review the weekly calendar, session overrides, and recurring rules
+              UI.
             </p>
           </Link>
         </div>
