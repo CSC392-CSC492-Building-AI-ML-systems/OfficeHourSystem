@@ -1,68 +1,14 @@
 import { Bug, CalendarDays, Users } from "lucide-react";
 import { Navbar } from "./Navbar";
+import {
+  DUMMY_DEBUGGING_SESSIONS,
+  DUMMY_DROP_IN_SESSIONS,
+  DUMMY_GROUP_TOPIC_SESSIONS,
+} from "./data";
 import { DropInCard } from "./cards/DropInCard";
 import { FeatureBanner } from "./cards/FeatureBanner";
 import { GroupTopicCard } from "./cards/GroupTopicCard";
 import { QueueCard } from "./cards/QueueCard";
-
-interface DropInSession {
-  title: string;
-  time: string;
-  location?: string;
-  taName: string;
-}
-
-interface DebuggingSession {
-  taName: string;
-  location: string;
-  isOnline?: boolean;
-}
-
-interface GroupTopicSession {
-  topic: string;
-  time: string;
-}
-
-const dropInSessions: DropInSession[] = [
-  {
-    title: "Morning Session",
-    time: "10:00 AM - 12:00 PM",
-    location: "BA 3110 (In-Person)",
-    taName: "Sarah Chen",
-  },
-  {
-    title: "Evening Session",
-    time: "Online (Zoom Link)",
-    taName: "James Miller",
-  },
-];
-
-const debuggingSessions: DebuggingSession[] = [
-  {
-    taName: "David Wu",
-    location: "BA 3110 (In-Person)",
-  },
-  {
-    taName: "Sarah Chen",
-    location: "Online (Zoom Link)",
-    isOnline: true,
-  },
-];
-
-const groupTopics: GroupTopicSession[] = [
-  {
-    topic: "Linked Lists Deep-Dive",
-    time: "Today, 2:00 PM",
-  },
-  {
-    topic: "Recursion Workshop",
-    time: "Today, 3:30 PM",
-  },
-  {
-    topic: "Big O Notation",
-    time: "Tomorrow, 11:00 AM",
-  },
-];
 
 const columnBaseClass =
   "rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]";
@@ -101,7 +47,7 @@ export default function StudentDashboard() {
               </div>
 
               <div className="space-y-4">
-                {dropInSessions.map((session) => (
+                {DUMMY_DROP_IN_SESSIONS.map((session) => (
                   <DropInCard key={session.title} {...session} />
                 ))}
               </div>
@@ -124,7 +70,7 @@ export default function StudentDashboard() {
               </div>
 
               <div className="space-y-4">
-                {debuggingSessions.map((session) => (
+                {DUMMY_DEBUGGING_SESSIONS.map((session) => (
                   <QueueCard
                     key={`${session.taName}-${session.location}`}
                     {...session}
@@ -149,7 +95,7 @@ export default function StudentDashboard() {
               </div>
 
               <div className="space-y-4">
-                {groupTopics.map((session) => (
+                {DUMMY_GROUP_TOPIC_SESSIONS.map((session) => (
                   <GroupTopicCard
                     key={`${session.topic}-${session.time}`}
                     topic={session.topic}

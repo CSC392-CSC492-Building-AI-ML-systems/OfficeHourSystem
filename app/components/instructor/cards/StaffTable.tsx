@@ -10,46 +10,7 @@ import {
   Trash2,
   Video,
 } from "lucide-react";
-
-interface StaffMember {
-  id: string;
-  name: string;
-  program: string;
-  role: "Lead TA" | "TA";
-  email: string;
-  location: string;
-  isRemote: boolean;
-}
-
-const staffRoster: StaffMember[] = [
-  {
-    id: "1",
-    name: "Sarah Chen",
-    program: "Grad Student",
-    role: "Lead TA",
-    email: "s.chen@university.edu",
-    location: "Tech Plaza, Rm 402",
-    isRemote: false,
-  },
-  {
-    id: "2",
-    name: "Marcus Holloway",
-    program: "Senior Undergraduate",
-    role: "TA",
-    email: "m.holloway@university.edu",
-    location: "Science Center, Lab 1B",
-    isRemote: false,
-  },
-  {
-    id: "3",
-    name: "Elena Rodriguez",
-    program: "Masters Student",
-    role: "TA",
-    email: "e.rodriguez@university.edu",
-    location: "Remote (Zoom)",
-    isRemote: true,
-  },
-];
+import { DUMMY_STAFF } from "./data";
 
 function getInitials(name: string) {
   return name
@@ -67,10 +28,10 @@ export function StaffTable() {
     const normalizedQuery = query.trim().toLowerCase();
 
     if (!normalizedQuery) {
-      return staffRoster;
+      return DUMMY_STAFF;
     }
 
-    return staffRoster.filter((member) =>
+    return DUMMY_STAFF.filter((member) =>
       [member.name, member.program, member.role, member.email, member.location]
         .join(" ")
         .toLowerCase()
