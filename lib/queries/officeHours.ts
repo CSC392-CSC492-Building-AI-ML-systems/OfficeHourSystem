@@ -1,4 +1,4 @@
-import { prisma } from "../prisma";
+import { prisma } from "@/lib/prisma";
 
 //example of useage
 // const sessions = await getUpcomingSessionsByStudentIdentifier("student@mail.utoronto.ca");

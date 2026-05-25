@@ -1,4 +1,4 @@
-import { prisma } from "../prisma";
+import { prisma } from "@/lib/prisma";
 
 // example useage
 // const result = await markInterestedInSession(
