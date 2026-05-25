@@ -1,4 +1,4 @@
-// components/student/cards/GroupTopicCard.tsx
+import { Clock3, Users } from "lucide-react";
 
 interface GroupTopicCardProps {
   topic: string;
@@ -7,13 +7,20 @@ interface GroupTopicCardProps {
 
 export function GroupTopicCard({ topic, timeString }: GroupTopicCardProps) {
   return (
-    <div className="bg-slate-50 p-4 rounded-lg border mb-4 flex justify-between items-center">
-      <div>
-        <h4 className="font-semibold text-slate-900">{topic}</h4>
-        <p className="text-sm text-slate-600">🕒 {timeString}</p>
+    <div className="flex items-start justify-between gap-3 rounded-2xl border border-[#d8e5f2] bg-[#f5faff] p-4">
+      <div className="space-y-3">
+        <h3 className="flex items-center gap-2 text-base font-semibold text-[#071f41]">
+          <Users className="h-4 w-4 text-slate-400" />
+          <span>{topic}</span>
+        </h3>
+        <p className="flex items-center gap-2 text-sm text-slate-600">
+          <Clock3 className="h-4 w-4 text-slate-400" />
+          <span>{timeString}</span>
+        </p>
       </div>
-      <button className="text-sm px-3 py-1 bg-white border rounded hover:bg-slate-50 text-slate-700 transition-colors">
-        {"I'm interested."}
+
+      <button className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-[#071f41] transition hover:border-slate-300 hover:bg-slate-50">
+        I&apos;m interested
       </button>
     </div>
   );
