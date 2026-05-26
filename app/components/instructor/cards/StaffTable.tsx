@@ -1,145 +1,158 @@
-// components/instructor/cards/StaffTable.tsx
-import { Trash2, MapPin, Video, ChevronLeft, ChevronRight } from "lucide-react";
+"use client";
 
-// we will use this mock data for now, later we will fetch data from the database
-const staffRoster = [
-  {
-    id: "1",
-    name: "Sarah Chen",
-    role: "Grad Student",
-    isLead: true,
-    email: "s.chen@university.edu",
-    location: "Tech Plaza, Rm 402",
-    isOnline: false,
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-  },
-  {
-    id: "2",
-    name: "Marcus Holloway",
-    role: "Senior Undergraduate",
-    isLead: false,
-    email: "m.holloway@university.edu",
-    location: "Science Center, Lab 1B",
-    isOnline: false,
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-  },
-  {
-    id: "3",
-    name: "Elena Rodriguez",
-    role: "Masters Student",
-    isLead: false,
-    email: "e.rodriguez@university.edu",
-    location: "Remote (Zoom)",
-    isOnline: true,
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
-  },
-];
+import { useMemo, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Mail,
+  MapPin,
+  Search,
+  Trash2,
+  Video,
+} from "lucide-react";
+import { DUMMY_STAFF } from "./data";
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
 
 export function StaffTable() {
+  const [query, setQuery] = useState("");
+
+  const filteredStaff = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return DUMMY_STAFF;
+    }
+
+    return DUMMY_STAFF.filter((member) =>
+      [member.name, member.program, member.role, member.email, member.location]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedQuery),
+    );
+  }, [query]);
+
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      {/* Clean Table Header without search bar */}
-      <div className="p-5 border-b border-slate-100">
-        <h3 className="font-bold text-base text-[#0f2942]">
+    <section className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
+      <div className="flex flex-col gap-4 border-b border-slate-200 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+        <h2 className="text-lg font-semibold text-[#071f41]">
           Current Teaching Assistants
-        </h3>
+        </h2>
+
+        <label className="relative block w-full max-w-sm">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search staff..."
+            className="w-full rounded-full border border-slate-200 bg-[#f8fafc] py-2.5 pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
+          />
+        </label>
       </div>
 
-      {/* Responsive Table Grid */}
-      <div className="w-full overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-collapse">
           <thead>
-            <tr className="bg-[#eef2f6]/50 border-b border-slate-200 text-[11px] font-bold text-slate-500 tracking-wider">
-              <th className="px-6 py-3.5">STAFF MEMBER</th>
-              <th className="px-6 py-3.5">ROLE</th>
-              <th className="px-6 py-3.5">CONTACT INFO</th>
-              <th className="px-6 py-3.5">OFFICE LOCATION</th>
-              <th className="px-6 py-3.5 text-right">ACTIONS</th>
+            <tr className="bg-[#f8fafc] text-left text-xs font-semibold tracking-[0.18em] text-slate-500">
+              <th className="px-6 py-4">STAFF MEMBER</th>
+              <th className="px-6 py-4">ROLE</th>
+              <th className="px-6 py-4">CONTACT INFO</th>
+              <th className="px-6 py-4">OFFICE LOCATION</th>
+              <th className="px-6 py-4 text-right">ACTIONS</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
-            {staffRoster.map((ta) => (
-              <tr
-                key={ta.id}
-                className="hover:bg-slate-50/40 transition-colors"
-              >
-                {/* Profile Identity block */}
-                <td className="px-6 py-4 whitespace-nowrap">
+          <tbody className="divide-y divide-slate-100">
+            {filteredStaff.map((member) => (
+              <tr key={member.id} className="text-sm text-slate-700">
+                <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <img
-                      src={ta.avatar}
-                      alt={ta.name}
-                      className="w-10 h-10 rounded-full object-cover border border-slate-100"
-                    />
+                    <div className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf1ff] text-sm font-semibold text-[#071f41]">
+                      {getInitials(member.name)}
+                    </div>
                     <div>
-                      <span className="font-bold text-slate-900 block">
-                        {ta.name}
-                      </span>
-                      <span className="text-xs text-slate-400 block mt-0.5">
-                        {ta.role}
-                      </span>
+                      <p className="font-semibold text-[#071f41]">
+                        {member.name}
+                      </p>
+                      <p className="text-sm text-slate-500">{member.program}</p>
                     </div>
                   </div>
                 </td>
-
-                {/* Role Badge */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {ta.isLead ? (
-                    <span className="inline-flex items-center bg-[#002244] text-white text-[10px] font-black px-2 py-0.5 rounded tracking-wide">
-                      LEAD TA
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center bg-[#dae2ec] text-[#627d98] text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">
-                      TA
-                    </span>
-                  )}
+                <td className="px-6 py-4">
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                      member.role === "Lead TA"
+                        ? "bg-[#071f41] text-white"
+                        : "bg-[#e8eef5] text-[#5b6b80]"
+                    }`}
+                  >
+                    {member.role}
+                  </span>
                 </td>
-
-                {/* Email Info */}
-                <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-600">
-                  {ta.email}
-                </td>
-
-                {/* Location with reactive icons */}
-                <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                  <div className="flex items-center gap-1.5">
-                    {ta.isOnline ? (
-                      <Video className="w-4 h-4 text-slate-400" />
-                    ) : (
-                      <MapPin className="w-4 h-4 text-slate-400" />
-                    )}
-                    <span>{ta.location}</span>
+                <td className="px-6 py-4 text-slate-600">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-slate-400" />
+                    <span>{member.email}</span>
                   </div>
                 </td>
-
-                {/* Remove Action Trigger */}
-                <td className="px-6 py-4 whitespace-nowrap text-right">
-                  <button className="inline-flex items-center gap-1 text-[#b91c1c] hover:text-[#991b1b] font-bold text-xs transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" />
+                <td className="px-6 py-4 text-slate-600">
+                  <div className="flex items-center gap-2">
+                    {member.isRemote ? (
+                      <Video className="h-4 w-4 text-slate-400" />
+                    ) : (
+                      <MapPin className="h-4 w-4 text-slate-400" />
+                    )}
+                    <span>{member.location}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <button className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-[#c8102e] transition hover:bg-[#fff1f2]">
+                    <Trash2 className="h-4 w-4" />
                     Remove
                   </button>
                 </td>
               </tr>
             ))}
+            {filteredStaff.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-6 py-10 text-center text-sm text-slate-500"
+                >
+                  No staff members match your search.
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>
 
-      {/* Table Pagination Footer */}
-      <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
+      <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4 text-sm text-slate-500">
         <span>Showing 3 of 12 staff members</span>
         <div className="flex items-center gap-2">
-          <button className="w-7 h-7 inline-flex items-center justify-center border border-slate-200 rounded text-slate-400 hover:bg-slate-50 transition-colors">
-            <ChevronLeft className="w-4 h-4" />
+          <button
+            type="button"
+            aria-label="Previous page"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50"
+          >
+            <ChevronLeft className="h-4 w-4" />
           </button>
-          <button className="w-7 h-7 inline-flex items-center justify-center border border-slate-200 rounded text-slate-400 hover:bg-slate-50 transition-colors">
-            <ChevronRight className="w-4 h-4" />
+          <button
+            type="button"
+            aria-label="Next page"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50"
+          >
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
