@@ -20,6 +20,10 @@ export async function importClasslist(input: ImportClasslistInput) {
   return await prisma.$transaction(async (tx) => {
     const { termCode, rows } = input;
 
+    if (!rows || rows.length === 0) {
+      throw new Error("Cannot import an empty classlist");
+    }
+
     // Assumption: one CSV is for one course offering.
     // So we get the course code from the first row.
     // e.g. "CSC398H5", "STA398H5"
@@ -91,6 +95,7 @@ export async function importClasslist(input: ImportClasslistInput) {
       // Only import active students.
       // For now, we only accept "APP".
       // Other status values will be skipped.
+      // TODO: not 100% sure
       if (status !== "APP") {
         skipped++;
         continue;
