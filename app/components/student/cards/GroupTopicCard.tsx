@@ -1,0 +1,27 @@
+import { Clock3, Users } from "lucide-react";
+
+interface GroupTopicCardProps {
+  topic: string;
+  timeString: string;
+}
+
+export function GroupTopicCard({ topic, timeString }: GroupTopicCardProps) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-2xl border border-[#d8e5f2] bg-[#f5faff] p-4">
+      <div className="space-y-3">
+        <h3 className="flex items-center gap-2 text-base font-semibold text-[#071f41]">
+          <Users className="h-4 w-4 text-slate-400" />
+          <span>{topic}</span>
+        </h3>
+        <p className="flex items-center gap-2 text-sm text-slate-600">
+          <Clock3 className="h-4 w-4 text-slate-400" />
+          <span>{timeString}</span>
+        </p>
+      </div>
+
+      <button className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-[#071f41] transition hover:border-slate-300 hover:bg-slate-50">
+        I&apos;m interested
+      </button>
+    </div>
+  );
+}
