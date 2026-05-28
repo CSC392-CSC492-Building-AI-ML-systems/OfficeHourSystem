@@ -7,11 +7,11 @@
 //    system would push data to Interest table and teaching team can check the stats
 // 6. In the term, instructors can add temporary session(e.g debugging session), can cancel a session
 // 7. During Office hour, Students' Tcards will be scanned and students' info will be pushed to Session Attendance
-      queue will be ranked by checkin-time. Students can check their rank in the queue.
+//      queue will be ranked by checkin-time. Students can check their rank in the queue.
 // 8. During office hours, TAs/Instructors can see the queue as well, and deal with one student at a time. By clicking, start
-      answering to start with a student and click "finish" when student has no more to ask. System would update time started and
-      ended and update status of the attendance. TAs/Instructors can also click "Not shown" to skip a student. System will also
-      update the related status of Attendance Table.
+//      answering to start with a student and click "finish" when student has no more to ask. System would update time started and
+//      ended and update status of the attendance. TAs/Instructors can also click "Not shown" to skip a student. System will also
+//      update the related status of Attendance Table.
 
 generator client {
   provider = "prisma-client-js"
@@ -50,9 +50,6 @@ model Course {
 
   code String @unique
 
-  // e.g Intro to SWE
-  name String
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -60,18 +57,14 @@ model Course {
 }
 
 model CourseOffering {
-  id       Int    @id @default(autoincrement())
+  id Int @id @default(autoincrement())
   publicId String @unique @default(cuid())
 
   courseId Int
   course Course @relation(fields: [courseId], references: [id])
 
-  // e.g. "2026F", "2026W" ? Idk for sure
+  // e.g. "2026F", "2026W", "2026S"
   termCode String
-
-  // e.g. "LEC0101".
-  // Use DEFAULT instead of nullable value so @@unique works reliably.
-  sectionCode String @default("DEFAULT")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -80,7 +73,7 @@ model CourseOffering {
   schedules OfficeHourSchedule[]
   sessions OfficeHourSession[]
 
-  @@unique([courseId, termCode, sectionCode])
+  @@unique([courseId, termCode])
   @@index([termCode])
 }
 
