@@ -11,8 +11,10 @@ interface AddTaModalProps {
 }
 
 type StaffRole = StaffMember["role"];
+type LocationType = "in-person" | "remote";
 
 const initialRole: StaffRole = "TA";
+const initialLocationType: LocationType = "in-person";
 
 export function AddTaModal({
   isOpen,
@@ -23,8 +25,9 @@ export function AddTaModal({
   const [email, setEmail] = useState("");
   const [program, setProgram] = useState("");
   const [role, setRole] = useState<StaffRole>(initialRole);
+  const [locationType, setLocationType] =
+    useState<LocationType>(initialLocationType);
   const [location, setLocation] = useState("");
-  const [isRemote, setIsRemote] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -57,8 +60,8 @@ export function AddTaModal({
     setEmail("");
     setProgram("");
     setRole(initialRole);
+    setLocationType(initialLocationType);
     setLocation("");
-    setIsRemote(false);
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -71,7 +74,7 @@ export function AddTaModal({
       program: program.trim(),
       role,
       location: location.trim(),
-      isRemote,
+      isRemote: locationType === "remote",
     });
     resetForm();
   };
@@ -88,10 +91,10 @@ export function AddTaModal({
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
           <div>
             <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
-              STAFF ROSTER
+              STAFF MANAGEMENT
             </p>
             <h2 className="mt-2 text-xl font-semibold text-[#071f41]">
-              Add Teaching Assistant
+              Add teaching assistant
             </h2>
           </div>
           <button
@@ -155,26 +158,42 @@ export function AddTaModal({
             </label>
           </div>
 
-          <label className="space-y-2 text-sm font-medium text-[#071f41]">
-            <span>Office location</span>
-            <input
-              required
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              placeholder="Tech Plaza, Rm 402"
-              className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
-            />
-          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 text-sm font-medium text-[#071f41]">
+              <span>Location type</span>
+              <div className="grid grid-cols-2 rounded-2xl border border-slate-200 bg-[#f8fafc] p-1">
+                {(["in-person", "remote"] as LocationType[]).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setLocationType(type)}
+                    className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                      locationType === type
+                        ? "bg-[#071f41] text-white shadow-[0_12px_24px_-20px_rgba(7,31,65,0.8)]"
+                        : "text-slate-500 hover:text-[#071f41]"
+                    }`}
+                  >
+                    {type === "in-person" ? "In person" : "Remote"}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <label className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-600">
-            <span>Remote office hours</span>
-            <input
-              type="checkbox"
-              checked={isRemote}
-              onChange={(event) => setIsRemote(event.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 accent-[#071f41]"
-            />
-          </label>
+            <label className="space-y-2 text-sm font-medium text-[#071f41]">
+              <span>Office location</span>
+              <input
+                required
+                value={location}
+                onChange={(event) => setLocation(event.target.value)}
+                placeholder={
+                  locationType === "remote"
+                    ? "Remote (Zoom)"
+                    : "Tech Plaza, Rm 402"
+                }
+                className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
+              />
+            </label>
+          </div>
 
           <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
             <button
