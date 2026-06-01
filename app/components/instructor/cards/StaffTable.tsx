@@ -10,7 +10,12 @@ import {
   Trash2,
   Video,
 } from "lucide-react";
-import { DUMMY_STAFF } from "./data";
+import { StaffMember } from "./data";
+
+interface StaffTableProps {
+  staff: StaffMember[];
+  onRemoveStaffMember: (memberId: string) => void;
+}
 
 function getInitials(name: string) {
   return name
@@ -21,23 +26,23 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export function StaffTable() {
+export function StaffTable({ staff, onRemoveStaffMember }: StaffTableProps) {
   const [query, setQuery] = useState("");
 
   const filteredStaff = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     if (!normalizedQuery) {
-      return DUMMY_STAFF;
+      return staff;
     }
 
-    return DUMMY_STAFF.filter((member) =>
+    return staff.filter((member) =>
       [member.name, member.program, member.role, member.email, member.location]
         .join(" ")
         .toLowerCase()
         .includes(normalizedQuery),
     );
-  }, [query]);
+  }, [query, staff]);
 
   return (
     <section className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
@@ -113,7 +118,11 @@ export function StaffTable() {
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-[#c8102e] transition hover:bg-[#fff1f2]">
+                  <button
+                    type="button"
+                    onClick={() => onRemoveStaffMember(member.id)}
+                    className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-[#c8102e] transition hover:bg-[#fff1f2]"
+                  >
                     <Trash2 className="h-4 w-4" />
                     Remove
                   </button>
@@ -135,19 +144,23 @@ export function StaffTable() {
       </div>
 
       <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4 text-sm text-slate-500">
-        <span>Showing 3 of 12 staff members</span>
+        <span>
+          Showing {filteredStaff.length} of {staff.length} staff members
+        </span>
         <div className="flex items-center gap-2">
           <button
             type="button"
             aria-label="Previous page"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50"
+            disabled
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-300"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button
             type="button"
             aria-label="Next page"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50"
+            disabled
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-300"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

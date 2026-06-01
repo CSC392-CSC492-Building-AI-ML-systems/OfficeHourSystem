@@ -63,7 +63,7 @@ export default function StudentDashboard() {
                     Debugging Queue
                   </h2>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Join a TA queue for deeper 1:1 support on blockers and code
+                    Join the queue for deeper 1:1 support on blockers and code
                     issues.
                   </p>
                 </div>

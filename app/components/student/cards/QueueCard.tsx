@@ -1,4 +1,5 @@
-import { Globe, MapPin, UserRound } from "lucide-react";
+import { Globe, MapPin } from "lucide-react";
+import { InterestedButton } from "./InterestedButton";
 
 interface QueueCardProps {
   taName: string;
@@ -6,18 +7,13 @@ interface QueueCardProps {
   isOnline?: boolean;
 }
 
-export function QueueCard({
-  taName,
-  location,
-  isOnline = false,
-}: QueueCardProps) {
+export function QueueCard({ location, isOnline = false }: QueueCardProps) {
   return (
     <div className="rounded-2xl border border-[#d8e5f2] bg-[#f5faff] p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-3">
-          <h3 className="flex items-center gap-2 text-base font-semibold text-[#071f41]">
-            <UserRound className="h-4 w-4 text-slate-400" />
-            <span>{taName}</span>
+          <h3 className="text-base font-semibold text-[#071f41]">
+            Debugging support
           </h3>
           <p
             className={`flex items-center gap-2 text-sm font-medium ${
@@ -33,9 +29,7 @@ export function QueueCard({
           </p>
         </div>
 
-        <button className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-[#071f41] transition hover:border-slate-300 hover:bg-slate-50">
-          I&apos;m interested
-        </button>
+        <InterestedButton />
       </div>
     </div>
   );
