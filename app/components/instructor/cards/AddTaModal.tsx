@@ -64,8 +64,18 @@ export function AddTaModal({
     setLocation("");
   };
 
+  const isFormValid =
+    name.trim().length > 0 &&
+    email.trim().length > 0 &&
+    program.trim().length > 0 &&
+    location.trim().length > 0;
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!isFormValid) {
+      return;
+    }
 
     onAddStaffMember({
       id: `local-${Date.now()}`,
@@ -205,7 +215,8 @@ export function AddTaModal({
             </button>
             <button
               type="submit"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(7,31,65,0.7)] transition hover:bg-[#0f2942]"
+              disabled={!isFormValid}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(7,31,65,0.7)] transition hover:bg-[#0f2942] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
             >
               <UserPlus className="h-4 w-4" />
               Add TA
