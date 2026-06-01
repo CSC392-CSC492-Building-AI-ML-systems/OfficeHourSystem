@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import ActiveQueuePage from "@/components/instructor/queues/ActiveQueuePage";
+import ActiveQueuePage from "@/app/components/instructor/queues/ActiveQueuePage";
 
 export default function InstructorActiveQueueRoute() {
   return (
