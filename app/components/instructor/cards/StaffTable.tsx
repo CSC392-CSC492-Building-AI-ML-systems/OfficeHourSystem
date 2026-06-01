@@ -10,7 +10,12 @@ import {
   Trash2,
   Video,
 } from "lucide-react";
-import { DUMMY_STAFF } from "./data";
+import type { StaffMember } from "./data";
+
+interface StaffTableProps {
+  staff: StaffMember[];
+  onRemoveStaffMember: (staffMemberId: string) => void;
+}
 
 function getInitials(name: string) {
   return name
@@ -21,30 +26,35 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export function StaffTable() {
+export function StaffTable({ staff, onRemoveStaffMember }: StaffTableProps) {
   const [query, setQuery] = useState("");
 
   const filteredStaff = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     if (!normalizedQuery) {
-      return DUMMY_STAFF;
+      return staff;
     }
 
-    return DUMMY_STAFF.filter((member) =>
+    return staff.filter((member) =>
       [member.name, member.program, member.role, member.email, member.location]
         .join(" ")
         .toLowerCase()
         .includes(normalizedQuery),
     );
-  }, [query]);
+  }, [query, staff]);
 
   return (
     <section className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
       <div className="flex flex-col gap-4 border-b border-slate-200 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
-        <h2 className="text-lg font-semibold text-[#071f41]">
-          Current Teaching Assistants
-        </h2>
+        <div>
+          <h2 className="text-lg font-semibold text-[#071f41]">
+            Current Teaching Assistants
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Search, review, and manage the staff roster for this course.
+          </p>
+        </div>
 
         <label className="relative block w-full max-w-sm">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -71,7 +81,10 @@ export function StaffTable() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredStaff.map((member) => (
-              <tr key={member.id} className="text-sm text-slate-700">
+              <tr
+                key={member.id}
+                className="text-sm text-slate-700 transition hover:bg-[#fbfdff]"
+              >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf1ff] text-sm font-semibold text-[#071f41]">
@@ -113,7 +126,12 @@ export function StaffTable() {
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-[#c8102e] transition hover:bg-[#fff1f2]">
+                  <button
+                    type="button"
+                    aria-label={`Remove ${member.name}`}
+                    onClick={() => onRemoveStaffMember(member.id)}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-[#9f1239] transition hover:border-[#fecdd3] hover:bg-[#fff1f2]"
+                  >
                     <Trash2 className="h-4 w-4" />
                     Remove
                   </button>
@@ -135,7 +153,9 @@ export function StaffTable() {
       </div>
 
       <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4 text-sm text-slate-500">
-        <span>Showing 3 of 12 staff members</span>
+        <span>
+          Showing {filteredStaff.length} of {staff.length} staff members
+        </span>
         <div className="flex items-center gap-2">
           <button
             type="button"
