@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getSessionOptions, type SessionData } from "@/lib/session";
 import { getRoleFromWhitelist } from "@/lib/whitelist";
-import { CourseRole } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
 // GET /api/auth/session
