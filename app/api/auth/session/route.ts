@@ -35,9 +35,8 @@ export async function GET(request: NextRequest) {
   let email: string | null = null;
 
   if (isProd) {
-    // Apache + mod_shib injects these headers for every authenticated request.
-    // The server strips them from external connections (see server.ts), so
-    // they can be trusted here.
+    // Apache + mod_shib injects these headers on proxied requests. Next.js
+    // is only reachable via Apache on localhost (see docker-compose / Apache config).
     utorid = request.headers.get("utorid");
     firstName = request.headers.get("givenName");
     lastName = request.headers.get("surname");
