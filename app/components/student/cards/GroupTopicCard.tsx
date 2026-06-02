@@ -1,4 +1,5 @@
 import { Clock3, Users } from "lucide-react";
+import { InterestedButton } from "./InterestedButton";
 
 interface GroupTopicCardProps {
   topic: string;
@@ -19,9 +20,7 @@ export function GroupTopicCard({ topic, timeString }: GroupTopicCardProps) {
         </p>
       </div>
 
-      <button className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-[#071f41] transition hover:border-slate-300 hover:bg-slate-50">
-        I&apos;m interested
-      </button>
+      <InterestedButton />
     </div>
   );
 }
