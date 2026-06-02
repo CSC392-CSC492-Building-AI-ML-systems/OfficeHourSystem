@@ -1,4 +1,4 @@
-import InstructorScheduleDashboard from "@/components/instructor/schedule/InstructorScheduleDashboard";
+import InstructorScheduleDashboard from "@/app/components/instructor/schedule/InstructorScheduleDashboard";
 
 export default function InstructorSchedulePage() {
   return (
