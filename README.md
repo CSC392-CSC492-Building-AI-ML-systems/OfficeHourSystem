@@ -16,7 +16,7 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+You can start editing the page by modifying `src/app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
@@ -39,9 +39,11 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ```
 /
-├── actions/            ← has server actions, wrapper for services, and authenticates as needed
-├── api/                ← holds the route.ts needed to handle HTTP requests, also wraps services
-├── services/           ← has the big workflows where the business logic lives
-├── lib/                ← helpful code snippits that can be reused
-└── app/                ← pages, components, etc anything frontend
+├── src/
+│   ├── actions/        ← server actions; wrappers for services, auth as needed
+│   ├── app/            ← pages, components, and API routes (app/api/...)
+│   ├── lib/            ← reusable helpers (prisma, session, queries, etc.)
+│   └── services/       ← business-logic workflows
+├── prisma/             ← schema and migrations
+└── public/             ← static assets
 ```
