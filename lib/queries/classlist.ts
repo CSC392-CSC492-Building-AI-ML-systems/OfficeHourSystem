@@ -1,10 +1,11 @@
-import { prisma } from "@/lib/prisma";
-
 export type ClasslistRow = {
   Acad_act: string;
   Email: string;
   Surname: string;
   "Given Name": string;
+  "Person ID"?: string;
+  student_number?: string;
+  studentNumber?: string;
   Current_sts: string;
   UTORid: string;
 };
@@ -14,10 +15,47 @@ export type ImportClasslistInput = {
   rows: ClasslistRow[];
 };
 
-export async function importClasslist(input: ImportClasslistInput) {
+export type ImportClasslistClient = {
+  $transaction<T>(
+    callback: (tx: ImportClasslistTransaction) => Promise<T>,
+  ): Promise<T>;
+};
+
+export type ImportClasslistTransaction = {
+  course: {
+    upsert(args: unknown): Promise<{ id: number }>;
+  };
+  courseOffering: {
+    upsert(args: unknown): Promise<{ id: number }>;
+  };
+  offeringMember: {
+    count(args: unknown): Promise<number>;
+    deleteMany(args: unknown): Promise<{ count: number }>;
+    upsert(args: unknown): Promise<unknown>;
+  };
+  user: {
+    findMany(args: unknown): Promise<Array<{ id: number }>>;
+    create(args: unknown): Promise<{ id: number }>;
+    update(args: unknown): Promise<{ id: number }>;
+  };
+};
+
+function getStudentNumber(row: ClasslistRow) {
+  return (
+    row["Person ID"] ??
+    row.student_number ??
+    row.studentNumber ??
+    ""
+  ).trim();
+}
+
+export async function importClasslistWithClient(
+  input: ImportClasslistInput,
+  client: ImportClasslistClient,
+) {
   // Use transaction to make sure this import is all-or-nothing.
   // If any error happens inside, Prisma will rollback all database changes.
-  return await prisma.$transaction(async (tx) => {
+  return await client.$transaction(async (tx) => {
     const { termCode, rows } = input;
 
     if (!rows || rows.length === 0) {
@@ -91,6 +129,7 @@ export async function importClasslist(input: ImportClasslistInput) {
     for (const row of rows) {
       const status = row.Current_sts.trim().toUpperCase();
       const utorid = row.UTORid.trim();
+      const studentNumber = getStudentNumber(row);
 
       // Only import active students.
       // For now, we only accept "APP".
@@ -108,25 +147,61 @@ export async function importClasslist(input: ImportClasslistInput) {
         throw new Error("CSV contains an active student row without UTORid");
       }
 
-      // 6. Find user based on utorid.
+      // If an active student does not have student number,
+      // this means the CSV data is not valid enough for import.
+      // Throw error here so transaction can rollback everything.
+      if (!studentNumber) {
+        throw new Error(
+          "CSV contains an active student row without student number",
+        );
+      }
+
+      // 6. Find user based on utorid or student number.
       // If the user does not exist, create a new user.
-      // If the user already exists, update name and email.
-      const user = await tx.user.upsert({
+      // If the user already exists, update name, email, and student number.
+      const matchingUsers = await tx.user.findMany({
         where: {
-          utorid: utorid,
+          OR: [
+            {
+              utorid: utorid,
+            },
+            {
+              studentNumber: studentNumber,
+            },
+          ],
         },
-        update: {
-          email: row.Email.trim(),
-          firstName: row["Given Name"].trim(),
-          lastName: row.Surname.trim(),
-        },
-        create: {
-          utorid: utorid,
-          email: row.Email.trim(),
-          firstName: row["Given Name"].trim(),
-          lastName: row.Surname.trim(),
+        select: {
+          id: true,
         },
       });
+
+      const matchingUserIds = new Set(matchingUsers.map((user) => user.id));
+
+      if (matchingUserIds.size > 1) {
+        throw new Error(
+          "CSV row matches multiple existing users by UTORid and student number",
+        );
+      }
+
+      const userData = {
+        utorid: utorid,
+        studentNumber: studentNumber,
+        email: row.Email.trim(),
+        firstName: row["Given Name"].trim(),
+        lastName: row.Surname.trim(),
+      };
+
+      const user =
+        matchingUsers.length > 0
+          ? await tx.user.update({
+              where: {
+                id: matchingUsers[0].id,
+              },
+              data: userData,
+            })
+          : await tx.user.create({
+              data: userData,
+            });
 
       // 7. Add this user to this offering as a student.
       // Since we may have cleared old student members above,
@@ -162,4 +237,13 @@ export async function importClasslist(input: ImportClasslistInput) {
       skipped,
     };
   });
+}
+
+export async function importClasslist(input: ImportClasslistInput) {
+  const { prisma } = await import("../prisma");
+
+  return await importClasslistWithClient(
+    input,
+    prisma as unknown as ImportClasslistClient,
+  );
 }

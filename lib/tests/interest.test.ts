@@ -52,6 +52,7 @@ async function setupScenario() {
     data: {
       utorid: `${TEST_PREFIX}student1`,
       email: `${TEST_PREFIX}student1@mail.utoronto.ca`,
+      studentNumber: "1011662167",
       firstName: "Alice",
       lastName: "Test",
     },
@@ -65,6 +66,7 @@ async function setupScenario() {
     data: {
       utorid: `${TEST_PREFIX}student2`,
       email: `${TEST_PREFIX}student2@mail.utoronto.ca`,
+      studentNumber: "1011662168",
       firstName: "Bob",
       lastName: "Test",
     },
@@ -113,69 +115,120 @@ async function main() {
     } catch (e) {
       errorMsg = (e as Error).message;
     }
-    assert(errorMsg.includes("User not found"), `Error message should contain 'User not found', got: ${errorMsg}`);
+    assert(
+      errorMsg.includes("User not found"),
+      `Error message should contain 'User not found', got: ${errorMsg}`,
+    );
   });
 
   // Test 2: session does not exist -> throw
-  await runTest("Session does not exist → throw 'Office hour session not found'", async () => {
-    let errorMsg = "";
-    try {
-      await markInterestedInSession(student.utorid, 999999999);
-    } catch (e) {
-      errorMsg = (e as Error).message;
-    }
-    assert(
-      errorMsg.includes("Office hour session not found"),
-      `Error message should contain 'Office hour session not found', got: ${errorMsg}`,
-    );
-  });
+  await runTest(
+    "Session does not exist → throw 'Office hour session not found'",
+    async () => {
+      let errorMsg = "";
+      try {
+        await markInterestedInSession(student.utorid, 999999999);
+      } catch (e) {
+        errorMsg = (e as Error).message;
+      }
+      assert(
+        errorMsg.includes("Office hour session not found"),
+        `Error message should contain 'Office hour session not found', got: ${errorMsg}`,
+      );
+    },
+  );
 
   // Test 3: student not in offering -> throw sth
-  await runTest("Student not in offering → throw 'Student is not enrolled'", async () => {
-    let errorMsg = "";
-    try {
-      await markInterestedInSession(outsider.utorid, session.id);
-    } catch (e) {
-      errorMsg = (e as Error).message;
-    }
-    assert(
-      errorMsg.includes("Student is not enrolled in this offering"),
-      `Error message should contain 'Student is not enrolled', got: ${errorMsg}`,
-    );
-  });
+  await runTest(
+    "Student not in offering → throw 'Student is not enrolled'",
+    async () => {
+      let errorMsg = "";
+      try {
+        await markInterestedInSession(outsider.utorid, session.id);
+      } catch (e) {
+        errorMsg = (e as Error).message;
+      }
+      assert(
+        errorMsg.includes("Student is not enrolled in this offering"),
+        `Error message should contain 'Student is not enrolled', got: ${errorMsg}`,
+      );
+    },
+  );
 
   // Test 4: normal interest mark
-  await runTest("Normal mark → returns interestId / userId / sessionId", async () => {
-    const result = await markInterestedInSession(student.utorid, session.id);
+  await runTest(
+    "Normal mark → returns interestId / userId / sessionId",
+    async () => {
+      const result = await markInterestedInSession(student.utorid, session.id);
 
-    assert(typeof result.interestId === "number", "interestId should be a number");
-    assertEqual(result.userId, student.id, "userId");
+      assert(
+        typeof result.interestId === "number",
+        "interestId should be a number",
+      );
+      assertEqual(result.userId, student.id, "userId");
+      assertEqual(result.sessionId, session.id, "sessionId");
+    },
+  );
+
+  await runTest("Mark by student number returns interest result", async () => {
+    const result = await markInterestedInSession(
+      student2.studentNumber!,
+      session.id,
+    );
+
+    assert(
+      typeof result.interestId === "number",
+      "interestId should be a number",
+    );
+    assertEqual(result.userId, student2.id, "userId");
     assertEqual(result.sessionId, session.id, "sessionId");
   });
 
   // Test 5: duplicate mark → idempotent
-  await runTest("Duplicate mark → idempotent, returns same record", async () => {
-    // student already marked in test 4, marking again should not throw
-    const first = await markInterestedInSession(student.utorid, session.id);
-    const second = await markInterestedInSession(student.utorid, session.id);
+  await runTest(
+    "Duplicate mark → idempotent, returns same record",
+    async () => {
+      // student already marked in test 4, marking again should not throw
+      const first = await markInterestedInSession(student.utorid, session.id);
+      const second = await markInterestedInSession(student.utorid, session.id);
 
-    // upsert semantics: same record, id unchanged
-    assertEqual(first.interestId, second.interestId, "Both marks should return the same interestId");
-  });
+      // upsert semantics: same record, id unchanged
+      assertEqual(
+        first.interestId,
+        second.interestId,
+        "Both marks should return the same interestId",
+      );
+    },
+  );
 
   // ── Test 6: getSessionInterestCount ──────────────────────────────────────
-  await runTest("getSessionInterestCount → correctly reflects number of interested students", async () => {
-    // Only student1 has marked interest so far
-    const before = await getSessionInterestCount(session.id);
-    assertEqual(before.interestCount, 1, "count should be 1 before student2 marks interest");
+  await runTest(
+    "getSessionInterestCount → correctly reflects number of interested students",
+    async () => {
+      // student1 and student2 have marked interest so far
+      const before = await getSessionInterestCount(session.id);
+      assertEqual(
+        before.interestCount,
+        2,
+        "count should be 2 before duplicate mark",
+      );
 
-    // student2 also marks interest
-    await markInterestedInSession(student2.utorid, session.id);
+      // student2 marks interest again through utorid; this should be idempotent.
+      await markInterestedInSession(student2.utorid, session.id);
 
-    const after = await getSessionInterestCount(session.id);
-    assertEqual(after.interestCount, 2, "count should be 2 after student2 marks interest");
-    assertEqual(after.sessionId, session.id, "returned sessionId should match");
-  });
+      const after = await getSessionInterestCount(session.id);
+      assertEqual(
+        after.interestCount,
+        2,
+        "count should stay 2 after duplicate mark",
+      );
+      assertEqual(
+        after.sessionId,
+        session.id,
+        "returned sessionId should match",
+      );
+    },
+  );
 
   // cleanup
   await cleanupAll();

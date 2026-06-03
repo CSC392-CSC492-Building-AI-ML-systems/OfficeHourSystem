@@ -1,4 +1,18 @@
-import { prisma } from "@/lib/prisma";
+import { find_user, type UserLookupClient } from "./users";
+
+type MarkInterestClient = UserLookupClient & {
+  officeHourSession: {
+    findUnique(
+      args: unknown,
+    ): Promise<{ id: number; offeringId: number } | null>;
+  };
+  offeringMember: {
+    findFirst(args: unknown): Promise<unknown>;
+  };
+  officeHourInterest: {
+    upsert(args: unknown): Promise<{ id: number }>;
+  };
+};
 
 // example useage
 // const result = await markInterestedInSession(
@@ -10,23 +24,13 @@ import { prisma } from "@/lib/prisma";
 export async function markInterestedInSession(
   identifier: string,
   sessionId: number,
+  client?: MarkInterestClient,
 ) {
-  // input can be utorid or email
-  const keyword = identifier.trim();
+  const db = (client ??
+    (await import("../prisma")).prisma) as MarkInterestClient;
 
-  // 1. find user by utorid or email
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        {
-          utorid: keyword,
-        },
-        {
-          email: keyword,
-        },
-      ],
-    },
-  });
+  // input can be utorid, email, or student number
+  const user = await find_user(identifier, db);
 
   // if user does not exist, stop here
   if (!user) {
@@ -34,7 +38,7 @@ export async function markInterestedInSession(
   }
 
   // 2. find the office hour session
-  const session = await prisma.officeHourSession.findUnique({
+  const session = await db.officeHourSession.findUnique({
     where: {
       id: sessionId,
     },
@@ -46,7 +50,7 @@ export async function markInterestedInSession(
   }
 
   // 3. check whether this student belongs to this session's offering
-  const membership = await prisma.offeringMember.findFirst({
+  const membership = await db.offeringMember.findFirst({
     where: {
       userId: user.id,
       offeringId: session.offeringId,
@@ -61,7 +65,7 @@ export async function markInterestedInSession(
 
   // 4. create interest record
   // if the record already exists, keep it as it is
-  const interest = await prisma.officeHourInterest.upsert({
+  const interest = await db.officeHourInterest.upsert({
     where: {
       userId_sessionId: {
         userId: user.id,
@@ -84,6 +88,8 @@ export async function markInterestedInSession(
 }
 
 export async function getSessionInterestCount(sessionId: number) {
+  const { prisma } = await import("../prisma");
+
   // Count how many students clicked Interested for this office hour session.
   const count = await prisma.officeHourInterest.count({
     where: {

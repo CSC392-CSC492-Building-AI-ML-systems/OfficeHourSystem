@@ -28,6 +28,7 @@ model User {
 
   utorid String @unique
   email String
+  studentNumber String? @unique @map("student_number")
   firstName String
   lastName String
 

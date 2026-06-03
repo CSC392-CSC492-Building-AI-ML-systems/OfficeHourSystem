@@ -2,14 +2,16 @@ import { type CourseRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /**
- * User identifier: one of three options.
+ * User identifier: one of four options.
  *   utorid e.g. "abcede12"
  *   email e.g. "xxx@mail.utoronto.ca"
+ *   studentNumber e.g. "1011662167"
  *   publicId cuid from the User table (public id see schema)
  */
 export type UserIdentifier =
   | { utorid: string }
   | { email: string }
+  | { studentNumber: string }
   | { publicId: string };
 
 /**
@@ -25,6 +27,7 @@ export type OfferingIdentifier =
 function userWhere(id: UserIdentifier) {
   if ("utorid" in id) return { utorid: id.utorid };
   if ("email" in id) return { email: id.email };
+  if ("studentNumber" in id) return { studentNumber: id.studentNumber };
   return { publicId: id.publicId };
 }
 

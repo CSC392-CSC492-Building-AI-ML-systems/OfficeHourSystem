@@ -49,6 +49,7 @@ async function setupScenario() {
     data: {
       utorid: `${TEST_PREFIX}student1`,
       email: `${TEST_PREFIX}student1@mail.utoronto.ca`,
+      studentNumber: "1011662167",
       firstName: "Test",
       lastName: "Student",
     },
@@ -101,7 +102,14 @@ async function setupScenario() {
     },
   });
 
-  return { course, offering, student, normalSession, cancelledSession, farSession };
+  return {
+    course,
+    offering,
+    student,
+    normalSession,
+    cancelledSession,
+    farSession,
+  };
 }
 
 async function main() {
@@ -121,24 +129,44 @@ async function main() {
   const { student, normalSession, cancelledSession } = await setupScenario();
 
   // ── Test 2: query by utorid ───────────────────────────────────────────────
-  await runTest("Query by utorid → returns non-cancelled sessions within 7 days", async () => {
-    const sessions = await getUpcomingSessionsByStudentIdentifier(student.utorid);
+  await runTest(
+    "Query by utorid → returns non-cancelled sessions within 7 days",
+    async () => {
+      const sessions = await getUpcomingSessionsByStudentIdentifier(
+        student.utorid,
+      );
 
-    // Only normalSession should appear (cancelled and beyond-7-day sessions filtered)
-    assertEqual(sessions.length, 1, "session count");
-    assertEqual(sessions[0].id, normalSession.id, "session id");
-  });
+      // Only normalSession should appear (cancelled and beyond-7-day sessions filtered)
+      assertEqual(sessions.length, 1, "session count");
+      assertEqual(sessions[0].id, normalSession.id, "session id");
+    },
+  );
 
   // ── Test 3: query by email ────────────────────────────────────────────────
   await runTest("Query by email → result matches utorid query", async () => {
-    const sessions = await getUpcomingSessionsByStudentIdentifier(student.email);
+    const sessions = await getUpcomingSessionsByStudentIdentifier(
+      student.email,
+    );
     assertEqual(sessions.length, 1, "session count");
     assertEqual(sessions[0].id, normalSession.id, "session id");
   });
 
+  await runTest(
+    "Query by student number returns matching sessions",
+    async () => {
+      const sessions = await getUpcomingSessionsByStudentIdentifier(
+        student.studentNumber!,
+      );
+      assertEqual(sessions.length, 1, "session count");
+      assertEqual(sessions[0].id, normalSession.id, "session id");
+    },
+  );
+
   // ── Test 4: CANCELLED session should not appear ───────────────────────────
   await runTest("CANCELLED session → not in results", async () => {
-    const sessions = await getUpcomingSessionsByStudentIdentifier(student.utorid);
+    const sessions = await getUpcomingSessionsByStudentIdentifier(
+      student.utorid,
+    );
     const cancelledIds = sessions.map((s) => s.id);
     assert(
       !cancelledIds.includes(cancelledSession.id),
@@ -148,7 +176,9 @@ async function main() {
 
   // ── Test 5: sessions beyond 7 days should not appear ─────────────────────
   await runTest("Session beyond 7 days → not in results", async () => {
-    const sessions = await getUpcomingSessionsByStudentIdentifier(student.utorid);
+    const sessions = await getUpcomingSessionsByStudentIdentifier(
+      student.utorid,
+    );
     // normalSession is included; none of the ids should be the one 8 days away
     for (const s of sessions) {
       const startDiff = s.startsAt.getTime() - Date.now();
@@ -160,20 +190,25 @@ async function main() {
   });
 
   // ── Test 6: student not in offering cannot see that offering's sessions ──
-  await runTest("Student not in offering → cannot see that offering's sessions", async () => {
-    // Create a user who does not belong to any offering
-    const outsider = await prisma.user.create({
-      data: {
-        utorid: `${TEST_PREFIX}outsider`,
-        email: `${TEST_PREFIX}outsider@mail.utoronto.ca`,
-        firstName: "Out",
-        lastName: "Sider",
-      },
-    });
+  await runTest(
+    "Student not in offering → cannot see that offering's sessions",
+    async () => {
+      // Create a user who does not belong to any offering
+      const outsider = await prisma.user.create({
+        data: {
+          utorid: `${TEST_PREFIX}outsider`,
+          email: `${TEST_PREFIX}outsider@mail.utoronto.ca`,
+          firstName: "Out",
+          lastName: "Sider",
+        },
+      });
 
-    const sessions = await getUpcomingSessionsByStudentIdentifier(outsider.utorid);
-    assertEqual(sessions.length, 0, "outsider should not see any sessions");
-  });
+      const sessions = await getUpcomingSessionsByStudentIdentifier(
+        outsider.utorid,
+      );
+      assertEqual(sessions.length, 0, "outsider should not see any sessions");
+    },
+  );
 
   // Cleanup
   await cleanupAll();

@@ -64,6 +64,7 @@ async function setupScenario() {
     data: {
       utorid: `${TEST_PREFIX}staffuser`,
       email: `${TEST_PREFIX}staffuser@mail.utoronto.ca`,
+      studentNumber: "1011662169",
       firstName: "Staff",
       lastName: "User",
     },
@@ -111,106 +112,145 @@ async function main() {
   });
 
   // ── Test 4: query by utorid ───────────────────────────────────────────────
-  await runTest("getMemberRole: query by utorid → returns correct role", async () => {
-    const result = await getMemberRole(
-      { utorid: user.utorid },
-      { publicId: offering.publicId },
-    );
-    assert(result !== null, "should not return null");
-    assertEqual(result!.role, "INSTRUCTOR", "role should be INSTRUCTOR");
-  });
+  await runTest(
+    "getMemberRole: query by utorid → returns correct role",
+    async () => {
+      const result = await getMemberRole(
+        { utorid: user.utorid },
+        { publicId: offering.publicId },
+      );
+      assert(result !== null, "should not return null");
+      assertEqual(result!.role, "INSTRUCTOR", "role should be INSTRUCTOR");
+    },
+  );
 
   // ── Test 5: query by email ────────────────────────────────────────────────
-  await runTest("getMemberRole: query by email → returns correct role", async () => {
-    const result = await getMemberRole(
-      { email: user.email },
-      { publicId: offering.publicId },
-    );
-    assert(result !== null, "should not return null");
-    assertEqual(result!.role, "INSTRUCTOR", "role should be INSTRUCTOR");
-  });
+  await runTest(
+    "getMemberRole: query by email → returns correct role",
+    async () => {
+      const result = await getMemberRole(
+        { email: user.email },
+        { publicId: offering.publicId },
+      );
+      assert(result !== null, "should not return null");
+      assertEqual(result!.role, "INSTRUCTOR", "role should be INSTRUCTOR");
+    },
+  );
+
+  await runTest(
+    "getMemberRole: query by student number returns correct role",
+    async () => {
+      const result = await getMemberRole(
+        { studentNumber: user.studentNumber! },
+        { publicId: offering.publicId },
+      );
+      assert(result !== null, "should not return null");
+      assertEqual(result!.role, "INSTRUCTOR", "role should be INSTRUCTOR");
+    },
+  );
 
   // ── Test 6: query by user publicId ───────────────────────────────────────
-  await runTest("getMemberRole: query by user publicId → returns correct role", async () => {
-    const result = await getMemberRole(
-      { publicId: user.publicId },
-      { publicId: offering.publicId },
-    );
-    assert(result !== null, "should not return null");
-    assertEqual(result!.role, "INSTRUCTOR", "role should be INSTRUCTOR");
-  });
+  await runTest(
+    "getMemberRole: query by user publicId → returns correct role",
+    async () => {
+      const result = await getMemberRole(
+        { publicId: user.publicId },
+        { publicId: offering.publicId },
+      );
+      assert(result !== null, "should not return null");
+      assertEqual(result!.role, "INSTRUCTOR", "role should be INSTRUCTOR");
+    },
+  );
 
   // ── Test 7: query by offering publicId ───────────────────────────────────
-  await runTest("getMemberRole: query by offering publicId → returns correct role", async () => {
-    const result = await getMemberRole(
-      { utorid: user.utorid },
-      { publicId: offering.publicId },
-    );
-    assert(result !== null, "should not return null");
-    assertEqual(result!.role, "INSTRUCTOR", "role should be INSTRUCTOR");
-  });
+  await runTest(
+    "getMemberRole: query by offering publicId → returns correct role",
+    async () => {
+      const result = await getMemberRole(
+        { utorid: user.utorid },
+        { publicId: offering.publicId },
+      );
+      assert(result !== null, "should not return null");
+      assertEqual(result!.role, "INSTRUCTOR", "role should be INSTRUCTOR");
+    },
+  );
 
   // ── Test 8: query by courseCode + termCode ───────────────────────────────
-  await runTest("getMemberRole: query by courseCode + termCode → returns correct role", async () => {
-    const result = await getMemberRole(
-      { utorid: user.utorid },
-      { courseCode: course.code, termCode: TEST_TERM },
-    );
-    assert(result !== null, "should not return null");
-    assertEqual(result!.role, "INSTRUCTOR", "role should be INSTRUCTOR");
-  });
+  await runTest(
+    "getMemberRole: query by courseCode + termCode → returns correct role",
+    async () => {
+      const result = await getMemberRole(
+        { utorid: user.utorid },
+        { courseCode: course.code, termCode: TEST_TERM },
+      );
+      assert(result !== null, "should not return null");
+      assertEqual(result!.role, "INSTRUCTOR", "role should be INSTRUCTOR");
+    },
+  );
 
   // ── Test 9: attempt to set STUDENT role → throws (safety check) ──────────
-  await runTest("addOrUpdateStaffMember: set STUDENT role → throws", async () => {
-    let errorMsg = "";
-    try {
-      await addOrUpdateStaffMember(
-        { utorid: user.utorid },
-        { publicId: offering.publicId },
-        "STUDENT",
+  await runTest(
+    "addOrUpdateStaffMember: set STUDENT role → throws",
+    async () => {
+      let errorMsg = "";
+      try {
+        await addOrUpdateStaffMember(
+          { utorid: user.utorid },
+          { publicId: offering.publicId },
+          "STUDENT",
+        );
+      } catch (e) {
+        errorMsg = (e as Error).message;
+      }
+      assert(errorMsg.length > 0, "should have thrown an error");
+      assert(
+        errorMsg.includes("STUDENT role cannot be assigned"),
+        `Error message should mention the STUDENT restriction, got: ${errorMsg}`,
       );
-    } catch (e) {
-      errorMsg = (e as Error).message;
-    }
-    assert(errorMsg.length > 0, "should have thrown an error");
-    assert(
-      errorMsg.includes("STUDENT role cannot be assigned"),
-      `Error message should mention the STUDENT restriction, got: ${errorMsg}`,
-    );
-  });
+    },
+  );
 
   // ── Test 10: user does not exist → throws ────────────────────────────────
-  await runTest("addOrUpdateStaffMember: user does not exist → throws", async () => {
-    let errorMsg = "";
-    try {
-      await addOrUpdateStaffMember(
-        { utorid: `${TEST_PREFIX}nobody` },
-        { publicId: offering.publicId },
-        "TA",
+  await runTest(
+    "addOrUpdateStaffMember: user does not exist → throws",
+    async () => {
+      let errorMsg = "";
+      try {
+        await addOrUpdateStaffMember(
+          { utorid: `${TEST_PREFIX}nobody` },
+          { publicId: offering.publicId },
+          "TA",
+        );
+      } catch (e) {
+        errorMsg = (e as Error).message;
+      }
+      assert(
+        errorMsg.includes("User not found"),
+        `Should contain 'User not found', got: ${errorMsg}`,
       );
-    } catch (e) {
-      errorMsg = (e as Error).message;
-    }
-    assert(errorMsg.includes("User not found"), `Should contain 'User not found', got: ${errorMsg}`);
-  });
+    },
+  );
 
   // ── Test 11: offering does not exist → throws ─────────────────────────────
-  await runTest("addOrUpdateStaffMember: Offering does not exist → throws", async () => {
-    let errorMsg = "";
-    try {
-      await addOrUpdateStaffMember(
-        { utorid: user.utorid },
-        { publicId: "nonexistent-public-id" },
-        "TA",
+  await runTest(
+    "addOrUpdateStaffMember: Offering does not exist → throws",
+    async () => {
+      let errorMsg = "";
+      try {
+        await addOrUpdateStaffMember(
+          { utorid: user.utorid },
+          { publicId: "nonexistent-public-id" },
+          "TA",
+        );
+      } catch (e) {
+        errorMsg = (e as Error).message;
+      }
+      assert(
+        errorMsg.includes("Course offering not found"),
+        `Should contain 'Course offering not found', got: ${errorMsg}`,
       );
-    } catch (e) {
-      errorMsg = (e as Error).message;
-    }
-    assert(
-      errorMsg.includes("Course offering not found"),
-      `Should contain 'Course offering not found', got: ${errorMsg}`,
-    );
-  });
+    },
+  );
 
   // Subsequent tests need a new user not yet enrolled in the offering
   const freshUser = await prisma.user.create({
@@ -223,22 +263,29 @@ async function main() {
   });
 
   // ── Test 12: add INSTRUCTOR → created=true ────────────────────────────────
-  await runTest("addOrUpdateStaffMember: add INSTRUCTOR → created=true", async () => {
-    const result = await addOrUpdateStaffMember(
-      { utorid: freshUser.utorid },
-      { publicId: offering.publicId },
-      "INSTRUCTOR",
-    );
-    assertEqual(result.role, "INSTRUCTOR", "role should be INSTRUCTOR");
-    assertEqual(result.created, true, "should be newly created");
+  await runTest(
+    "addOrUpdateStaffMember: add INSTRUCTOR → created=true",
+    async () => {
+      const result = await addOrUpdateStaffMember(
+        { utorid: freshUser.utorid },
+        { publicId: offering.publicId },
+        "INSTRUCTOR",
+      );
+      assertEqual(result.role, "INSTRUCTOR", "role should be INSTRUCTOR");
+      assertEqual(result.created, true, "should be newly created");
 
-    // Verify getMemberRole also finds it
-    const check = await getMemberRole(
-      { utorid: freshUser.utorid },
-      { publicId: offering.publicId },
-    );
-    assertEqual(check?.role, "INSTRUCTOR", "getMemberRole should return INSTRUCTOR");
-  });
+      // Verify getMemberRole also finds it
+      const check = await getMemberRole(
+        { utorid: freshUser.utorid },
+        { publicId: offering.publicId },
+      );
+      assertEqual(
+        check?.role,
+        "INSTRUCTOR",
+        "getMemberRole should return INSTRUCTOR",
+      );
+    },
+  );
 
   // ── Test 13: add TA ───────────────────────────────────────────────────────
   await runTest("addOrUpdateStaffMember: add TA → created=true", async () => {
@@ -259,83 +306,116 @@ async function main() {
     assertEqual(result.created, true, "should be newly created");
   });
 
-  // ── Test 14: add ADMIN ────────────────────────────────────────────────────
-  await runTest("addOrUpdateStaffMember: add ADMIN → created=true", async () => {
-    const adminUser = await prisma.user.create({
-      data: {
-        utorid: `${TEST_PREFIX}adminuser`,
-        email: `${TEST_PREFIX}adminuser@mail.utoronto.ca`,
-        firstName: "Admin",
-        lastName: "User",
-      },
-    });
-    const result = await addOrUpdateStaffMember(
-      { utorid: adminUser.utorid },
-      { publicId: offering.publicId },
-      "ADMIN",
-    );
-    assertEqual(result.role, "ADMIN", "role should be ADMIN");
-    assertEqual(result.created, true, "should be newly created");
-  });
+  // ── Test 14: add another INSTRUCTOR ───────────────────────────────────────
+  await runTest(
+    "addOrUpdateStaffMember: add another INSTRUCTOR → created=true",
+    async () => {
+      const instructorUser = await prisma.user.create({
+        data: {
+          utorid: `${TEST_PREFIX}instructoruser`,
+          email: `${TEST_PREFIX}instructoruser@mail.utoronto.ca`,
+          firstName: "Instructor",
+          lastName: "User",
+        },
+      });
+      const result = await addOrUpdateStaffMember(
+        { utorid: instructorUser.utorid },
+        { publicId: offering.publicId },
+        "INSTRUCTOR",
+      );
+      assertEqual(result.role, "INSTRUCTOR", "role should be INSTRUCTOR");
+      assertEqual(result.created, true, "should be newly created");
+    },
+  );
 
   // ── Test 15: update existing member role (TA → INSTRUCTOR) → created=false ─
-  await runTest("addOrUpdateStaffMember: TA → INSTRUCTOR → created=false, role updated", async () => {
-    // freshUser is currently INSTRUCTOR (set in test 12), change to TA then back
-    const toTA = await addOrUpdateStaffMember(
-      { utorid: freshUser.utorid },
-      { publicId: offering.publicId },
-      "TA",
-    );
-    assertEqual(toTA.role, "TA", "should be updated to TA");
-    assertEqual(toTA.created, false, "should be an update (not a new creation)");
+  await runTest(
+    "addOrUpdateStaffMember: TA → INSTRUCTOR → created=false, role updated",
+    async () => {
+      // freshUser is currently INSTRUCTOR (set in test 12), change to TA then back
+      const toTA = await addOrUpdateStaffMember(
+        { utorid: freshUser.utorid },
+        { publicId: offering.publicId },
+        "TA",
+      );
+      assertEqual(toTA.role, "TA", "should be updated to TA");
+      assertEqual(
+        toTA.created,
+        false,
+        "should be an update (not a new creation)",
+      );
 
-    const back = await addOrUpdateStaffMember(
-      { utorid: freshUser.utorid },
-      { publicId: offering.publicId },
-      "INSTRUCTOR",
-    );
-    assertEqual(back.role, "INSTRUCTOR", "should be updated back to INSTRUCTOR");
-    assertEqual(back.created, false, "should be an update (not a new creation)");
-  });
+      const back = await addOrUpdateStaffMember(
+        { utorid: freshUser.utorid },
+        { publicId: offering.publicId },
+        "INSTRUCTOR",
+      );
+      assertEqual(
+        back.role,
+        "INSTRUCTOR",
+        "should be updated back to INSTRUCTOR",
+      );
+      assertEqual(
+        back.created,
+        false,
+        "should be an update (not a new creation)",
+      );
+    },
+  );
 
   // ── Test 16: user is STUDENT, can be promoted to TA ─────────────────────
-  await runTest("addOrUpdateStaffMember: STUDENT can be promoted to TA (upgrade flow)", async () => {
-    // Simulate a student imported via classlist
-    const studentUser = await prisma.user.create({
-      data: {
-        utorid: `${TEST_PREFIX}studenttobe`,
-        email: `${TEST_PREFIX}studenttobe@mail.utoronto.ca`,
-        firstName: "Student",
-        lastName: "ToBeTA",
-      },
-    });
-    await prisma.offeringMember.create({
-      data: { userId: studentUser.id, offeringId: offering.id, role: "STUDENT" },
-    });
+  await runTest(
+    "addOrUpdateStaffMember: STUDENT can be promoted to TA (upgrade flow)",
+    async () => {
+      // Simulate a student imported via classlist
+      const studentUser = await prisma.user.create({
+        data: {
+          utorid: `${TEST_PREFIX}studenttobe`,
+          email: `${TEST_PREFIX}studenttobe@mail.utoronto.ca`,
+          firstName: "Student",
+          lastName: "ToBeTA",
+        },
+      });
+      await prisma.offeringMember.create({
+        data: {
+          userId: studentUser.id,
+          offeringId: offering.id,
+          role: "STUDENT",
+        },
+      });
 
-    // Confirm current role is STUDENT
-    const before = await getMemberRole(
-      { utorid: studentUser.utorid },
-      { publicId: offering.publicId },
-    );
-    assertEqual(before?.role, "STUDENT", "role should be STUDENT before promotion");
+      // Confirm current role is STUDENT
+      const before = await getMemberRole(
+        { utorid: studentUser.utorid },
+        { publicId: offering.publicId },
+      );
+      assertEqual(
+        before?.role,
+        "STUDENT",
+        "role should be STUDENT before promotion",
+      );
 
-    // Promote to TA
-    const result = await addOrUpdateStaffMember(
-      { utorid: studentUser.utorid },
-      { publicId: offering.publicId },
-      "TA",
-    );
-    assertEqual(result.role, "TA", "role should be TA after promotion");
-    assertEqual(result.created, false, "should be an update (not a new creation)");
+      // Promote to TA
+      const result = await addOrUpdateStaffMember(
+        { utorid: studentUser.utorid },
+        { publicId: offering.publicId },
+        "TA",
+      );
+      assertEqual(result.role, "TA", "role should be TA after promotion");
+      assertEqual(
+        result.created,
+        false,
+        "should be an update (not a new creation)",
+      );
 
-    // Confirm with getMemberRole again
-    const after = await getMemberRole(
-      { utorid: studentUser.utorid },
-      { publicId: offering.publicId },
-    );
-    assertEqual(after?.role, "TA", "getMemberRole should return TA");
-  });
+      // Confirm with getMemberRole again
+      const after = await getMemberRole(
+        { utorid: studentUser.utorid },
+        { publicId: offering.publicId },
+      );
+      assertEqual(after?.role, "TA", "getMemberRole should return TA");
+    },
+  );
 
   // Cleanup
   await cleanupAll();

@@ -1,29 +1,33 @@
-import { prisma } from "@/lib/prisma";
+import { find_user, type UserLookupClient } from "./users";
+
+type UpcomingSession = {
+  id: number;
+  startsAt: Date;
+  [key: string]: unknown;
+};
+
+type UpcomingSessionsClient = UserLookupClient & {
+  officeHourSession: {
+    findMany(args: unknown): Promise<UpcomingSession[]>;
+  };
+};
 
 //example of useage
 // const sessions = await getUpcomingSessionsByStudentIdentifier("student@mail.utoronto.ca");
 // console.log(sessions);
 export async function getUpcomingSessionsByStudentIdentifier(
   identifier: string,
+  client?: UpcomingSessionsClient,
 ) {
-  const keyword = identifier.trim();
+  const db = (client ??
+    (await import("../prisma")).prisma) as UpcomingSessionsClient;
 
-  // 1. Find user by utorid or email.
+  // 1. Find user by utorid, email, or student number.
   // The input can be either:
   // utorid, e.g. "abcefghi"
   // email, e.g. "student@mail.utoronto.ca"
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [
-        {
-          utorid: keyword,
-        },
-        {
-          email: keyword,
-        },
-      ],
-    },
-  });
+  // student number, e.g. "1011662167"
+  const user = await find_user(identifier, db);
 
   // 2. If user does not exist, return empty list.
   // This means this student is not imported yet.
@@ -43,7 +47,7 @@ export async function getUpcomingSessionsByStudentIdentifier(
   // - this user is a STUDENT member of that offering
   // - the session starts in the next 7 days
   // - the session is not cancelled
-  const sessions = await prisma.officeHourSession.findMany({
+  const sessions = await db.officeHourSession.findMany({
     where: {
       startsAt: {
         gte: now,
