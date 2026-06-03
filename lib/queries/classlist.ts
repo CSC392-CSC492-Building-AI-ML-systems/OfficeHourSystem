@@ -3,10 +3,8 @@ export type ClasslistRow = {
   Email: string;
   Surname: string;
   "Given Name": string;
-  "Person ID"?: string;
-  student_number?: string;
-  studentNumber?: string;
-  Current_sts: string;
+  "Person ID": string;
+  Current_sts?: string;
   UTORid: string;
 };
 
@@ -41,12 +39,7 @@ export type ImportClasslistTransaction = {
 };
 
 function getStudentNumber(row: ClasslistRow) {
-  return (
-    row["Person ID"] ??
-    row.student_number ??
-    row.studentNumber ??
-    ""
-  ).trim();
+  return row["Person ID"].trim();
 }
 
 export async function importClasslistWithClient(
@@ -123,37 +116,24 @@ export async function importClasslistWithClient(
     }
 
     let imported = 0;
-    let skipped = 0;
 
     // 5. Import students one row at a time.
     for (const row of rows) {
-      const status = row.Current_sts.trim().toUpperCase();
       const utorid = row.UTORid.trim();
       const studentNumber = getStudentNumber(row);
 
-      // Only import active students.
-      // For now, we only accept "APP".
-      // Other status values will be skipped.
-      // TODO: not 100% sure
-      if (status !== "APP") {
-        skipped++;
-        continue;
-      }
-
-      // If an active student does not have utorid,
+      // If a student does not have utorid,
       // this means the CSV data is not valid enough for import.
       // Throw error here so transaction can rollback everything.
       if (!utorid) {
-        throw new Error("CSV contains an active student row without UTORid");
+        throw new Error("CSV contains a student row without UTORid");
       }
 
-      // If an active student does not have student number,
+      // If a student does not have student number,
       // this means the CSV data is not valid enough for import.
       // Throw error here so transaction can rollback everything.
       if (!studentNumber) {
-        throw new Error(
-          "CSV contains an active student row without student number",
-        );
+        throw new Error("CSV contains a student row without student number");
       }
 
       // 6. Find user based on utorid or student number.
@@ -234,7 +214,6 @@ export async function importClasslistWithClient(
       offeringId: offering.id,
       cleared,
       imported,
-      skipped,
     };
   });
 }

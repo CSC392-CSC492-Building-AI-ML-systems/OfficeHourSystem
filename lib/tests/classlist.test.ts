@@ -9,9 +9,10 @@
  * Scenarios covered:
  *   1. Empty rows array → should throw, no data written
  *   2. Normal import    → course / offering / user / member all created, stats correct
- *   3. Mixed status rows → non-APP rows are skipped, APP rows are imported normally
- *   4. APP row missing UTORid → throws, transaction rolls back (no partial data left)
- *   5. Re-importing same offering → old students cleared and replaced with new CSV result
+ *   3. Current_sts is ignored → all rows are imported normally
+ *   4. Row missing UTORid → throws, transaction rolls back (no partial data left)
+ *   5. Row missing Person ID → throws, transaction rolls back
+ *   6. Re-importing same offering → old students cleared and replaced with new CSV result
  */
 
 // Must be the first import to ensure DATABASE_URL is injected before the prisma.ts module loads
@@ -40,7 +41,7 @@ function makeStudentNumber(suffix: string): string {
   return `101${String(numericPart).padStart(7, "0")}`;
 }
 
-/** Generate a valid APP student row */
+/** Generate a valid student row */
 function makeRow(
   suffix: string,
   overrides: Partial<ClasslistRow> = {},
@@ -51,7 +52,6 @@ function makeRow(
     Surname: "Test",
     "Given Name": suffix,
     "Person ID": makeStudentNumber(suffix),
-    Current_sts: "APP",
     UTORid: `${TEST_PREFIX}${suffix}`,
     ...overrides,
   };
@@ -89,7 +89,6 @@ async function main() {
 
       // Verify returned stats
       assertEqual(result.imported, 3, "imported count");
-      assertEqual(result.skipped, 0, "skipped count");
       assertEqual(result.cleared, 0, "cleared should be 0 on first import");
 
       // Verify course was created
@@ -126,36 +125,34 @@ async function main() {
     },
   );
 
-  // Test 3: mixed status rows
+  // Test 3: Current_sts is ignored
   await runTest(
-    "Mixed status rows → non-APP rows skipped, no user created for them",
+    "Current_sts is ignored and all rows are imported",
     async () => {
       // Clean up data from the previous test first
       await cleanupAll();
 
       const rows = [
-        makeRow("active1"), // APP → should be imported
-        makeRow("waitlisted", { Current_sts: "WL" }), // non-APP → skip
-        makeRow("active2"), // APP → should be imported
-        makeRow("dropped", { Current_sts: "DROP" }), // non-APP → skip
+        makeRow("active1", { Current_sts: "ENROLLED" }),
+        makeRow("waitlisted", { Current_sts: "WL" }),
+        makeRow("active2", { Current_sts: "" }),
+        makeRow("dropped", { Current_sts: "DROP" }),
       ];
 
       const result = await importClasslist({ termCode: TEST_TERM, rows });
 
-      assertEqual(result.imported, 2, "imported count");
-      assertEqual(result.skipped, 2, "skipped count");
+      assertEqual(result.imported, 4, "imported count");
 
-      // Users for WL and DROP rows should not have been created
       const wlUser = await prisma.user.findFirst({
         where: { utorid: `${TEST_PREFIX}waitlisted` },
       });
-      assert(wlUser === null, "waitlisted user should not have been created");
+      assert(wlUser !== null, "waitlisted user should have been created");
     },
   );
 
-  // Test 4: APP row missing UTORid → throws, transaction rolls back
+  // Test 4: row missing UTORid → throws, transaction rolls back
   await runTest(
-    "APP row missing UTORid → throws, transaction fully rolled back",
+    "Row missing UTORid → throws, transaction fully rolled back",
     async () => {
       await cleanupAll();
 
@@ -183,34 +180,31 @@ async function main() {
     },
   );
 
-  // Test 5: APP row missing student number -> throws, transaction rolls back
-  await runTest(
-    "APP row missing student number rolls back transaction",
-    async () => {
-      await cleanupAll();
+  // Test 5: row missing Person ID -> throws, transaction rolls back
+  await runTest("Row missing Person ID rolls back transaction", async () => {
+    await cleanupAll();
 
-      const rows = [
-        makeRow("validuser"),
-        makeRow("nonumber", { "Person ID": "" }),
-      ];
+    const rows = [
+      makeRow("validuser"),
+      makeRow("nonumber", { "Person ID": "" }),
+    ];
 
-      let threw = false;
-      try {
-        await importClasslist({ termCode: TEST_TERM, rows });
-      } catch {
-        threw = true;
-      }
-      assert(threw, "Should have thrown an error");
+    let threw = false;
+    try {
+      await importClasslist({ termCode: TEST_TERM, rows });
+    } catch {
+      threw = true;
+    }
+    assert(threw, "Should have thrown an error");
 
-      const user = await prisma.user.findFirst({
-        where: { utorid: `${TEST_PREFIX}validuser` },
-      });
-      assert(
-        user === null,
-        "validuser should not remain after transaction rollback",
-      );
-    },
-  );
+    const user = await prisma.user.findFirst({
+      where: { utorid: `${TEST_PREFIX}validuser` },
+    });
+    assert(
+      user === null,
+      "validuser should not remain after transaction rollback",
+    );
+  });
 
   // Test 6: re-importing same offering
   await runTest(
