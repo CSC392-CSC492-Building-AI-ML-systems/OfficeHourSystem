@@ -1,0 +1,36 @@
+# Dependencies and build output are regenerated inside the image.
+node_modules
+.next
+out
+build
+
+# Version control and Docker/meta files (not needed in the build context).
+.git
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose*.yml
+.husky
+
+# Local environment / secrets — never bake these into an image.
+.env
+.env.*
+!.env.example
+
+# Editor / OS / tooling noise.
+.vscode
+.idea
+.DS_Store
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docs and local-only artifacts.
+*.md
+dev-notes.md
+coverage
+*.tar
+
+# Local mutable data (mounted at runtime, not built in).
+uploads

@@ -1,13 +1,10 @@
-# Production override - uses pre-built image from Docker Hub
-# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Ideally github action will ssh into server build and run this docker-compose.prod.yml
+# But it might not work so we'll have to manually build and run the image on the server in that case
 services:
   app:
-    image: jadendocks/ohsystem:latest # TODO: Change to the correct image name, obviously jadendocks isn't on the team.
     build:
       context: .
     volumes:
-      - ./src/server.ts:/app/src/server.ts:ro
-      - ./src/app/api/auth/session/route.ts:/app/src/app/api/auth/session/route.ts:ro
       - ./whitelist.txt:/app/whitelist.txt:ro
       - ./uploads:/app/uploads
     env_file: .env
@@ -19,7 +16,7 @@ services:
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
-  redis:
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+  # redis:
+  #   command: redis-server --requirepass ${REDIS_PASSWORD}
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]

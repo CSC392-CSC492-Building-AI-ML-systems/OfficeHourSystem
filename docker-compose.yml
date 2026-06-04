@@ -5,51 +5,56 @@ services:
       dockerfile: Dockerfile
     ports:
       - "127.0.0.1:3000:3000"
+    env_file: .env
+    # Override DATABASE_URL so the app reaches Postgres over the compose
+    # network. The value in .env (localhost) only works for tooling run on the
+    # host; inside the container the database is the `postgres` service.
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ohsystem
-      - REDIS_URL=redis://:changeme@redis:6379
-      - SESSION_SECRET=${SESSION_SECRET}
-      - DEV_UTORID=${DEV_UTORID}
-      - DEV_NAME=${DEV_NAME}
-      - DEV_ROLE=${DEV_ROLE}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      # REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+      # redis:
+      #   condition: service_healthy
     restart: unless-stopped
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18
     ports:
       - "127.0.0.1:5432:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-ohsystem}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # Postgres 18+ stores data under /var/lib/postgresql/<major>/docker
+    # (see https://github.com/docker-library/postgres/pull/1259).
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      # $$ escapes the variable so it is expanded inside the container, not by compose.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
-  redis:
-    image: redis:7-alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
-    ports:
-      - "127.0.0.1:6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
+  # Redis is optional — uncomment here and in the app service above if/when the
+  # app starts using it (e.g. for sessions, queues, or websocket fan-out).
+  # redis:
+  #   image: redis:7-alpine
+  #   command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
+  #   ports:
+  #     - "127.0.0.1:6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+  #   restart: unless-stopped
 
 volumes:
   postgres_data:
-  redis_data:
+  # redis_data:
