@@ -27,9 +27,10 @@ model User {
   publicId String @unique @default(cuid())
 
   utorid String @unique
-  email String?
-  firstName String?
-  lastName String?
+  email String
+  studentNumber String? @unique @map("student_number")
+  firstName String
+  lastName String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
