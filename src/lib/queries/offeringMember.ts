@@ -99,7 +99,7 @@ export async function getMemberRole(
  * Add a user to an offering or update their role.
  *
  *
- * add an ADMIN / INSTRUCTOR / TA roles to an offering.
+ * Add an INSTRUCTOR / TA role to an offering.
  * The STUDENT role can only be assigned via importClasslist() from a CSV file,
  * not through this function.
  *
