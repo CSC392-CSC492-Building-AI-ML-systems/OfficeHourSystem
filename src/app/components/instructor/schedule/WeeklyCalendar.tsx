@@ -10,6 +10,9 @@ interface WeeklyCalendarProps {
   sessions: ScheduleSession[];
   selectedSessionId: string;
   onSelectSession: (sessionId: string) => void;
+  weekLabel?: string;
+  onPreviousWeek?: () => void;
+  onNextWeek?: () => void;
 }
 
 const CALENDAR_HOUR_HEIGHT = 132;
@@ -24,26 +27,31 @@ export function WeeklyCalendar({
   sessions,
   selectedSessionId,
   onSelectSession,
+  weekLabel = "Week View",
+  onPreviousWeek,
+  onNextWeek,
 }: WeeklyCalendarProps) {
   return (
     <section className="rounded-[30px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)] sm:p-6">
       <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <h2 className="text-xl font-semibold text-[#071f41]">
-            Week of Oct 23 - 29
-          </h2>
+          <h2 className="text-xl font-semibold text-[#071f41]">{weekLabel}</h2>
           <div className="flex items-center gap-2">
             <button
               type="button"
               aria-label="Previous week"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50"
+              onClick={onPreviousWeek}
+              disabled={!onPreviousWeek}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               type="button"
               aria-label="Next week"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50"
+              onClick={onNextWeek}
+              disabled={!onNextWeek}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -118,6 +126,9 @@ export function WeeklyCalendar({
                 const dayIndex = days.findIndex(
                   (day) => day.key === session.day,
                 );
+                if (dayIndex < 0) {
+                  return null;
+                }
                 const rowStart = 2 + (session.startHour - HALF_HOUR_START) * 2;
                 const rowSpan = (session.endHour - session.startHour) * 2;
                 const durationHeight =

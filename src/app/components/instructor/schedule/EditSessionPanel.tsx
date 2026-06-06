@@ -1,11 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarClock, ChevronDown } from "lucide-react";
+import { CalendarClock } from "lucide-react";
 import type { ScheduleSession } from "./types";
 
 interface EditSessionPanelProps {
   selectedSession: ScheduleSession;
+  canEdit: boolean;
+  onSave: (patch: {
+    title?: string;
+    location?: string | null;
+  }) => Promise<void>;
+  onCancelSession: () => Promise<void>;
+  onError?: (message: string | null) => void;
 }
 
 function formatSelectedBlockTitle(session: ScheduleSession) {
@@ -16,32 +23,55 @@ function formatSelectedBlockTitle(session: ScheduleSession) {
   return session.courseCode;
 }
 
-export function EditSessionPanel({ selectedSession }: EditSessionPanelProps) {
-  const [hasLocationOverride, setHasLocationOverride] = useState(
-    selectedSession.hasLocationOverride ?? false,
-  );
-  const [locationValue, setLocationValue] = useState(
-    selectedSession.overrideLocation ?? selectedSession.location,
-  );
+export function EditSessionPanel({
+  selectedSession,
+  canEdit,
+  onSave,
+  onCancelSession,
+  onError,
+}: EditSessionPanelProps) {
+  const [topic, setTopic] = useState(selectedSession.topic);
+  const [location, setLocation] = useState(selectedSession.location);
   const [savedMessage, setSavedMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const defaultLocation = selectedSession.location;
-  const overrideLocation =
-    selectedSession.overrideLocation ?? selectedSession.location;
-
-  const handleToggleOverride = () => {
-    setSavedMessage("");
-    const nextValue = !hasLocationOverride;
-    setHasLocationOverride(nextValue);
-    setLocationValue(nextValue ? overrideLocation : defaultLocation);
+  const handleSaveOverride = async () => {
+    if (!canEdit) return;
+    onError?.(null);
+    setSubmitting(true);
+    try {
+      await onSave({
+        title: topic.trim() || selectedSession.title,
+        location: location.trim() || null,
+      });
+      setSavedMessage("Session override saved.");
+    } catch (saveError) {
+      onError?.(
+        saveError instanceof Error
+          ? saveError.message
+          : "Failed to save session.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleSaveOverride = () => {
-    setSavedMessage(
-      hasLocationOverride
-        ? "Override details are stored locally for this selected session preview."
-        : "This session is currently using the default recurring location.",
-    );
+  const handleCancel = async () => {
+    if (!canEdit) return;
+    onError?.(null);
+    setSubmitting(true);
+    try {
+      await onCancelSession();
+      setSavedMessage("Session cancelled.");
+    } catch (cancelError) {
+      onError?.(
+        cancelError instanceof Error
+          ? cancelError.message
+          : "Failed to cancel session.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -71,9 +101,18 @@ export function EditSessionPanel({ selectedSession }: EditSessionPanelProps) {
           <label className="mb-2 block text-sm font-medium text-[#071f41]">
             Session Topic
           </label>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-            {selectedSession.topic}
-          </div>
+          {canEdit ? (
+            <input
+              type="text"
+              value={topic}
+              onChange={(event) => setTopic(event.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
+            />
+          ) : (
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+              {selectedSession.topic}
+            </div>
+          )}
           <p className="mt-2 text-xs leading-5 text-slate-500">
             Updating this only affects the {selectedSession.startTime} session{" "}
             {selectedSession.dateLabel.toLowerCase() === "today"
@@ -83,65 +122,47 @@ export function EditSessionPanel({ selectedSession }: EditSessionPanelProps) {
         </div>
 
         <div>
-          <div className="mb-2 flex items-center justify-between">
-            <label className="block text-sm font-medium text-[#071f41]">
-              Location Override
-            </label>
-            <button
-              type="button"
-              aria-pressed={hasLocationOverride}
-              onClick={handleToggleOverride}
-              className={`relative inline-flex h-7 w-12 rounded-full p-1 transition ${
-                hasLocationOverride ? "bg-[#c8102e]" : "bg-slate-300"
-              }`}
-            >
-              <span
-                className={`h-5 w-5 rounded-full bg-white shadow-sm transition ${
-                  hasLocationOverride ? "ml-auto" : ""
-                }`}
-              />
-            </button>
-          </div>
-
-          <div
-            className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
-              hasLocationOverride
-                ? "border-slate-200 bg-white text-slate-700"
-                : "border-slate-200 bg-slate-50 text-slate-500"
-            }`}
-          >
+          <label className="mb-2 block text-sm font-medium text-[#071f41]">
+            Location
+          </label>
+          {canEdit ? (
             <input
               type="text"
-              value={hasLocationOverride ? locationValue : defaultLocation}
-              onChange={(event) => setLocationValue(event.target.value)}
-              disabled={!hasLocationOverride}
-              className="w-full bg-transparent outline-none disabled:cursor-not-allowed"
+              value={location}
+              onChange={(event) => setLocation(event.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
             />
-            <ChevronDown className="h-4 w-4 text-slate-400" />
-          </div>
+          ) : (
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+              {selectedSession.location}
+            </div>
+          )}
           <p className="mt-2 text-xs leading-5 text-slate-500">
-            {hasLocationOverride
-              ? "This override only affects this specific session occurrence."
-              : "This session is using the default recurring location."}
+            This override only affects this specific session occurrence.
           </p>
         </div>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <button
-          type="button"
-          onClick={handleSaveOverride}
-          className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
-        >
-          Save Override
-        </button>
-        <button
-          type="button"
-          className="inline-flex items-center justify-center rounded-full border border-[#c8102e] px-5 py-3 text-sm font-semibold text-[#c8102e] transition hover:bg-[#fff1f2]"
-        >
-          Cancel Session
-        </button>
-      </div>
+      {canEdit ? (
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => void handleSaveOverride()}
+            disabled={submitting}
+            className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0f2942] disabled:opacity-50"
+          >
+            {submitting ? "Saving…" : "Save Override"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleCancel()}
+            disabled={submitting}
+            className="inline-flex items-center justify-center rounded-full border border-[#c8102e] px-5 py-3 text-sm font-semibold text-[#c8102e] transition hover:bg-[#fff1f2] disabled:opacity-50"
+          >
+            Cancel Session
+          </button>
+        </div>
+      ) : null}
       {savedMessage ? (
         <p className="mt-3 text-sm text-slate-500">{savedMessage}</p>
       ) : null}

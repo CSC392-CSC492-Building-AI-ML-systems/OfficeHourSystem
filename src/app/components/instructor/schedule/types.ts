@@ -25,16 +25,11 @@ export interface RecurringRule {
   title: string;
   repeats: string;
   defaultTime: string;
+  startTime: string;
+  endTime: string;
   defaultLocation: string;
   mode: "in-person" | "online" | "hybrid";
   accent: "navy" | "red" | "gold";
-}
-
-export interface OnDutyTA {
-  id: string;
-  name: string;
-  statusLabel: string;
-  status: "active" | "break";
 }
 
 export interface CalendarDay {

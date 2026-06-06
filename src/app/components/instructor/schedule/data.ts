@@ -1,12 +1,11 @@
 import type {
   CalendarDay,
-  OnDutyTA,
   RecurringRule,
   ScheduleSession,
   TimeSlot,
 } from "./types";
 
-// TODO: Replace dummy schedule data with API data after schema is finalized.
+// Static calendar grid config. Live sessions/rules load from /api/instructor/schedule.
 export const CALENDAR_DAYS: CalendarDay[] = [
   { key: "mon", label: "MON", date: "23" },
   { key: "tue", label: "TUE", date: "24" },
@@ -123,21 +122,6 @@ export const DUMMY_SCHEDULE_SESSIONS: ScheduleSession[] = [
 
 export const DEFAULT_SELECTED_SESSION_ID = "session-wed-kernel-projects";
 
-export const DUMMY_ON_DUTY_TAS: OnDutyTA[] = [
-  {
-    id: "ta-alex-rivers",
-    name: "Alex Rivers",
-    statusLabel: "CS305 - OS",
-    status: "active",
-  },
-  {
-    id: "ta-sarah-chen",
-    name: "Sarah Chen",
-    statusLabel: "Taking a break",
-    status: "break",
-  },
-];
-
 export const DUMMY_RECURRING_RULES: RecurringRule[] = [
   {
     id: "recurring-cs101",
@@ -145,6 +129,8 @@ export const DUMMY_RECURRING_RULES: RecurringRule[] = [
     title: "Fundamental Concepts",
     repeats: "Mon, Thu",
     defaultTime: "10:00 AM - 12:00 PM",
+    startTime: "10:00",
+    endTime: "12:00",
     defaultLocation: "Engineering Hall, Room 402",
     mode: "in-person",
     accent: "navy",
@@ -155,6 +141,8 @@ export const DUMMY_RECURRING_RULES: RecurringRule[] = [
     title: "Systems Architecture",
     repeats: "Tue",
     defaultTime: "09:00 AM - 11:00 AM",
+    startTime: "09:00",
+    endTime: "11:00",
     defaultLocation: "Online (Zoom)",
     mode: "online",
     accent: "red",
@@ -165,6 +153,8 @@ export const DUMMY_RECURRING_RULES: RecurringRule[] = [
     title: "Operating Systems",
     repeats: "Wed, Fri",
     defaultTime: "02:00 PM - 04:00 PM",
+    startTime: "14:00",
+    endTime: "16:00",
     defaultLocation: "Hybrid Mode",
     mode: "hybrid",
     accent: "gold",
