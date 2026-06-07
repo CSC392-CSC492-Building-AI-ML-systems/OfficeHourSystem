@@ -10,15 +10,15 @@ import { TIME_SLOTS } from "./data";
 import { EditSessionPanel } from "./EditSessionPanel";
 import { RecurringBlocks } from "./RecurringBlocks";
 import {
-  cancelSessionApi,
-  createOneTimeSessionApi,
-  createRecurringBlockApi,
-  deleteRecurringBlockApi,
-  fetchSchedulePage,
-  updateRecurringBlockApi,
-  updateSessionApi,
-  type SchedulePageResponse,
-} from "./scheduleApi";
+  cancelSessionAction,
+  createOneTimeSessionAction,
+  createRecurringBlockAction,
+  deleteRecurringBlockAction,
+  getSchedulePageAction,
+  updateRecurringBlockAction,
+  updateSessionAction,
+} from "@/actions/scheduling";
+import type { SchedulePageResponse } from "@/lib/scheduling/types";
 import { WeeklyCalendar } from "./WeeklyCalendar";
 import type { RecurringRule, ScheduleSession } from "./types";
 import type { CreateOneTimeSessionInput } from "@/lib/scheduling/types";
@@ -71,7 +71,7 @@ export default function InstructorScheduleDashboard({
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchSchedulePage({
+        const data = await getSchedulePageAction({
           offeringPublicId:
             opts?.offeringPublicId ?? offeringPublicId ?? undefined,
           weekStart: opts?.weekStart ?? weekStart ?? undefined,
@@ -139,7 +139,7 @@ export default function InstructorScheduleDashboard({
   }) => {
     if (!offeringPublicId) return;
     setActionError(null);
-    await createRecurringBlockApi({
+    await createRecurringBlockAction({
       offeringPublicId,
       title: input.title,
       uiType: input.uiType,
@@ -156,7 +156,7 @@ export default function InstructorScheduleDashboard({
 
   const handleCreateOneTime = async (input: CreateOneTimeSessionInput) => {
     setActionError(null);
-    await createOneTimeSessionApi(input);
+    await createOneTimeSessionAction(input);
     setActiveModal(null);
     await loadSchedule();
   };
@@ -167,7 +167,7 @@ export default function InstructorScheduleDashboard({
   }) => {
     if (!selectedSession) return;
     setActionError(null);
-    await updateSessionApi(selectedSession.id, patch);
+    await updateSessionAction(selectedSession.id, patch);
     await loadSchedule();
   };
 
@@ -179,7 +179,7 @@ export default function InstructorScheduleDashboard({
   }) => {
     if (!editingRule) return;
     setActionError(null);
-    await updateRecurringBlockApi(editingRule.id, {
+    await updateRecurringBlockAction(editingRule.id, {
       title: input.title,
       location: input.location || null,
       startTime: input.startTime,
@@ -192,7 +192,7 @@ export default function InstructorScheduleDashboard({
   const handleDeleteRecurringBlock = async () => {
     if (!editingRule) return;
     setActionError(null);
-    await deleteRecurringBlockApi(editingRule.id);
+    await deleteRecurringBlockAction(editingRule.id);
     setEditingRule(null);
     await loadSchedule();
   };
@@ -200,7 +200,7 @@ export default function InstructorScheduleDashboard({
   const handleCancelSession = async () => {
     if (!selectedSession) return;
     setActionError(null);
-    await cancelSessionApi(selectedSession.id);
+    await cancelSessionAction(selectedSession.id);
     await loadSchedule();
   };
 

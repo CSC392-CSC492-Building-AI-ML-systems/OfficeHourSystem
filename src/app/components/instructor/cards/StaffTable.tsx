@@ -112,7 +112,7 @@ export function StaffTable({ staff, onRemoveStaffMember }: StaffTableProps) {
                 <td className="px-6 py-4 text-slate-600">
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-slate-400" />
-                    <span>{member.email}</span>
+                    <span>{member.email || member.utorid || "—"}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-slate-600">

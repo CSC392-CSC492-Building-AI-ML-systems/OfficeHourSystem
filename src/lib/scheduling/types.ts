@@ -102,3 +102,28 @@ export type QueueSessionDto = {
   workspaceSubtitle: string;
   lastScanLabel: string;
 };
+
+export type CalendarDayDto = {
+  key: string;
+  label: string;
+  date: string;
+};
+
+export type ViewableOffering = {
+  offeringPublicId: string;
+  courseCode: string;
+  termCode: string;
+  role: string;
+  canEdit: boolean;
+};
+
+export type SchedulePageResponse = {
+  offerings: ViewableOffering[];
+  offering: ViewableOffering | null;
+  weekStart: string | null;
+  weekLabel: string | null;
+  calendarDays: CalendarDayDto[];
+  sessions: ScheduleSessionDto[];
+  rules: RecurringRuleDto[];
+  canEdit: boolean;
+};

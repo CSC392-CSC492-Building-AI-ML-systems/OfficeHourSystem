@@ -21,7 +21,9 @@ export function AddTaModal({
   onClose,
   onAddStaffMember,
 }: AddTaModalProps) {
-  const [name, setName] = useState("");
+  const [utorid, setUtorid] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [program, setProgram] = useState("");
   const [role, setRole] = useState<StaffRole>(initialRole);
@@ -56,7 +58,9 @@ export function AddTaModal({
   }
 
   const resetForm = () => {
-    setName("");
+    setUtorid("");
+    setFirstName("");
+    setLastName("");
     setEmail("");
     setProgram("");
     setRole(initialRole);
@@ -65,8 +69,7 @@ export function AddTaModal({
   };
 
   const isFormValid =
-    name.trim().length > 0 &&
-    email.trim().length > 0 &&
+    utorid.trim().length > 0 &&
     program.trim().length > 0 &&
     location.trim().length > 0;
 
@@ -77,9 +80,15 @@ export function AddTaModal({
       return;
     }
 
+    const trimmedUtorid = utorid.trim();
+    const displayName =
+      [firstName.trim(), lastName.trim()].filter(Boolean).join(" ") ||
+      trimmedUtorid;
+
     onAddStaffMember({
       id: `local-${Date.now()}`,
-      name: name.trim(),
+      utorid: trimmedUtorid,
+      name: displayName,
       email: email.trim(),
       program: program.trim(),
       role,
@@ -106,6 +115,9 @@ export function AddTaModal({
             <h2 className="mt-2 text-xl font-semibold text-[#071f41]">
               Add teaching assistant
             </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              UTORid is required. Name and email can be added later.
+            </p>
           </div>
           <button
             type="button"
@@ -118,30 +130,49 @@ export function AddTaModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
+          <label className="block space-y-2 text-sm font-medium text-[#071f41]">
+            <span>UTORid</span>
+            <input
+              required
+              value={utorid}
+              onChange={(event) => setUtorid(event.target.value)}
+              placeholder="jlee1234"
+              className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
+            />
+          </label>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="space-y-2 text-sm font-medium text-[#071f41]">
-              <span>Full name</span>
+              <span>First name (optional)</span>
               <input
-                required
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Jordan Lee"
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+                placeholder="Jordan"
                 className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
               />
             </label>
 
             <label className="space-y-2 text-sm font-medium text-[#071f41]">
-              <span>Email</span>
+              <span>Last name (optional)</span>
               <input
-                required
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="j.lee@university.edu"
+                value={lastName}
+                onChange={(event) => setLastName(event.target.value)}
+                placeholder="Lee"
                 className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
               />
             </label>
           </div>
+
+          <label className="block space-y-2 text-sm font-medium text-[#071f41]">
+            <span>Email (optional)</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="j.lee@mail.utoronto.ca"
+              className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
+            />
+          </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="space-y-2 text-sm font-medium text-[#071f41]">

@@ -10,9 +10,9 @@ model User {
   id            Int                      @id @default(autoincrement())
   publicId      String                   @unique @default(cuid())
   utorid        String                   @unique
-  email         String
-  firstName     String
-  lastName      String
+  email         String?
+  firstName     String?
+  lastName      String?
   createdAt     DateTime                 @default(now())
   updatedAt     DateTime                 @updatedAt
   studentNumber String?                  @unique @map("student_number")

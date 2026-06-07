@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CalendarDays, ChevronRight } from "lucide-react";
 import { Navbar } from "../Navbar";
-import { fetchQueueSessions } from "../schedule/scheduleApi";
+import { getQueueSessionsAction } from "@/actions/scheduling";
 import { DUMMY_QUEUE_SESSIONS } from "./data";
 import { QueueSessionCard } from "./QueueSessionCard";
 import type { QueueSession } from "./types";
@@ -18,7 +18,7 @@ export default function MyQueuesPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchQueueSessions();
+        const data = await getQueueSessionsAction();
         setSessions(
           data.sessions.map((session) => ({
             id: session.id,

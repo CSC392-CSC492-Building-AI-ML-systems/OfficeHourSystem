@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "prepare": "husky",
+    "postinstall": "prisma generate",
     "db:setup": "docker compose up -d postgres --wait && prisma migrate deploy",
     "db:migrate": "prisma migrate deploy"
   },

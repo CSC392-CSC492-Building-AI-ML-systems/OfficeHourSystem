@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
@@ -22,6 +23,49 @@ import { getRoleFromWhitelist } from "@/lib/whitelist";
 // cookie and redirects to the URL supplied in the `redirect` query param
 // (defaults to "/").
 // ---------------------------------------------------------------------------
+
+function buildUserProfileUpdateData(profile: {
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+}): Prisma.UserUpdateInput {
+  const data: Prisma.UserUpdateInput = {};
+
+  if (profile.firstName) {
+    data.firstName = profile.firstName;
+  }
+  if (profile.lastName) {
+    data.lastName = profile.lastName;
+  }
+  if (profile.email) {
+    data.email = profile.email;
+  }
+
+  return data;
+}
+
+function buildUserCreateData(
+  utorid: string,
+  profile: {
+    firstName: string | null;
+    lastName: string | null;
+    email: string | null;
+  },
+): Prisma.UserUncheckedCreateInput {
+  const data = { utorid } as Prisma.UserUncheckedCreateInput;
+
+  if (profile.firstName) {
+    data.firstName = profile.firstName;
+  }
+  if (profile.lastName) {
+    data.lastName = profile.lastName;
+  }
+  if (profile.email) {
+    data.email = profile.email;
+  }
+
+  return data;
+}
 
 export async function GET(request: NextRequest) {
   const isProd = process.env.NODE_ENV === "production";
@@ -79,19 +123,12 @@ export async function GET(request: NextRequest) {
   //    Role is re-evaluated on every login so whitelist changes take
   //    effect immediately on the user's next sign-in.
   // ------------------------------------------------------------------
+  const profile = { firstName, lastName, email };
+
   const user = await prisma.user.upsert({
     where: { utorid },
-    update: {
-      ...(firstName ? { firstName } : {}),
-      ...(lastName ? { lastName } : {}),
-      ...(email ? { email } : {}),
-    },
-    create: {
-      utorid,
-      firstName: firstName ?? "",
-      lastName: lastName ?? "",
-      email: email ?? `${utorid}@mail.utoronto.ca`,
-    },
+    update: buildUserProfileUpdateData(profile),
+    create: buildUserCreateData(utorid, profile),
   });
 
   // ------------------------------------------------------------------
@@ -103,7 +140,7 @@ export async function GET(request: NextRequest) {
   );
   session.userId = user.id.toString();
   session.utorid = user.utorid;
-  session.email = user.email;
+  session.email = user.email ?? "";
   session.firstName = user.firstName ?? "";
   session.lastName = user.lastName ?? "";
   session.role = role;

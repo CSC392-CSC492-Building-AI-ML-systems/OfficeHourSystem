@@ -703,8 +703,14 @@ export async function getUpcomingSessionsForHost(
 
   return sessions.map((session, index): QueueSessionDto => {
     const lastAttendance = session.attendances[0];
+    const studentName = [
+      lastAttendance?.student.firstName,
+      lastAttendance?.student.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ");
     const lastScanLabel = lastAttendance
-      ? `${lastAttendance.student.firstName} ${lastAttendance.student.lastName} checked in`
+      ? `${studentName || lastAttendance.student.utorid} checked in`
       : "No check-ins yet";
 
     const isToday = formatSessionDateLabel(session.startsAt) === "Today";

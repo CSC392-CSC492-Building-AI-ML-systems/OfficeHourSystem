@@ -5,7 +5,7 @@ import type {
   TimeSlot,
 } from "./types";
 
-// Static calendar grid config. Live sessions/rules load from /api/instructor/schedule.
+// Static calendar grid config. Live sessions/rules load via scheduling server actions.
 export const CALENDAR_DAYS: CalendarDay[] = [
   { key: "mon", label: "MON", date: "23" },
   { key: "tue", label: "TUE", date: "24" },
