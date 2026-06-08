@@ -3,7 +3,7 @@
 import {
   uploadClasslistFromFormData,
   type ClasslistUploadResult,
-} from "@/lib/csv/uploadClasslist";
+} from "@/lib/csv/processClasslistCSV";
 
 /**
  * Server action for instructor classlist upload from the UI.
