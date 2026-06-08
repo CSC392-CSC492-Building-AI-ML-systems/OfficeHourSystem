@@ -46,7 +46,7 @@ function loadWhitelist(): Set<string> {
     const line = rawLine.trim();
     if (!line || line.startsWith("#")) continue;
 
-    // Tolerate legacy "utorid,PROFESSOR" format — strip anything after a comma
+    // Tolerate legacy "utorid,ROLE" format — strip anything after a comma
     const utorid = line.split(",")[0].trim().toLowerCase();
     if (utorid) set.add(utorid);
   }
