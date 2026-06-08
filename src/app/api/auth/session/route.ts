@@ -64,8 +64,9 @@ export async function GET(request: NextRequest) {
 
   // ------------------------------------------------------------------
   // 2. Resolve role from the instructor whitelist.
-  //    PROFESSOR / TA → listed in whitelist.txt
-  //    STUDENT       → everyone else (default)
+  //    INSTRUCTOR → listed in whitelist.txt
+  //    TA         → assigned per course via the UI
+  //    STUDENT    → everyone else (default)
   //    In dev mode DEV_ROLE overrides the whitelist (for testing instructor UI).
   // ------------------------------------------------------------------
   const whitelistRole = getRoleFromWhitelist(utorid);
