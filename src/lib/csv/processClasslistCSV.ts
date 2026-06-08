@@ -1,7 +1,7 @@
 import { requireInstructorSession } from "@/lib/auth/getUserRole";
 import { importClasslist } from "@/lib/queries/classlist";
 
-import { parseClasslistCSVText } from "./csv";
+import { parseClasslistCSVText } from "./parseCSV";
 
 export type ClasslistUploadSuccess = {
   ok: true;
