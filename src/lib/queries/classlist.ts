@@ -163,12 +163,18 @@ export async function importClasslistWithClient(
         );
       }
 
+      const profileData = {
+        ...(row.Email.trim() ? { email: row.Email.trim() } : {}),
+        ...(row["Given Name"].trim()
+          ? { firstName: row["Given Name"].trim() }
+          : {}),
+        ...(row.Surname.trim() ? { lastName: row.Surname.trim() } : {}),
+      };
+
       const userData = {
-        utorid: utorid,
-        studentNumber: studentNumber,
-        email: row.Email.trim(),
-        firstName: row["Given Name"].trim(),
-        lastName: row.Surname.trim(),
+        utorid,
+        studentNumber,
+        ...profileData,
       };
 
       const user =
@@ -177,7 +183,10 @@ export async function importClasslistWithClient(
               where: {
                 id: matchingUsers[0].id,
               },
-              data: userData,
+              data: {
+                studentNumber,
+                ...profileData,
+              },
             })
           : await tx.user.create({
               data: userData,

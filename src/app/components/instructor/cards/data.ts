@@ -1,5 +1,6 @@
 export interface StaffMember {
   id: string;
+  utorid?: string;
   name: string;
   program: string;
   role: "Lead TA" | "TA";

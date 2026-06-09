@@ -210,14 +210,14 @@ async function main() {
     },
   );
 
-  // ── Test 10: user does not exist → throws ────────────────────────────────
+  // ── Test 10: non-UTORid lookup with no user → throws ─────────────────────
   await runTest(
-    "addOrUpdateStaffMember: user does not exist → throws",
+    "addOrUpdateStaffMember: email lookup with no user → throws",
     async () => {
       let errorMsg = "";
       try {
         await addOrUpdateStaffMember(
-          { utorid: `${TEST_PREFIX}nobody` },
+          { email: `${TEST_PREFIX}nobody@mail.utoronto.ca` },
           { publicId: offering.publicId },
           "TA",
         );
@@ -228,6 +228,31 @@ async function main() {
         errorMsg.includes("User not found"),
         `Should contain 'User not found', got: ${errorMsg}`,
       );
+    },
+  );
+
+  // ── Test 10b: unknown UTORid → creates user and membership ───────────────
+  await runTest(
+    "addOrUpdateStaffMember: unknown UTORid → creates user and membership",
+    async () => {
+      const utorid = `${TEST_PREFIX}utoridonly`;
+      const result = await addOrUpdateStaffMember(
+        { utorid },
+        { publicId: offering.publicId },
+        "TA",
+      );
+
+      assertEqual(result.role, "TA", "role should be TA");
+      assertEqual(result.created, true, "membership should be newly created");
+
+      const createdUser = await prisma.user.findUnique({
+        where: { utorid },
+        select: { email: true, firstName: true, lastName: true },
+      });
+      assert(createdUser !== null, "user row should exist");
+      assertEqual(createdUser?.email, null, "email should be unset");
+      assertEqual(createdUser?.firstName, null, "firstName should be unset");
+      assertEqual(createdUser?.lastName, null, "lastName should be unset");
     },
   );
 

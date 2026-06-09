@@ -14,6 +14,16 @@ export type UserIdentifier =
   | { studentNumber: string }
   | { publicId: string };
 
+/** Optional profile fields when registering staff by UTORid only. */
+export type StaffMemberInput = {
+  utorid: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+};
+
+export type StaffUserRef = UserIdentifier | StaffMemberInput;
+
 /**
  * Offering identifier: one of two options.
  *   publicId cuid from the CourseOffering table
@@ -23,12 +33,28 @@ export type OfferingIdentifier =
   | { publicId: string }
   | { courseCode: string; termCode: string };
 
-/** Convert a UserIdentifier into a Prisma where condition */
-function userWhere(id: UserIdentifier) {
-  if ("utorid" in id) return { utorid: id.utorid };
+function normalizeUtorid(utorid: string) {
+  return utorid.trim().toLowerCase();
+}
+
+function isStaffMemberInput(ref: StaffUserRef): ref is StaffMemberInput {
+  return "utorid" in ref;
+}
+
+/** Convert a staff/user reference into a Prisma where condition */
+function userWhere(id: StaffUserRef) {
+  if ("utorid" in id) return { utorid: normalizeUtorid(id.utorid) };
   if ("email" in id) return { email: id.email };
   if ("studentNumber" in id) return { studentNumber: id.studentNumber };
   return { publicId: id.publicId };
+}
+
+function buildOptionalProfileData(ref: StaffMemberInput) {
+  return {
+    ...(ref.email?.trim() ? { email: ref.email.trim() } : {}),
+    ...(ref.firstName?.trim() ? { firstName: ref.firstName.trim() } : {}),
+    ...(ref.lastName?.trim() ? { lastName: ref.lastName.trim() } : {}),
+  };
 }
 
 /** Convert an OfferingIdentifier into a Prisma where condition */
@@ -104,20 +130,22 @@ export async function getMemberRole(
  * not through this function.
  *
  * Behaviour:
- *   - User or offering does not exist -> throw error
+ *   - Offering does not exist -> throw error
  *   - Attempting to set STUDENT role -> throw error
+ *   - UTORid reference with no existing user -> create a minimal User row
+ *   - Non-UTORid reference with no existing user -> throw error
  *   - User not yet in the offering -> create a new OfferingMember
  *   - User already in the offering (including as STUDENT) -> update role
  *
  * Example:
  *   const result = await addOrUpdateStaffMember(
- *     { email: "ta@mail.utoronto.ca" },
+ *     { utorid: "tauser01" },
  *     { courseCode: "CSC392H5", termCode: "2026F" },
  *     "TA"
  *   );
  */
 export async function addOrUpdateStaffMember(
-  userIdentifier: UserIdentifier,
+  userRef: StaffUserRef,
   offeringIdentifier: OfferingIdentifier,
   role: CourseRole,
 ): Promise<{
@@ -133,14 +161,37 @@ export async function addOrUpdateStaffMember(
     );
   }
 
-  // 1. Find user (throw if not found, rather than silently failing)
-  const user = await prisma.user.findFirst({
-    where: userWhere(userIdentifier),
+  // 1. Find or create user
+  let user = await prisma.user.findFirst({
+    where: userWhere(userRef),
     select: { id: true },
   });
 
   if (!user) {
-    throw new Error("User not found");
+    if (!isStaffMemberInput(userRef)) {
+      throw new Error("User not found");
+    }
+
+    const utorid = normalizeUtorid(userRef.utorid);
+    if (!utorid) {
+      throw new Error("UTORid is required");
+    }
+
+    user = await prisma.user.create({
+      data: {
+        utorid,
+        ...buildOptionalProfileData(userRef),
+      },
+      select: { id: true },
+    });
+  } else if (isStaffMemberInput(userRef)) {
+    const profilePatch = buildOptionalProfileData(userRef);
+    if (Object.keys(profilePatch).length > 0) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: profilePatch,
+      });
+    }
   }
 
   // 2. Find offering (also throw if not found)

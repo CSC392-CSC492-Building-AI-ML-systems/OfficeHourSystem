@@ -1,8 +1,10 @@
-import { Clock3, Ellipsis, MapPin, Pencil, Repeat2, Video } from "lucide-react";
+import { Clock3, MapPin, Pencil, Repeat2, Video } from "lucide-react";
 import type { RecurringRule } from "./types";
 
 interface RecurringBlocksProps {
   blocks: RecurringRule[];
+  canEdit?: boolean;
+  onEditBlock?: (block: RecurringRule) => void;
 }
 
 const badgeClasses = {
@@ -11,7 +13,11 @@ const badgeClasses = {
   gold: "bg-[#f4d84d] text-[#071f41]",
 } as const;
 
-export function RecurringBlocks({ blocks }: RecurringBlocksProps) {
+export function RecurringBlocks({
+  blocks,
+  canEdit = false,
+  onEditBlock,
+}: RecurringBlocksProps) {
   return (
     <section className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -25,9 +31,11 @@ export function RecurringBlocks({ blocks }: RecurringBlocksProps) {
             affect a specific occurrence.
           </p>
         </div>
-        <button className="w-fit text-sm font-semibold text-[#071f41] transition hover:text-[#c8102e]">
-          Manage All Rules
-        </button>
+        {canEdit && blocks.length > 0 ? (
+          <p className="w-fit text-sm text-slate-500">
+            Use the edit icon on a rule to change or delete a block.
+          </p>
+        ) : null}
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -48,22 +56,16 @@ export function RecurringBlocks({ blocks }: RecurringBlocksProps) {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 text-slate-400">
+              {canEdit ? (
                 <button
                   type="button"
-                  aria-label={`Edit ${block.courseCode}`}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-slate-100 hover:text-[#071f41]"
+                  aria-label={`Edit ${block.title}`}
+                  onClick={() => onEditBlock?.(block)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-[#071f41]"
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
-                <button
-                  type="button"
-                  aria-label={`More options for ${block.courseCode}`}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-slate-100 hover:text-[#071f41]"
-                >
-                  <Ellipsis className="h-4 w-4" />
-                </button>
-              </div>
+              ) : null}
             </div>
 
             <h3 className="mt-4 text-lg font-semibold text-[#071f41]">

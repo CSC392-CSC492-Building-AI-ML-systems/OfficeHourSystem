@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Bug,
   CalendarRange,
@@ -11,6 +11,13 @@ import {
   Users,
   X,
 } from "lucide-react";
+import type { CreateRecurringBlockInput } from "@/lib/scheduling/types";
+import {
+  formatDateOnlyLocal,
+  getTermBounds,
+  type WeekdayKey,
+} from "@/lib/scheduling/time";
+import { useModalOverlay } from "./useModalOverlay";
 
 type SessionType = "drop-in" | "debugging-queue" | "topic-group";
 type ScheduleDay = "mon" | "tue" | "wed" | "thu" | "fri";
@@ -19,6 +26,18 @@ type LocationMode = "in-person" | "online" | "hybrid";
 interface CreateRecurringBlockModalProps {
   isOpen: boolean;
   onClose: () => void;
+  termCode: string;
+  onSubmit: (input: {
+    title: string;
+    uiType: CreateRecurringBlockInput["uiType"];
+    weekdayKeys: WeekdayKey[];
+    startTime: string;
+    endTime: string;
+    validFrom: string;
+    validUntil: string;
+    location?: string;
+  }) => Promise<void>;
+  onError?: (message: string | null) => void;
 }
 
 const sessionTypeOptions: Array<{
@@ -64,45 +83,53 @@ const locationModes: Array<{ id: LocationMode; label: string }> = [
 export function CreateRecurringBlockModal({
   isOpen,
   onClose,
+  termCode,
+  onSubmit,
+  onError,
 }: CreateRecurringBlockModalProps) {
+  useModalOverlay(isOpen, onClose);
+
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <CreateRecurringBlockForm
+      key={termCode}
+      termCode={termCode}
+      onClose={onClose}
+      onSubmit={onSubmit}
+      onError={onError}
+    />
+  );
+}
+
+function CreateRecurringBlockForm({
+  termCode,
+  onClose,
+  onSubmit,
+  onError,
+}: Omit<CreateRecurringBlockModalProps, "isOpen">) {
+  const termBounds = getTermBounds(termCode);
+  const [submitting, setSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<SessionType>("drop-in");
   const [selectedDays, setSelectedDays] = useState<ScheduleDay[]>([
     "mon",
     "wed",
     "fri",
   ]);
+  const [validFromDate, setValidFromDate] = useState(() =>
+    formatDateOnlyLocal(termBounds.validFrom),
+  );
+  const [validUntilDate, setValidUntilDate] = useState(() =>
+    formatDateOnlyLocal(termBounds.validUntil),
+  );
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("16:00");
   const [locationMode, setLocationMode] = useState<LocationMode>("in-person");
   const [locationDetail, setLocationDetail] = useState("Room 402 or Zoom Link");
   const [topic, setTopic] = useState("");
   const [maxSeats, setMaxSeats] = useState("");
-
-  useEffect(() => {
-    if (!isOpen) {
-      return undefined;
-    }
-
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      window.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) {
-    return null;
-  }
 
   const toggleDay = (day: ScheduleDay) => {
     setSelectedDays((currentDays) =>
@@ -114,6 +141,42 @@ export function CreateRecurringBlockModal({
 
   const handleClose = () => {
     onClose();
+  };
+
+  const handleCreate = async () => {
+    onError?.(null);
+
+    if (!validFromDate || !validUntilDate) {
+      onError?.("Start and end dates are required.");
+      return;
+    }
+
+    if (validFromDate > validUntilDate) {
+      onError?.("End date must be on or after start date.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        title: topic.trim() || "Office Hours",
+        uiType: selectedType,
+        weekdayKeys: selectedDays as WeekdayKey[],
+        startTime,
+        endTime,
+        validFrom: validFromDate,
+        validUntil: validUntilDate,
+        location: locationDetail.trim() || undefined,
+      });
+    } catch (submitError) {
+      onError?.(
+        submitError instanceof Error
+          ? submitError.message
+          : "Failed to create recurring block.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -260,6 +323,36 @@ export function CreateRecurringBlockModal({
                 />
               </label>
             </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-[#071f41]">
+                  Start Date
+                </span>
+                <input
+                  type="date"
+                  value={validFromDate}
+                  onChange={(event) => setValidFromDate(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-[#071f41]">
+                  End Date
+                </span>
+                <input
+                  type="date"
+                  value={validUntilDate}
+                  onChange={(event) => setValidUntilDate(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
+                />
+              </label>
+            </div>
+            <p className="text-xs leading-5 text-slate-500">
+              Sessions generate on the selected weekdays between these dates
+              (inclusive). Defaults are based on term {termCode}.
+            </p>
           </section>
 
           <section className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
@@ -346,9 +439,9 @@ export function CreateRecurringBlockModal({
 
           <section className="rounded-[26px] border border-[#d7e7ff] bg-[#eef5ff] px-5 py-4">
             <p className="text-sm leading-6 text-slate-600">
-              Scheduled blocks will repeat weekly until the end of the current
-              term. TAs assigned to these slots will be automatically notified
-              24 hours before each session.
+              Scheduled blocks repeat weekly between your start and end dates.
+              Adjust the date range above if this block should not run for the
+              full term.
             </p>
           </section>
         </div>
@@ -363,10 +456,11 @@ export function CreateRecurringBlockModal({
           </button>
           <button
             type="button"
-            onClick={handleClose}
-            className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
+            onClick={() => void handleCreate()}
+            disabled={submitting || selectedDays.length === 0}
+            className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0f2942] disabled:opacity-50"
           >
-            Create Recurring Block
+            {submitting ? "Creating…" : "Create Recurring Block"}
           </button>
         </div>
       </div>

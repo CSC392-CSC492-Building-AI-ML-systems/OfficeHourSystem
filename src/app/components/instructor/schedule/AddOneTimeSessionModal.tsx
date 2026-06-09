@@ -14,9 +14,14 @@ import {
 type SessionType = "drop-in" | "debugging-queue" | "topic-group";
 type LocationMode = "in-person" | "online" | "hybrid";
 
+import type { CreateOneTimeSessionInput } from "@/lib/scheduling/types";
+
 interface AddOneTimeSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  offeringPublicId: string;
+  onSubmit: (input: CreateOneTimeSessionInput) => Promise<void>;
+  onError?: (message: string | null) => void;
 }
 
 const sessionTypeOptions: Array<{
@@ -54,7 +59,11 @@ const locationModes: Array<{ id: LocationMode; label: string }> = [
 export function AddOneTimeSessionModal({
   isOpen,
   onClose,
+  offeringPublicId,
+  onSubmit,
+  onError,
 }: AddOneTimeSessionModalProps) {
+  const [submitting, setSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<SessionType>("drop-in");
   const [courseOrTopic, setCourseOrTopic] = useState("");
   const [date, setDate] = useState("2026-10-25");
@@ -90,6 +99,30 @@ export function AddOneTimeSessionModal({
   if (!isOpen) {
     return null;
   }
+
+  const handleAdd = async () => {
+    onError?.(null);
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        offeringPublicId,
+        title: courseOrTopic.trim() || "Office Hours",
+        uiType: selectedType,
+        date,
+        startTime,
+        endTime,
+        location: locationDetail.trim() || undefined,
+      });
+    } catch (submitError) {
+      onError?.(
+        submitError instanceof Error
+          ? submitError.message
+          : "Failed to add session.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div
@@ -327,10 +360,11 @@ export function AddOneTimeSessionModal({
           </button>
           <button
             type="button"
-            onClick={onClose}
-            className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
+            onClick={() => void handleAdd()}
+            disabled={submitting}
+            className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0f2942] disabled:opacity-50"
           >
-            Add Session
+            {submitting ? "Adding…" : "Add Session"}
           </button>
         </div>
       </div>

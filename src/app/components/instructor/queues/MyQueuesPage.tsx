@@ -1,9 +1,49 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { CalendarDays, ChevronRight } from "lucide-react";
 import { Navbar } from "../Navbar";
+import { getQueueSessionsAction } from "@/actions/scheduling";
 import { DUMMY_QUEUE_SESSIONS } from "./data";
 import { QueueSessionCard } from "./QueueSessionCard";
+import type { QueueSession } from "./types";
 
 export default function MyQueuesPage() {
+  const [sessions, setSessions] = useState<QueueSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getQueueSessionsAction();
+        setSessions(
+          data.sessions.map((session) => ({
+            id: session.id,
+            courseLabel: session.courseLabel,
+            title: session.title,
+            time: session.time,
+            location: session.location,
+            isHighlighted: session.isHighlighted,
+            workspaceSubtitle: session.workspaceSubtitle,
+            lastScanLabel: session.lastScanLabel,
+          })),
+        );
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Failed to load queue sessions.",
+        );
+        setSessions(DUMMY_QUEUE_SESSIONS);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
@@ -18,6 +58,12 @@ export default function MyQueuesPage() {
               Launch your assigned queue sessions and keep live support moving.
             </p>
           </section>
+
+          {error ? (
+            <p className="rounded-2xl border border-[#fecaca] bg-[#fff1f2] px-4 py-3 text-sm text-[#991b1b]">
+              {error} Showing sample data.
+            </p>
+          ) : null}
 
           <section className="rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)] sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -42,11 +88,19 @@ export default function MyQueuesPage() {
               </span>
             </div>
 
-            <div className="mt-8 grid gap-5 xl:grid-cols-2">
-              {DUMMY_QUEUE_SESSIONS.map((session) => (
-                <QueueSessionCard key={session.id} session={session} />
-              ))}
-            </div>
+            {loading ? (
+              <p className="mt-8 text-sm text-slate-500">Loading sessions…</p>
+            ) : sessions.length === 0 ? (
+              <p className="mt-8 text-sm text-slate-500">
+                No upcoming debugging sessions assigned to you.
+              </p>
+            ) : (
+              <div className="mt-8 grid gap-5 xl:grid-cols-2">
+                {sessions.map((session) => (
+                  <QueueSessionCard key={session.id} session={session} />
+                ))}
+              </div>
+            )}
           </section>
         </main>
       </div>
