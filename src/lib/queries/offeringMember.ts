@@ -1,4 +1,4 @@
-import { type CourseRole } from "@prisma/client";
+import { type CourseRole, type Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -49,12 +49,47 @@ function userWhere(id: StaffUserRef) {
   return { publicId: id.publicId };
 }
 
-function buildOptionalProfileData(ref: StaffMemberInput) {
-  return {
-    ...(ref.email?.trim() ? { email: ref.email.trim() } : {}),
-    ...(ref.firstName?.trim() ? { firstName: ref.firstName.trim() } : {}),
-    ...(ref.lastName?.trim() ? { lastName: ref.lastName.trim() } : {}),
-  };
+function buildStaffProfileUpdateData(
+  ref: StaffMemberInput,
+): Prisma.UserUpdateInput {
+  const data: Prisma.UserUpdateInput = {};
+
+  const email = ref.email?.trim();
+  if (email) {
+    data.email = email;
+  }
+  const firstName = ref.firstName?.trim();
+  if (firstName) {
+    data.firstName = firstName;
+  }
+  const lastName = ref.lastName?.trim();
+  if (lastName) {
+    data.lastName = lastName;
+  }
+
+  return data;
+}
+
+function buildStaffUserCreateData(
+  utorid: string,
+  ref: StaffMemberInput,
+): Prisma.UserUncheckedCreateInput {
+  const data = { utorid } as Prisma.UserUncheckedCreateInput;
+
+  const email = ref.email?.trim();
+  if (email) {
+    data.email = email;
+  }
+  const firstName = ref.firstName?.trim();
+  if (firstName) {
+    data.firstName = firstName;
+  }
+  const lastName = ref.lastName?.trim();
+  if (lastName) {
+    data.lastName = lastName;
+  }
+
+  return data;
 }
 
 /** Convert an OfferingIdentifier into a Prisma where condition */
@@ -178,14 +213,11 @@ export async function addOrUpdateStaffMember(
     }
 
     user = await prisma.user.create({
-      data: {
-        utorid,
-        ...buildOptionalProfileData(userRef),
-      },
+      data: buildStaffUserCreateData(utorid, userRef),
       select: { id: true },
     });
   } else if (isStaffMemberInput(userRef)) {
-    const profilePatch = buildOptionalProfileData(userRef);
+    const profilePatch = buildStaffProfileUpdateData(userRef);
     if (Object.keys(profilePatch).length > 0) {
       await prisma.user.update({
         where: { id: user.id },
