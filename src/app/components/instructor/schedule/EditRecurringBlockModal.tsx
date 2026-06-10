@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { CalendarClock, Trash2, X } from "lucide-react";
+import {
+  snapOfficeHourEndTime,
+  snapOfficeHourStartTime,
+  validateOfficeHourTimes,
+} from "@/lib/scheduling/time";
+import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
 import type { RecurringRule } from "./types";
 import { useModalOverlay } from "./useModalOverlay";
 
@@ -62,13 +68,24 @@ function EditRecurringBlockForm({
   const [location, setLocation] = useState(
     block.defaultLocation === "TBD" ? "" : block.defaultLocation,
   );
-  const [startTime, setStartTime] = useState(block.startTime);
-  const [endTime, setEndTime] = useState(block.endTime);
+  const [startTime, setStartTime] = useState(() =>
+    snapOfficeHourStartTime(block.startTime),
+  );
+  const [endTime, setEndTime] = useState(() =>
+    snapOfficeHourEndTime(block.startTime, block.endTime),
+  );
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const handleSave = async () => {
     onError?.(null);
+
+    const timeError = validateOfficeHourTimes(startTime, endTime);
+    if (timeError) {
+      onError?.(timeError);
+      return;
+    }
+
     setSubmitting(true);
     try {
       await onSave({
@@ -170,30 +187,12 @@ function EditRecurringBlockForm({
             />
           </label>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                Start Time
-              </span>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(event) => setStartTime(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                End Time
-              </span>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(event) => setEndTime(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-              />
-            </label>
-          </div>
+          <OfficeHourTimeFields
+            startTime={startTime}
+            endTime={endTime}
+            onStartTimeChange={setStartTime}
+            onEndTimeChange={setEndTime}
+          />
 
           <p className="text-xs leading-5 text-slate-500">
             Changes apply to the rule and all upcoming scheduled sessions in

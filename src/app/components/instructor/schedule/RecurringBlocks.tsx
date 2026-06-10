@@ -20,22 +20,18 @@ export function RecurringBlocks({
 }: RecurringBlocksProps) {
   return (
     <section className="space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="max-w-3xl">
-          <h2 className="text-2xl font-semibold text-[#071f41]">
-            Recurring Schedule Rules
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            These rules generate the default weekly office hour sessions.
-            Editing a rule affects future weeks, while session overrides only
-            affect a specific occurrence.
-          </p>
-        </div>
-        {canEdit && blocks.length > 0 ? (
-          <p className="w-fit text-sm text-slate-500">
-            Use the edit icon on a rule to change or delete a block.
-          </p>
-        ) : null}
+      <div className="max-w-3xl">
+        <h2 className="text-2xl font-semibold text-[#071f41]">
+          Recurring Schedule Rules
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          These rules generate the default weekly office hour sessions. Editing
+          a rule affects future weeks, while session overrides only affect a
+          specific occurrence.
+          {canEdit && blocks.length > 0
+            ? " Use the edit icon on a rule to change or delete a block."
+            : null}
+        </p>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -49,7 +45,7 @@ export function RecurringBlocks({
                 <span
                   className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${badgeClasses[block.accent]}`}
                 >
-                  {block.courseCode}
+                  {block.sessionTypeLabel}
                 </span>
                 <span className="inline-flex rounded-full border border-slate-200 bg-[#f8fafc] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-slate-500">
                   Recurring Rule

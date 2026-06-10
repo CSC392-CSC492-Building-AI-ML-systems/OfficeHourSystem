@@ -1,3 +1,4 @@
+import { buildCalendarTimeSlots } from "@/lib/scheduling/time";
 import type {
   CalendarDay,
   RecurringRule,
@@ -12,29 +13,17 @@ export const CALENDAR_DAYS: CalendarDay[] = [
   { key: "wed", label: "WED", date: "25" },
   { key: "thu", label: "THU", date: "26" },
   { key: "fri", label: "FRI", date: "27" },
-  { key: "sat", label: "SAT", date: "28" },
-  { key: "sun", label: "SUN", date: "29" },
 ];
 
-export const TIME_SLOTS: TimeSlot[] = [
-  { label: "09:00 AM", hour: 9 },
-  { label: "10:00 AM", hour: 10 },
-  { label: "11:00 AM", hour: 11 },
-  { label: "12:00 PM", hour: 12 },
-  { label: "01:00 PM", hour: 13 },
-  { label: "02:00 PM", hour: 14 },
-  { label: "03:00 PM", hour: 15 },
-  { label: "04:00 PM", hour: 16 },
-  { label: "05:00 PM", hour: 17 },
-  { label: "06:00 PM", hour: 18 },
-];
+export const TIME_SLOTS: TimeSlot[] = buildCalendarTimeSlots();
 
 export const DUMMY_SCHEDULE_SESSIONS: ScheduleSession[] = [
   {
     id: "session-mon-exam-review",
     courseCode: "CS101",
     courseName: "Introduction to Computer Science",
-    calendarLabel: "CS101",
+    sessionTypeLabel: "Drop-in",
+    calendarLabel: "Drop-in",
     title: "Exam Review",
     topic: "Midterm review and study strategies",
     day: "mon",
@@ -51,7 +40,8 @@ export const DUMMY_SCHEDULE_SESSIONS: ScheduleSession[] = [
     id: "session-tue-lab",
     courseCode: "CS202",
     courseName: "Systems Programming",
-    calendarLabel: "CS202",
+    sessionTypeLabel: "Topic Group",
+    calendarLabel: "Topic Group",
     title: "Lab",
     topic: "Systems Architecture lab support",
     day: "tue",
@@ -68,7 +58,8 @@ export const DUMMY_SCHEDULE_SESSIONS: ScheduleSession[] = [
     id: "session-wed-kernel-projects",
     courseCode: "CS305",
     courseName: "Operating Systems",
-    calendarLabel: "CS305",
+    sessionTypeLabel: "Debugging Queue",
+    calendarLabel: "Debugging Queue",
     title: "Kernel Projects",
     topic: "Kernel Synchronization",
     day: "wed",
@@ -80,7 +71,6 @@ export const DUMMY_SCHEDULE_SESSIONS: ScheduleSession[] = [
     location: "Virtual: Zoom Link A",
     mode: "online",
     accent: "yellow",
-    hasWarning: true,
     hasLocationOverride: true,
     overrideLocation: "Virtual: Zoom Link A",
   },
@@ -88,7 +78,8 @@ export const DUMMY_SCHEDULE_SESSIONS: ScheduleSession[] = [
     id: "session-thu-dropin",
     courseCode: "CS101",
     courseName: "Introduction to Computer Science",
-    calendarLabel: "CS101",
+    sessionTypeLabel: "Drop-in",
+    calendarLabel: "Drop-in",
     title: "Drop-in",
     topic: "Weekly Drop-in",
     day: "thu",
@@ -105,7 +96,8 @@ export const DUMMY_SCHEDULE_SESSIONS: ScheduleSession[] = [
     id: "session-fri-support",
     courseCode: "TA Hours",
     courseName: "Teaching Assistant Office Hours",
-    calendarLabel: "TA Hours",
+    sessionTypeLabel: "Topic Group",
+    calendarLabel: "Topic Group",
     title: "General",
     topic: "General Support",
     day: "fri",
@@ -126,6 +118,7 @@ export const DUMMY_RECURRING_RULES: RecurringRule[] = [
   {
     id: "recurring-cs101",
     courseCode: "CS101",
+    sessionTypeLabel: "Drop-in",
     title: "Fundamental Concepts",
     repeats: "Mon, Thu",
     defaultTime: "10:00 AM - 12:00 PM",
@@ -138,6 +131,7 @@ export const DUMMY_RECURRING_RULES: RecurringRule[] = [
   {
     id: "recurring-cs202",
     courseCode: "CS202",
+    sessionTypeLabel: "Topic Group",
     title: "Systems Architecture",
     repeats: "Tue",
     defaultTime: "09:00 AM - 11:00 AM",
@@ -150,6 +144,7 @@ export const DUMMY_RECURRING_RULES: RecurringRule[] = [
   {
     id: "recurring-cs305",
     courseCode: "CS305",
+    sessionTypeLabel: "Debugging Queue",
     title: "Operating Systems",
     repeats: "Wed, Fri",
     defaultTime: "02:00 PM - 04:00 PM",

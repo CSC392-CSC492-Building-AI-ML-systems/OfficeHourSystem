@@ -2,6 +2,7 @@ export interface ScheduleSession {
   id: string;
   courseCode: string;
   courseName?: string;
+  sessionTypeLabel: string;
   calendarLabel: string;
   title: string;
   topic: string;
@@ -14,7 +15,6 @@ export interface ScheduleSession {
   location: string;
   mode: "in-person" | "online" | "hybrid";
   accent: "navy-yellow" | "navy-red" | "yellow";
-  hasWarning?: boolean;
   hasLocationOverride?: boolean;
   overrideLocation?: string;
 }
@@ -22,6 +22,7 @@ export interface ScheduleSession {
 export interface RecurringRule {
   id: string;
   courseCode: string;
+  sessionTypeLabel: string;
   title: string;
   repeats: string;
   defaultTime: string;

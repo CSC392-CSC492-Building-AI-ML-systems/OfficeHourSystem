@@ -15,6 +15,11 @@ type SessionType = "drop-in" | "debugging-queue" | "topic-group";
 type LocationMode = "in-person" | "online" | "hybrid";
 
 import type { CreateOneTimeSessionInput } from "@/lib/scheduling/types";
+import {
+  validateOfficeHourDate,
+  validateOfficeHourTimes,
+} from "@/lib/scheduling/time";
+import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
 
 interface AddOneTimeSessionModalProps {
   isOpen: boolean;
@@ -102,6 +107,19 @@ export function AddOneTimeSessionModal({
 
   const handleAdd = async () => {
     onError?.(null);
+
+    const dateError = validateOfficeHourDate(date);
+    if (dateError) {
+      onError?.(dateError);
+      return;
+    }
+
+    const timeError = validateOfficeHourTimes(startTime, endTime);
+    if (timeError) {
+      onError?.(timeError);
+      return;
+    }
+
     setSubmitting(true);
     try {
       await onSubmit({
@@ -250,31 +268,12 @@ export function AddOneTimeSessionModal({
               </label>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                  Start Time
-                </span>
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(event) => setStartTime(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                  End Time
-                </span>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(event) => setEndTime(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-                />
-              </label>
-            </div>
+            <OfficeHourTimeFields
+              startTime={startTime}
+              endTime={endTime}
+              onStartTimeChange={setStartTime}
+              onEndTimeChange={setEndTime}
+            />
           </section>
 
           <section className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">

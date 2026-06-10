@@ -1,7 +1,6 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { AlertTriangle } from "lucide-react";
 import type { ScheduleSession } from "./types";
 
 interface ScheduleSessionCardProps {
@@ -50,14 +49,9 @@ export function ScheduleSessionCard({
       />
 
       <div className="ml-1.5 flex h-full flex-col justify-between gap-3 whitespace-normal break-words">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-[11px] font-semibold tracking-[0.18em] opacity-85">
-            {session.calendarLabel}
-          </p>
-          {session.hasWarning ? (
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          ) : null}
-        </div>
+        <p className="text-[11px] font-semibold tracking-[0.18em] opacity-85">
+          {session.calendarLabel}
+        </p>
 
         <div className="space-y-2">
           <p className="whitespace-normal break-words text-sm font-semibold leading-tight">

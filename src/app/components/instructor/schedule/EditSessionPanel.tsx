@@ -15,14 +15,6 @@ interface EditSessionPanelProps {
   onError?: (message: string | null) => void;
 }
 
-function formatSelectedBlockTitle(session: ScheduleSession) {
-  if (session.courseName) {
-    return `${session.courseCode}: ${session.courseName}`;
-  }
-
-  return session.courseCode;
-}
-
 export function EditSessionPanel({
   selectedSession,
   canEdit,
@@ -88,7 +80,7 @@ export function EditSessionPanel({
           SELECTED BLOCK
         </p>
         <h3 className="mt-2 text-lg font-semibold text-[#071f41]">
-          {formatSelectedBlockTitle(selectedSession)}
+          {selectedSession.sessionTypeLabel}
         </h3>
         <p className="mt-1 text-sm text-slate-600">
           {selectedSession.dateLabel}, {selectedSession.startTime} -{" "}

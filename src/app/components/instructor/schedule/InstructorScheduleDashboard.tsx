@@ -302,8 +302,6 @@ export default function InstructorScheduleDashboard({
                         { key: "wed", label: "WED", date: "—" },
                         { key: "thu", label: "THU", date: "—" },
                         { key: "fri", label: "FRI", date: "—" },
-                        { key: "sat", label: "SAT", date: "—" },
-                        { key: "sun", label: "SUN", date: "—" },
                       ]
                 }
                 timeSlots={TIME_SLOTS}

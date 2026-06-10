@@ -15,8 +15,10 @@ import type { CreateRecurringBlockInput } from "@/lib/scheduling/types";
 import {
   formatDateOnlyLocal,
   getTermBounds,
+  validateOfficeHourTimes,
   type WeekdayKey,
 } from "@/lib/scheduling/time";
+import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
 import { useModalOverlay } from "./useModalOverlay";
 
 type SessionType = "drop-in" | "debugging-queue" | "topic-group";
@@ -153,6 +155,12 @@ function CreateRecurringBlockForm({
 
     if (validFromDate > validUntilDate) {
       onError?.("End date must be on or after start date.");
+      return;
+    }
+
+    const timeError = validateOfficeHourTimes(startTime, endTime);
+    if (timeError) {
+      onError?.(timeError);
       return;
     }
 
@@ -298,31 +306,12 @@ function CreateRecurringBlockForm({
               })}
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                  Start Time
-                </span>
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(event) => setStartTime(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                  End Time
-                </span>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(event) => setEndTime(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-                />
-              </label>
-            </div>
+            <OfficeHourTimeFields
+              startTime={startTime}
+              endTime={endTime}
+              onStartTimeChange={setStartTime}
+              onEndTimeChange={setEndTime}
+            />
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block">

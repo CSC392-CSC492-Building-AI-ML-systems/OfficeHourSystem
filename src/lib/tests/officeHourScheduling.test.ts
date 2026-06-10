@@ -16,6 +16,7 @@ import {
 } from "@/lib/queries/officeHourScheduling";
 import { expandOfficeHourSchedule } from "@/lib/scheduling/expandSchedule";
 import { ScheduleAuthError } from "@/lib/scheduling/auth";
+import { formatDateOnlyLocal } from "@/lib/scheduling/time";
 import {
   TEST_PREFIX,
   TEST_TERM,
@@ -25,6 +26,15 @@ import {
   runTest,
   finishTests,
 } from "./_seed";
+
+function futureWeekdayDate(daysAhead = 4): string {
+  const date = new Date();
+  date.setDate(date.getDate() + daysAhead);
+  while (date.getDay() === 0 || date.getDay() === 6) {
+    date.setDate(date.getDate() + 1);
+  }
+  return formatDateOnlyLocal(date);
+}
 
 async function setupOffering() {
   const course = await prisma.course.create({
@@ -171,9 +181,7 @@ async function main() {
     await cleanupAll();
     const { offering, instructor } = await setupOffering();
 
-    const future = new Date();
-    future.setDate(future.getDate() + 3);
-    const date = future.toISOString().slice(0, 10);
+    const date = futureWeekdayDate(3);
 
     await createOneTimeSession(instructor.id, {
       offeringPublicId: offering.publicId,
@@ -196,9 +204,7 @@ async function main() {
     await cleanupAll();
     const { offering, instructor } = await setupOffering();
 
-    const future = new Date();
-    future.setDate(future.getDate() + 2);
-    const date = future.toISOString().slice(0, 10);
+    const date = futureWeekdayDate(2);
 
     const { session } = await createOneTimeSession(instructor.id, {
       offeringPublicId: offering.publicId,
@@ -253,6 +259,169 @@ async function main() {
       });
       assertEqual(session.title, "Updated Title", "session title");
       assertEqual(session.location, "Room 200", "session location");
+    },
+  );
+
+  await runTest("Rejects office hours before 8 AM", async () => {
+    await cleanupAll();
+    const { offering, instructor } = await setupOffering();
+
+    let threw = false;
+    try {
+      await createRecurringBlock(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Too Early",
+        uiType: "drop-in",
+        weekdayKeys: ["mon"],
+        startTime: "07:00",
+        endTime: "09:00",
+      });
+    } catch (error) {
+      threw =
+        error instanceof Error &&
+        error.message.includes("cannot start before 8:00 AM");
+    }
+
+    assert(threw, "should reject start before 8 AM");
+  });
+
+  await runTest("Rejects office hours ending after 10 PM", async () => {
+    await cleanupAll();
+    const { offering, instructor } = await setupOffering();
+
+    let threw = false;
+    try {
+      await createRecurringBlock(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Too Late",
+        uiType: "drop-in",
+        weekdayKeys: ["tue"],
+        startTime: "21:00",
+        endTime: "22:30",
+      });
+    } catch (error) {
+      threw =
+        error instanceof Error &&
+        error.message.includes("cannot end after 10:00 PM");
+    }
+
+    assert(threw, "should reject end after 10 PM");
+  });
+
+  await runTest(
+    "Rejects start times not on the hour or half past",
+    async () => {
+      await cleanupAll();
+      const { offering, instructor } = await setupOffering();
+
+      let threw = false;
+      try {
+        await createRecurringBlock(instructor.id, {
+          offeringPublicId: offering.publicId,
+          title: "Odd Start",
+          uiType: "drop-in",
+          weekdayKeys: ["wed"],
+          startTime: "14:17",
+          endTime: "15:30",
+        });
+      } catch (error) {
+        threw =
+          error instanceof Error &&
+          error.message.includes("Start time must be on the hour or half past");
+      }
+
+      assert(threw, "should reject odd start minutes");
+    },
+  );
+
+  await runTest("Rejects office hours shorter than 1 hour", async () => {
+    await cleanupAll();
+    const { offering, instructor } = await setupOffering();
+
+    let threw = false;
+    try {
+      await createRecurringBlock(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Too Short",
+        uiType: "drop-in",
+        weekdayKeys: ["thu"],
+        startTime: "14:00",
+        endTime: "14:30",
+      });
+    } catch (error) {
+      threw =
+        error instanceof Error &&
+        error.message.includes("at least 1 hour long");
+    }
+
+    assert(threw, "should reject sub-hour blocks");
+  });
+
+  await runTest("Rejects recurring blocks on weekends", async () => {
+    await cleanupAll();
+    const { offering, instructor } = await setupOffering();
+
+    let threw = false;
+    try {
+      await createRecurringBlock(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Weekend block",
+        uiType: "drop-in",
+        weekdayKeys: ["sat"],
+        startTime: "10:00",
+        endTime: "11:00",
+      });
+    } catch (error) {
+      threw =
+        error instanceof Error &&
+        error.message.includes("cannot be scheduled on weekends");
+    }
+
+    assert(threw, "should reject Saturday recurring blocks");
+  });
+
+  await runTest("Rejects one-time sessions on weekends", async () => {
+    await cleanupAll();
+    const { offering, instructor } = await setupOffering();
+
+    let threw = false;
+    try {
+      await createOneTimeSession(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Saturday session",
+        uiType: "drop-in",
+        date: "2026-06-13",
+        startTime: "10:00",
+        endTime: "11:00",
+      });
+    } catch (error) {
+      threw =
+        error instanceof Error &&
+        error.message.includes("cannot be scheduled on weekends");
+    }
+
+    assert(threw, "should reject Saturday one-time sessions");
+  });
+
+  await runTest(
+    "Allows half-past start times with at least 1 hour duration",
+    async () => {
+      await cleanupAll();
+      const { offering, instructor } = await setupOffering();
+
+      const date = futureWeekdayDate(4);
+
+      const { session } = await createOneTimeSession(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Half past block",
+        uiType: "drop-in",
+        date,
+        startTime: "14:30",
+        endTime: "15:30",
+      });
+
+      assertEqual(session.startTime, "2:30 PM", "start label");
+      assertEqual(session.endTime, "3:30 PM", "end label");
     },
   );
 

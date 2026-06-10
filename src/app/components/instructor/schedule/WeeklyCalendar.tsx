@@ -1,6 +1,10 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  CALENDAR_HOUR_HEIGHT,
+  sessionGridPlacement,
+} from "@/lib/scheduling/time";
 import { ScheduleSessionCard } from "./ScheduleSessionCard";
 import type { CalendarDay, ScheduleSession, TimeSlot } from "./types";
 
@@ -15,9 +19,7 @@ interface WeeklyCalendarProps {
   onNextWeek?: () => void;
 }
 
-const CALENDAR_HOUR_HEIGHT = 132;
 const HALF_HOUR_ROW_HEIGHT = CALENDAR_HOUR_HEIGHT / 2;
-const HALF_HOUR_START = 9;
 const SESSION_CARD_VERTICAL_MARGIN = 8;
 const MINIMUM_SESSION_CARD_HEIGHT = 116;
 
@@ -33,43 +35,40 @@ export function WeeklyCalendar({
 }: WeeklyCalendarProps) {
   return (
     <section className="rounded-[30px] border border-slate-200/80 bg-white p-5 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)] sm:p-6">
-      <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <h2 className="text-xl font-semibold text-[#071f41]">{weekLabel}</h2>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Previous week"
-              onClick={onPreviousWeek}
-              disabled={!onPreviousWeek}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              aria-label="Next week"
-              onClick={onNextWeek}
-              disabled={!onNextWeek}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+      <div className="mb-5 space-y-1">
+        <h2 className="text-xl font-semibold text-[#071f41]">{weekLabel}</h2>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="Previous week"
+            onClick={onPreviousWeek}
+            disabled={!onPreviousWeek}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="Next week"
+            onClick={onNextWeek}
+            disabled={!onNextWeek}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:opacity-40"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
-
-        <span className="inline-flex w-fit rounded-full border border-slate-200 bg-[#f8fafc] px-4 py-2 text-sm font-medium text-[#071f41]">
-          Week View
-        </span>
       </div>
 
       <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-[#fbfdff]">
         <div className="max-h-[760px] overflow-auto">
-          <div className="min-w-[980px]">
+          <div
+            className="min-w-full"
+            style={{ minWidth: `${96 + days.length * 132}px` }}
+          >
             <div
               className="grid"
               style={{
-                gridTemplateColumns: "96px repeat(7, minmax(132px, 1fr))",
+                gridTemplateColumns: `96px repeat(${days.length}, minmax(132px, 1fr))`,
                 gridTemplateRows: `72px repeat(${timeSlots.length * 2}, ${HALF_HOUR_ROW_HEIGHT}px)`,
               }}
             >
@@ -129,10 +128,10 @@ export function WeeklyCalendar({
                 if (dayIndex < 0) {
                   return null;
                 }
-                const rowStart = 2 + (session.startHour - HALF_HOUR_START) * 2;
-                const rowSpan = (session.endHour - session.startHour) * 2;
+                const { rowStart, rowSpan, topOffsetPx, durationHalfHours } =
+                  sessionGridPlacement(session.startHour, session.endHour);
                 const durationHeight =
-                  rowSpan * HALF_HOUR_ROW_HEIGHT -
+                  durationHalfHours * HALF_HOUR_ROW_HEIGHT -
                   SESSION_CARD_VERTICAL_MARGIN * 2;
 
                 return (
@@ -145,6 +144,7 @@ export function WeeklyCalendar({
                       gridColumn: dayIndex + 2,
                       gridRow: `${rowStart} / span ${rowSpan}`,
                       margin: `${SESSION_CARD_VERTICAL_MARGIN}px`,
+                      marginTop: `${SESSION_CARD_VERTICAL_MARGIN + topOffsetPx}px`,
                       minHeight: `${Math.max(
                         durationHeight,
                         MINIMUM_SESSION_CARD_HEIGHT,

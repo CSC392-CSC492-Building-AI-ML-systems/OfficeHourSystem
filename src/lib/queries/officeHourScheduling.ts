@@ -19,9 +19,14 @@ import type {
   UpdateRecurringBlockInput,
   UpdateSessionInput,
 } from "@/lib/scheduling/types";
-import { uiSessionTypeToOfficeHourType } from "@/lib/scheduling/types";
+import {
+  officeHourTypeLabel,
+  uiSessionTypeToOfficeHourType,
+} from "@/lib/scheduling/types";
 import {
   addDays,
+  assertOfficeHourWeekday,
+  assertOfficeHourWindow,
   buildWeekCalendarDays,
   combineDateAndMinutes,
   dayOfWeekToKey,
@@ -186,11 +191,14 @@ function mapSessionToDto(
     session.location != null &&
     session.location !== session.schedule?.location;
 
+  const sessionTypeLabel = officeHourTypeLabel(session.type);
+
   return {
     id: session.publicId,
     courseCode,
     courseName: undefined,
-    calendarLabel: courseCode,
+    sessionTypeLabel,
+    calendarLabel: sessionTypeLabel,
     title: session.title,
     topic: session.title,
     day: dayOfWeekToKey(session.startsAt.getDay()),
@@ -202,7 +210,6 @@ function mapSessionToDto(
     location: sessionLocation,
     mode: inferLocationMode(sessionLocation),
     accent: accentForType(session.type),
-    hasWarning: session.type === "DEBUGGING",
     hasLocationOverride,
     overrideLocation: hasLocationOverride ? sessionLocation : undefined,
   };
@@ -245,10 +252,7 @@ export async function createRecurringBlock(
   const access = await requireScheduleMutate(userId, input.offeringPublicId);
   const startMinute = parseTimeToMinutes(input.startTime);
   const endMinute = parseTimeToMinutes(input.endTime);
-
-  if (endMinute <= startMinute) {
-    throw new Error("End time must be after start time.");
-  }
+  assertOfficeHourWindow(startMinute, endMinute);
 
   const days = weekdayKeysToDayOfWeek(input.weekdayKeys);
   if (days.length === 0) {
@@ -315,14 +319,12 @@ export async function createOneTimeSession(
 ) {
   const access = await requireScheduleMutate(userId, input.offeringPublicId);
   const day = parseIsoDateOnly(input.date);
+  assertOfficeHourWeekday(day);
   const startMinute = parseTimeToMinutes(input.startTime);
   const endMinute = parseTimeToMinutes(input.endTime);
+  assertOfficeHourWindow(startMinute, endMinute);
   const startsAt = combineDateAndMinutes(day, startMinute);
   const endsAt = combineDateAndMinutes(day, endMinute);
-
-  if (endsAt <= startsAt) {
-    throw new Error("End time must be after start time.");
-  }
 
   const type = uiSessionTypeToOfficeHourType(input.uiType);
   const hosts = await resolveHostRows(
@@ -375,7 +377,7 @@ export async function listScheduleWeek(
   const weekStart = weekStartInput
     ? startOfWeekMonday(parseIsoDateOnly(weekStartInput))
     : startOfWeekMonday(new Date());
-  const weekEnd = addDays(weekStart, 7);
+  const weekEnd = addDays(weekStart, 5);
 
   const sessions = await prisma.officeHourSession.findMany({
     where: {
@@ -431,6 +433,7 @@ export async function listRecurringRules(
     rules.push({
       id: first.publicId,
       courseCode: access.courseCode,
+      sessionTypeLabel: officeHourTypeLabel(first.type),
       title: first.title,
       repeats: repeatDays,
       defaultTime: `${formatMinutesAsLabel(first.startMinute)} - ${formatMinutesAsLabel(first.endMinute)}`,
@@ -467,10 +470,7 @@ export async function updateRecurringBlock(
 
   const startMinute = nextStartMinute ?? group[0].startMinute;
   const endMinute = nextEndMinute ?? group[0].endMinute;
-
-  if (endMinute <= startMinute) {
-    throw new Error("End time must be after start time.");
-  }
+  assertOfficeHourWindow(startMinute, endMinute);
 
   const scheduleIds = group.map((row) => row.id);
   const now = new Date();
@@ -572,6 +572,7 @@ export async function updateSession(
     const day = patch.date
       ? parseIsoDateOnly(patch.date)
       : new Date(existing.startsAt);
+    assertOfficeHourWeekday(day);
     const startMinute = patch.startTime
       ? parseTimeToMinutes(patch.startTime)
       : existing.startsAt.getHours() * 60 + existing.startsAt.getMinutes();
@@ -583,9 +584,9 @@ export async function updateSession(
     endsAt = combineDateAndMinutes(day, parseTimeToMinutes(patch.endTime));
   }
 
-  if (endsAt <= startsAt) {
-    throw new Error("End time must be after start time.");
-  }
+  const startMinute = startsAt.getHours() * 60 + startsAt.getMinutes();
+  const endMinute = endsAt.getHours() * 60 + endsAt.getMinutes();
+  assertOfficeHourWindow(startMinute, endMinute);
 
   const updated = await prisma.officeHourSession.update({
     where: { id: existing.id },
