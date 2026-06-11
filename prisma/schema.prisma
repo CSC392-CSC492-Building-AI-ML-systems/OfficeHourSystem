@@ -10,6 +10,7 @@ model User {
   id            Int                      @id @default(autoincrement())
   publicId      String                   @unique @default(cuid())
   utorid        String                   @unique
+  barcodeNumber String?                  @unique
   email         String?
   firstName     String?
   lastName      String?
@@ -161,6 +162,7 @@ model OfficeHourAttendance {
   session        OfficeHourSession      @relation(fields: [sessionId], references: [id])
   student        User                   @relation("StudentVisits", fields: [studentId], references: [id])
 
+  @@unique([sessionId, studentId])
   @@index([sessionId, status, checkedInAt])
   @@index([studentId])
   @@index([helpedByHostId])

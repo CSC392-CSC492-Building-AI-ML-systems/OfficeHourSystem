@@ -3,10 +3,18 @@
 import { useEffect, useState } from "react";
 import { CalendarDays, ChevronRight } from "lucide-react";
 import { Navbar } from "../Navbar";
-import { getQueueSessionsAction } from "@/actions/scheduling";
+import { showUpcomingOhAction } from "@/actions/show_upcoming_oh/show-upcoming-oh";
 import { DUMMY_QUEUE_SESSIONS } from "./data";
 import { QueueSessionCard } from "./QueueSessionCard";
 import type { QueueSession } from "./types";
+
+// Format two ISO strings into a readable time range e.g. "10:00 AM - 11:00 AM"
+function formatSessionTime(startsAt: string, endsAt: string): string {
+  const opts: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit", hour12: true };
+  const start = new Date(startsAt).toLocaleTimeString([], opts);
+  const end = new Date(endsAt).toLocaleTimeString([], opts);
+  return `${start} - ${end}`;
+}
 
 export default function MyQueuesPage() {
   const [sessions, setSessions] = useState<QueueSession[]>([]);
@@ -18,17 +26,17 @@ export default function MyQueuesPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await getQueueSessionsAction();
+        const data = await showUpcomingOhAction();
         setSessions(
-          data.sessions.map((session) => ({
-            id: session.id,
-            courseLabel: session.courseLabel,
+          data.map((session) => ({
+            id: session.sessionPublicId,
+            courseLabel: session.courseCode,
             title: session.title,
-            time: session.time,
+            time: formatSessionTime(session.startsAt, session.endsAt),
             location: session.location,
-            isHighlighted: session.isHighlighted,
-            workspaceSubtitle: session.workspaceSubtitle,
-            lastScanLabel: session.lastScanLabel,
+            isHighlighted: session.status === "ACTIVE",
+            workspaceSubtitle: `${session.courseCode}: ${session.title}`,
+            lastScanLabel: "No check-ins yet",
           })),
         );
       } catch (loadError) {
