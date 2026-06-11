@@ -186,10 +186,15 @@ function mapSessionToDto(
 ): ScheduleSessionDto {
   const defaultLocation = session.schedule?.location ?? session.location ?? "";
   const sessionLocation = session.location ?? defaultLocation;
+  const schedule = session.schedule;
+  const isRecurringOccurrence = session.scheduleId != null && schedule != null;
+  const hasTitleOverride =
+    isRecurringOccurrence && session.title !== schedule.title;
   const hasLocationOverride =
-    session.scheduleId != null &&
+    isRecurringOccurrence &&
     session.location != null &&
-    session.location !== session.schedule?.location;
+    session.location !== schedule.location;
+  const hasOverride = hasTitleOverride || hasLocationOverride;
 
   const sessionTypeLabel = officeHourTypeLabel(session.type);
 
@@ -210,7 +215,7 @@ function mapSessionToDto(
     location: sessionLocation,
     mode: inferLocationMode(sessionLocation),
     accent: accentForType(session.type),
-    hasLocationOverride,
+    hasOverride,
     overrideLocation: hasLocationOverride ? sessionLocation : undefined,
   };
 }

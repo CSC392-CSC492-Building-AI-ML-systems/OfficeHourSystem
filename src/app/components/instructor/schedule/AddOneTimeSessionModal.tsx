@@ -19,7 +19,12 @@ import {
   validateOfficeHourDate,
   validateOfficeHourTimes,
 } from "@/lib/scheduling/time";
+import { FieldCharLimitHint } from "./FieldCharLimitHint";
 import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
+import {
+  LOCATION_MAX_LENGTH,
+  SESSION_TOPIC_MAX_LENGTH,
+} from "./scheduleFieldLimits";
 
 interface AddOneTimeSessionModalProps {
   isOpen: boolean;
@@ -75,7 +80,7 @@ export function AddOneTimeSessionModal({
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("16:00");
   const [locationMode, setLocationMode] = useState<LocationMode>("in-person");
-  const [locationDetail, setLocationDetail] = useState("Room 402 or Zoom Link");
+  const [locationDetail, setLocationDetail] = useState("Room 402");
   const [assignedTa, setAssignedTa] = useState("");
   const [maxSeats, setMaxSeats] = useState("");
 
@@ -249,10 +254,12 @@ export function AddOneTimeSessionModal({
                 <input
                   type="text"
                   value={courseOrTopic}
+                  maxLength={SESSION_TOPIC_MAX_LENGTH}
                   onChange={(event) => setCourseOrTopic(event.target.value)}
                   placeholder="e.g. Exam Review or Kernel Synchronization"
                   className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
                 />
+                <FieldCharLimitHint maxLength={SESSION_TOPIC_MAX_LENGTH} />
               </label>
 
               <label className="block">
@@ -306,10 +313,12 @@ export function AddOneTimeSessionModal({
               <input
                 type="text"
                 value={locationDetail}
+                maxLength={LOCATION_MAX_LENGTH}
                 onChange={(event) => setLocationDetail(event.target.value)}
-                placeholder="Room 402 or Zoom Link"
+                placeholder="Room 402 or Zoom"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
               />
+              <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />
             </label>
           </section>
 

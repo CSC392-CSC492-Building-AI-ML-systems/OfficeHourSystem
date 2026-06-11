@@ -71,7 +71,7 @@ export const DUMMY_SCHEDULE_SESSIONS: ScheduleSession[] = [
     location: "Virtual: Zoom Link A",
     mode: "online",
     accent: "yellow",
-    hasLocationOverride: true,
+    hasOverride: true,
     overrideLocation: "Virtual: Zoom Link A",
   },
   {

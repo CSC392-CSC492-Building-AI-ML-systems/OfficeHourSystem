@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { CalendarClock } from "lucide-react";
+import { FieldCharLimitHint } from "./FieldCharLimitHint";
+import {
+  clampToMaxLength,
+  LOCATION_MAX_LENGTH,
+  SESSION_TOPIC_MAX_LENGTH,
+} from "./scheduleFieldLimits";
 import type { ScheduleSession } from "./types";
 
 interface EditSessionPanelProps {
@@ -22,8 +28,12 @@ export function EditSessionPanel({
   onCancelSession,
   onError,
 }: EditSessionPanelProps) {
-  const [topic, setTopic] = useState(selectedSession.topic);
-  const [location, setLocation] = useState(selectedSession.location);
+  const [topic, setTopic] = useState(() =>
+    clampToMaxLength(selectedSession.topic, SESSION_TOPIC_MAX_LENGTH),
+  );
+  const [location, setLocation] = useState(() =>
+    clampToMaxLength(selectedSession.location, LOCATION_MAX_LENGTH),
+  );
   const [savedMessage, setSavedMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -94,12 +104,16 @@ export function EditSessionPanel({
             Session Topic
           </label>
           {canEdit ? (
-            <input
-              type="text"
-              value={topic}
-              onChange={(event) => setTopic(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-            />
+            <>
+              <input
+                type="text"
+                value={topic}
+                maxLength={SESSION_TOPIC_MAX_LENGTH}
+                onChange={(event) => setTopic(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
+              />
+              <FieldCharLimitHint maxLength={SESSION_TOPIC_MAX_LENGTH} />
+            </>
           ) : (
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
               {selectedSession.topic}
@@ -118,12 +132,16 @@ export function EditSessionPanel({
             Location
           </label>
           {canEdit ? (
-            <input
-              type="text"
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-            />
+            <>
+              <input
+                type="text"
+                value={location}
+                maxLength={LOCATION_MAX_LENGTH}
+                onChange={(event) => setLocation(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
+              />
+              <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />
+            </>
           ) : (
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
               {selectedSession.location}

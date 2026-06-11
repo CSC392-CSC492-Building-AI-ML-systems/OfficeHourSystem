@@ -79,7 +79,7 @@ export type ScheduleSessionDto = {
   location: string;
   mode: "in-person" | "online" | "hybrid";
   accent: "navy-yellow" | "navy-red" | "yellow";
-  hasLocationOverride?: boolean;
+  hasOverride?: boolean;
   overrideLocation?: string;
 };
 

@@ -18,7 +18,12 @@ import {
   validateOfficeHourTimes,
   type WeekdayKey,
 } from "@/lib/scheduling/time";
+import { FieldCharLimitHint } from "./FieldCharLimitHint";
 import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
+import {
+  BLOCK_NAME_MAX_LENGTH,
+  LOCATION_MAX_LENGTH,
+} from "./scheduleFieldLimits";
 import { useModalOverlay } from "./useModalOverlay";
 
 type SessionType = "drop-in" | "debugging-queue" | "topic-group";
@@ -129,7 +134,7 @@ function CreateRecurringBlockForm({
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("16:00");
   const [locationMode, setLocationMode] = useState<LocationMode>("in-person");
-  const [locationDetail, setLocationDetail] = useState("Room 402 or Zoom Link");
+  const [locationDetail, setLocationDetail] = useState("Room 402");
   const [topic, setTopic] = useState("");
   const [maxSeats, setMaxSeats] = useState("");
 
@@ -374,10 +379,12 @@ function CreateRecurringBlockForm({
               <input
                 type="text"
                 value={locationDetail}
+                maxLength={LOCATION_MAX_LENGTH}
                 onChange={(event) => setLocationDetail(event.target.value)}
-                placeholder="Room 402 or Zoom Link"
+                placeholder="Room 402 or Zoom"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
               />
+              <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />
             </label>
           </section>
 
@@ -405,10 +412,12 @@ function CreateRecurringBlockForm({
                 <input
                   type="text"
                   value={topic}
+                  maxLength={BLOCK_NAME_MAX_LENGTH}
                   onChange={(event) => setTopic(event.target.value)}
                   placeholder="Topic: e.g. Final Exam Review"
                   className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
                 />
+                <FieldCharLimitHint maxLength={BLOCK_NAME_MAX_LENGTH} />
               </label>
 
               <label className="block">

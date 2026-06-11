@@ -57,7 +57,7 @@ export function ScheduleSessionCard({
           <p className="whitespace-normal break-words text-sm font-semibold leading-tight">
             {session.title}
           </p>
-          {session.hasLocationOverride ? (
+          {session.hasOverride ? (
             <span className="inline-flex w-fit rounded-full bg-white/20 px-2 py-1 text-[10px] font-medium leading-none">
               Override
             </span>

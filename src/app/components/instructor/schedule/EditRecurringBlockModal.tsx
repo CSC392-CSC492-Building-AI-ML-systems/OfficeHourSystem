@@ -7,7 +7,13 @@ import {
   snapOfficeHourStartTime,
   validateOfficeHourTimes,
 } from "@/lib/scheduling/time";
+import { FieldCharLimitHint } from "./FieldCharLimitHint";
 import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
+import {
+  BLOCK_NAME_MAX_LENGTH,
+  clampToMaxLength,
+  LOCATION_MAX_LENGTH,
+} from "./scheduleFieldLimits";
 import type { RecurringRule } from "./types";
 import { useModalOverlay } from "./useModalOverlay";
 
@@ -64,9 +70,14 @@ function EditRecurringBlockForm({
   onDelete: EditRecurringBlockModalProps["onDelete"];
   onError?: EditRecurringBlockModalProps["onError"];
 }) {
-  const [title, setTitle] = useState(block.title);
-  const [location, setLocation] = useState(
-    block.defaultLocation === "TBD" ? "" : block.defaultLocation,
+  const [title, setTitle] = useState(() =>
+    clampToMaxLength(block.title, BLOCK_NAME_MAX_LENGTH),
+  );
+  const [location, setLocation] = useState(() =>
+    clampToMaxLength(
+      block.defaultLocation === "TBD" ? "" : block.defaultLocation,
+      LOCATION_MAX_LENGTH,
+    ),
   );
   const [startTime, setStartTime] = useState(() =>
     snapOfficeHourStartTime(block.startTime),
@@ -169,9 +180,11 @@ function EditRecurringBlockForm({
             <input
               type="text"
               value={title}
+              maxLength={BLOCK_NAME_MAX_LENGTH}
               onChange={(event) => setTitle(event.target.value)}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
             />
+            <FieldCharLimitHint maxLength={BLOCK_NAME_MAX_LENGTH} />
           </label>
 
           <label className="block">
@@ -181,10 +194,12 @@ function EditRecurringBlockForm({
             <input
               type="text"
               value={location}
+              maxLength={LOCATION_MAX_LENGTH}
               onChange={(event) => setLocation(event.target.value)}
               placeholder="Room 402 or Zoom link"
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
             />
+            <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />
           </label>
 
           <OfficeHourTimeFields
