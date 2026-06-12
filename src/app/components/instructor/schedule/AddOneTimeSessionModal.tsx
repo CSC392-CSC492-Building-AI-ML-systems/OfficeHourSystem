@@ -110,18 +110,23 @@ export function AddOneTimeSessionModal({
     return null;
   }
 
+  const showError = (message: string) => {
+    onError?.(message);
+    onClose();
+  };
+
   const handleAdd = async () => {
     onError?.(null);
 
     const dateError = validateOfficeHourDate(date);
     if (dateError) {
-      onError?.(dateError);
+      showError(dateError);
       return;
     }
 
     const timeError = validateOfficeHourTimes(startTime, endTime);
     if (timeError) {
-      onError?.(timeError);
+      showError(timeError);
       return;
     }
 
@@ -137,7 +142,7 @@ export function AddOneTimeSessionModal({
         location: locationDetail.trim() || undefined,
       });
     } catch (submitError) {
-      onError?.(
+      showError(
         submitError instanceof Error
           ? submitError.message
           : "Failed to add session.",

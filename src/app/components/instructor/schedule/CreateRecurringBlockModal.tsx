@@ -150,22 +150,27 @@ function CreateRecurringBlockForm({
     onClose();
   };
 
+  const showError = (message: string) => {
+    onError?.(message);
+    onClose();
+  };
+
   const handleCreate = async () => {
     onError?.(null);
 
     if (!validFromDate || !validUntilDate) {
-      onError?.("Start and end dates are required.");
+      showError("Start and end dates are required.");
       return;
     }
 
     if (validFromDate > validUntilDate) {
-      onError?.("End date must be on or after start date.");
+      showError("End date must be on or after start date.");
       return;
     }
 
     const timeError = validateOfficeHourTimes(startTime, endTime);
     if (timeError) {
-      onError?.(timeError);
+      showError(timeError);
       return;
     }
 
@@ -182,7 +187,7 @@ function CreateRecurringBlockForm({
         location: locationDetail.trim() || undefined,
       });
     } catch (submitError) {
-      onError?.(
+      showError(
         submitError instanceof Error
           ? submitError.message
           : "Failed to create recurring block.",

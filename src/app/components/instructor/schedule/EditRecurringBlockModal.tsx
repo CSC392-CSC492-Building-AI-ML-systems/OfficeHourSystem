@@ -88,12 +88,17 @@ function EditRecurringBlockForm({
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const showError = (message: string) => {
+    onError?.(message);
+    onClose();
+  };
+
   const handleSave = async () => {
     onError?.(null);
 
     const timeError = validateOfficeHourTimes(startTime, endTime);
     if (timeError) {
-      onError?.(timeError);
+      showError(timeError);
       return;
     }
 
@@ -106,7 +111,7 @@ function EditRecurringBlockForm({
         endTime,
       });
     } catch (saveError) {
-      onError?.(
+      showError(
         saveError instanceof Error
           ? saveError.message
           : "Failed to update recurring block.",
@@ -129,7 +134,7 @@ function EditRecurringBlockForm({
     try {
       await onDelete();
     } catch (deleteError) {
-      onError?.(
+      showError(
         deleteError instanceof Error
           ? deleteError.message
           : "Failed to delete recurring block.",

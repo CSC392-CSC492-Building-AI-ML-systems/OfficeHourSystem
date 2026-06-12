@@ -40,7 +40,6 @@ function pickInitialSessionId(
 export default function InstructorScheduleDashboard({
   initialData,
 }: InstructorScheduleDashboardProps) {
-  const [offerings, setOfferings] = useState(initialData.offerings);
   const [offeringPublicId, setOfferingPublicId] = useState<string | null>(
     initialData.offering?.offeringPublicId ?? null,
   );
@@ -77,7 +76,6 @@ export default function InstructorScheduleDashboard({
           weekStart: opts?.weekStart ?? weekStart ?? undefined,
         });
 
-        setOfferings(data.offerings);
         if (data.offering) {
           setOfferingPublicId(data.offering.offeringPublicId);
           setTermCode(data.offering.termCode);
@@ -121,10 +119,6 @@ export default function InstructorScheduleDashboard({
     current.setDate(current.getDate() + direction * 7);
     const next = current.toISOString().slice(0, 10);
     void loadSchedule({ weekStart: next });
-  };
-
-  const handleOfferingChange = (nextOfferingPublicId: string) => {
-    void loadSchedule({ offeringPublicId: nextOfferingPublicId });
   };
 
   const handleCreateRecurring = async (input: {
@@ -218,34 +212,12 @@ export default function InstructorScheduleDashboard({
               <p className="text-base text-slate-600">
                 Configure recurring office hours and manage live session
                 overrides.
-                {!canEdit && offerings.length > 0 ? (
+                {!canEdit && offeringPublicId ? (
                   <span className="mt-1 block text-sm font-medium text-[#c8102e]">
                     View only — instructors can edit this schedule.
                   </span>
                 ) : null}
               </p>
-              {offerings.length > 1 ? (
-                <label className="block text-sm font-medium text-[#071f41]">
-                  Course offering
-                  <select
-                    value={offeringPublicId ?? ""}
-                    onChange={(event) =>
-                      handleOfferingChange(event.target.value)
-                    }
-                    className="mt-2 w-full max-w-md rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
-                  >
-                    {offerings.map((offering) => (
-                      <option
-                        key={offering.offeringPublicId}
-                        value={offering.offeringPublicId}
-                      >
-                        {offering.courseCode} ({offering.termCode}) —{" "}
-                        {offering.role}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
             </div>
 
             {canEdit ? (
@@ -285,10 +257,10 @@ export default function InstructorScheduleDashboard({
 
           {loading && sessions.length === 0 ? (
             <p className="text-sm text-slate-500">Loading schedule…</p>
-          ) : offerings.length === 0 ? (
+          ) : !offeringPublicId ? (
             <p className="text-sm text-slate-500">
-              No course offerings found. Add yourself as an instructor or TA on
-              an offering to view the schedule.
+              No schedule found. Add yourself as an instructor or TA to view the
+              schedule.
             </p>
           ) : (
             <section className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_360px]">

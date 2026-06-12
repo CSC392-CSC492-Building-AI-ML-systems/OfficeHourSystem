@@ -3,6 +3,11 @@ import type { CourseRole, OfficeHourType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { expandOfficeHourSchedule } from "@/lib/scheduling/expandSchedule";
 import {
+  assertNoOverlappingRecurringSchedule,
+  assertNoOverlappingSession,
+  assertNoOverlappingSessionsForRecurringOccurrences,
+} from "@/lib/scheduling/overlap";
+import {
   requireScheduleMutate,
   requireScheduleView,
   listViewableOfferings,
@@ -35,6 +40,7 @@ import {
   formatMinutesAsLabel,
   formatSessionDateLabel,
   formatWeekRangeLabel,
+  getTermBounds,
   minutesToTimeInput,
   parseIsoDateOnly,
   parseTimeToMinutes,
@@ -275,6 +281,26 @@ export async function createRecurringBlock(
     input.hostUserPublicIds,
   );
 
+  for (const dayOfWeek of days) {
+    await assertNoOverlappingRecurringSchedule(
+      access.offeringId,
+      access.termCode,
+      dayOfWeek,
+      startMinute,
+      endMinute,
+      scheduleBounds.validFrom,
+      scheduleBounds.validUntil,
+    );
+    await assertNoOverlappingSessionsForRecurringOccurrences(
+      access.offeringId,
+      dayOfWeek,
+      startMinute,
+      endMinute,
+      scheduleBounds.validFrom,
+      scheduleBounds.validUntil,
+    );
+  }
+
   const schedulePublicIds: string[] = [];
   let sessionsCreated = 0;
   const blockGroupId = randomUUID();
@@ -336,6 +362,8 @@ export async function createOneTimeSession(
     access.offeringId,
     input.hostUserPublicIds,
   );
+
+  await assertNoOverlappingSession(access.offeringId, startsAt, endsAt);
 
   const session = await prisma.$transaction(async (tx) => {
     const created = await tx.officeHourSession.create({
@@ -479,6 +507,33 @@ export async function updateRecurringBlock(
 
   const scheduleIds = group.map((row) => row.id);
   const now = new Date();
+
+  if (nextStartMinute !== undefined || nextEndMinute !== undefined) {
+    const termBounds = getTermBounds(anchor.offering.termCode);
+    for (const row of group) {
+      const validFrom = row.validFrom ?? termBounds.validFrom;
+      const validUntil = row.validUntil ?? termBounds.validUntil;
+      await assertNoOverlappingRecurringSchedule(
+        anchor.offeringId,
+        anchor.offering.termCode,
+        row.dayOfWeek,
+        startMinute,
+        endMinute,
+        validFrom,
+        validUntil,
+        scheduleIds,
+      );
+      await assertNoOverlappingSessionsForRecurringOccurrences(
+        anchor.offeringId,
+        row.dayOfWeek,
+        startMinute,
+        endMinute,
+        validFrom,
+        validUntil,
+        { excludeScheduleIds: scheduleIds, onlyFrom: now },
+      );
+    }
+  }
 
   await prisma.$transaction(async (tx) => {
     await tx.officeHourSchedule.updateMany({
@@ -641,7 +696,6 @@ export async function getInstructorSchedulePage(
 
   if (offerings.length === 0) {
     return {
-      offerings: [],
       offering: null,
       weekStart: null,
       weekLabel: null,
@@ -663,7 +717,6 @@ export async function getInstructorSchedulePage(
   );
 
   return {
-    offerings,
     offering: {
       offeringPublicId: selected.offeringPublicId,
       courseCode: selected.courseCode,

@@ -21,7 +21,6 @@ interface WeeklyCalendarProps {
 
 const HALF_HOUR_ROW_HEIGHT = CALENDAR_HOUR_HEIGHT / 2;
 const SESSION_CARD_VERTICAL_MARGIN = 8;
-const MINIMUM_SESSION_CARD_HEIGHT = 116;
 
 export function WeeklyCalendar({
   days,
@@ -133,22 +132,22 @@ export function WeeklyCalendar({
                 const durationHeight =
                   durationHalfHours * HALF_HOUR_ROW_HEIGHT -
                   SESSION_CARD_VERTICAL_MARGIN * 2;
+                const compact = durationHalfHours <= 2;
 
                 return (
                   <ScheduleSessionCard
                     key={session.id}
                     session={session}
                     isSelected={session.id === selectedSessionId}
+                    compact={compact}
                     onSelect={onSelectSession}
                     style={{
                       gridColumn: dayIndex + 2,
                       gridRow: `${rowStart} / span ${rowSpan}`,
                       margin: `${SESSION_CARD_VERTICAL_MARGIN}px`,
                       marginTop: `${SESSION_CARD_VERTICAL_MARGIN + topOffsetPx}px`,
-                      minHeight: `${Math.max(
-                        durationHeight,
-                        MINIMUM_SESSION_CARD_HEIGHT,
-                      )}px`,
+                      height: `${durationHeight}px`,
+                      maxHeight: `${durationHeight}px`,
                       alignSelf: "start",
                     }}
                   />

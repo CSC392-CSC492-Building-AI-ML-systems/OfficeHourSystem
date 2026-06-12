@@ -36,6 +36,19 @@ function futureWeekdayDate(daysAhead = 4): string {
   return formatDateOnlyLocal(date);
 }
 
+/** A single future Monday for recurring-block tests that update upcoming sessions. */
+function upcomingMondayRange(): { validFrom: string; validUntil: string } {
+  const monday = new Date();
+  monday.setHours(0, 0, 0, 0);
+  if (monday.getDay() === 1) {
+    monday.setDate(monday.getDate() + 7);
+  } else {
+    monday.setDate(monday.getDate() + ((1 - monday.getDay() + 7) % 7));
+  }
+  const iso = formatDateOnlyLocal(monday);
+  return { validFrom: iso, validUntil: iso };
+}
+
 async function setupOffering() {
   const course = await prisma.course.create({
     data: { code: `${TEST_PREFIX}SCHED` },
@@ -228,6 +241,8 @@ async function main() {
       await cleanupAll();
       const { offering, instructor } = await setupOffering();
 
+      const mondayRange = upcomingMondayRange();
+
       const { schedulePublicIds } = await createRecurringBlock(instructor.id, {
         offeringPublicId: offering.publicId,
         title: "Original Title",
@@ -235,8 +250,8 @@ async function main() {
         weekdayKeys: ["mon"],
         startTime: "10:00",
         endTime: "11:00",
-        validFrom: "2026-06-08",
-        validUntil: "2026-06-14",
+        validFrom: mondayRange.validFrom,
+        validUntil: mondayRange.validUntil,
         location: "Room 100",
       });
 
@@ -259,6 +274,53 @@ async function main() {
       });
       assertEqual(session.title, "Updated Title", "session title");
       assertEqual(session.location, "Room 200", "session location");
+    },
+  );
+
+  await runTest(
+    "Rejects updating recurring block to overlapping times",
+    async () => {
+      await cleanupAll();
+      const { offering, instructor } = await setupOffering();
+      const mondayRange = upcomingMondayRange();
+
+      await createOneTimeSession(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Existing Monday OH",
+        uiType: "drop-in",
+        date: mondayRange.validFrom,
+        startTime: "11:00",
+        endTime: "13:00",
+      });
+
+      const { schedulePublicIds } = await createRecurringBlock(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Monday afternoon block",
+        uiType: "drop-in",
+        weekdayKeys: ["mon"],
+        startTime: "14:00",
+        endTime: "16:00",
+        validFrom: mondayRange.validFrom,
+        validUntil: mondayRange.validUntil,
+      });
+
+      let threw = false;
+      try {
+        await updateRecurringBlock(instructor.id, schedulePublicIds[0], {
+          startTime: "12:00",
+          endTime: "14:00",
+        });
+      } catch (error) {
+        threw =
+          error instanceof Error && error.message.includes("overlaps with");
+      }
+
+      assert(threw, "should reject overlapping recurring block update");
+
+      const schedule = await prisma.officeHourSchedule.findUniqueOrThrow({
+        where: { publicId: schedulePublicIds[0] },
+      });
+      assertEqual(schedule.startMinute, 14 * 60, "schedule time unchanged");
     },
   );
 
@@ -422,6 +484,207 @@ async function main() {
 
       assertEqual(session.startTime, "2:30 PM", "start label");
       assertEqual(session.endTime, "3:30 PM", "end label");
+    },
+  );
+
+  await runTest("Rejects one-time session that overlaps exactly", async () => {
+    await cleanupAll();
+    const { offering, instructor } = await setupOffering();
+    const date = futureWeekdayDate(3);
+
+    await createOneTimeSession(instructor.id, {
+      offeringPublicId: offering.publicId,
+      title: "Existing OH",
+      uiType: "drop-in",
+      date,
+      startTime: "11:00",
+      endTime: "13:00",
+    });
+
+    let threw = false;
+    try {
+      await createOneTimeSession(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Duplicate OH",
+        uiType: "drop-in",
+        date,
+        startTime: "11:00",
+        endTime: "13:00",
+      });
+    } catch (error) {
+      threw = error instanceof Error && error.message.includes("overlaps with");
+    }
+
+    assert(threw, "should reject exact overlap");
+  });
+
+  await runTest(
+    "Rejects one-time session that partially overlaps",
+    async () => {
+      await cleanupAll();
+      const { offering, instructor } = await setupOffering();
+      const date = futureWeekdayDate(3);
+
+      await createOneTimeSession(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Existing OH",
+        uiType: "drop-in",
+        date,
+        startTime: "11:00",
+        endTime: "13:00",
+      });
+
+      let threw = false;
+      try {
+        await createOneTimeSession(instructor.id, {
+          offeringPublicId: offering.publicId,
+          title: "Overlapping OH",
+          uiType: "drop-in",
+          date,
+          startTime: "12:00",
+          endTime: "14:00",
+        });
+      } catch (error) {
+        threw =
+          error instanceof Error && error.message.includes("overlaps with");
+      }
+
+      assert(threw, "should reject partial overlap");
+    },
+  );
+
+  await runTest(
+    "Rejects one-time session that fully contains another",
+    async () => {
+      await cleanupAll();
+      const { offering, instructor } = await setupOffering();
+      const date = futureWeekdayDate(3);
+
+      await createOneTimeSession(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Existing OH",
+        uiType: "drop-in",
+        date,
+        startTime: "11:00",
+        endTime: "13:00",
+      });
+
+      let threw = false;
+      try {
+        await createOneTimeSession(instructor.id, {
+          offeringPublicId: offering.publicId,
+          title: "Wide OH",
+          uiType: "drop-in",
+          date,
+          startTime: "09:00",
+          endTime: "12:00",
+        });
+      } catch (error) {
+        threw =
+          error instanceof Error && error.message.includes("overlaps with");
+      }
+
+      assert(threw, "should reject containing overlap");
+    },
+  );
+
+  await runTest("Allows non-overlapping sessions on the same day", async () => {
+    await cleanupAll();
+    const { offering, instructor } = await setupOffering();
+    const date = futureWeekdayDate(3);
+
+    await createOneTimeSession(instructor.id, {
+      offeringPublicId: offering.publicId,
+      title: "Morning OH",
+      uiType: "drop-in",
+      date,
+      startTime: "11:00",
+      endTime: "13:00",
+    });
+
+    const { session } = await createOneTimeSession(instructor.id, {
+      offeringPublicId: offering.publicId,
+      title: "Afternoon OH",
+      uiType: "drop-in",
+      date,
+      startTime: "14:00",
+      endTime: "16:00",
+    });
+
+    assertEqual(session.title, "Afternoon OH", "second session created");
+  });
+
+  await runTest(
+    "Rejects recurring block that overlaps existing recurring block",
+    async () => {
+      await cleanupAll();
+      const { offering, instructor } = await setupOffering();
+
+      await createRecurringBlock(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Thursday OH",
+        uiType: "drop-in",
+        weekdayKeys: ["thu"],
+        startTime: "11:00",
+        endTime: "13:00",
+        validFrom: "2026-06-11",
+        validUntil: "2026-06-18",
+      });
+
+      let threw = false;
+      try {
+        await createRecurringBlock(instructor.id, {
+          offeringPublicId: offering.publicId,
+          title: "Overlapping Thursday OH",
+          uiType: "drop-in",
+          weekdayKeys: ["thu"],
+          startTime: "12:00",
+          endTime: "14:00",
+          validFrom: "2026-06-11",
+          validUntil: "2026-06-18",
+        });
+      } catch (error) {
+        threw =
+          error instanceof Error && error.message.includes("overlaps with");
+      }
+
+      assert(threw, "should reject overlapping recurring blocks");
+    },
+  );
+
+  await runTest(
+    "Rejects recurring block that overlaps a one-time session",
+    async () => {
+      await cleanupAll();
+      const { offering, instructor } = await setupOffering();
+
+      await createOneTimeSession(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "One-time Thursday",
+        uiType: "drop-in",
+        date: "2026-06-11",
+        startTime: "11:00",
+        endTime: "13:00",
+      });
+
+      let threw = false;
+      try {
+        await createRecurringBlock(instructor.id, {
+          offeringPublicId: offering.publicId,
+          title: "Thursday recurring",
+          uiType: "drop-in",
+          weekdayKeys: ["thu"],
+          startTime: "11:00",
+          endTime: "13:00",
+          validFrom: "2026-06-11",
+          validUntil: "2026-06-18",
+        });
+      } catch (error) {
+        threw =
+          error instanceof Error && error.message.includes("overlaps with");
+      }
+
+      assert(threw, "should reject recurring block overlapping one-time");
     },
   );
 

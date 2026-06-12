@@ -130,7 +130,6 @@ export type ViewableOffering = {
 };
 
 export type SchedulePageResponse = {
-  offerings: ViewableOffering[];
   offering: ViewableOffering | null;
   weekStart: string | null;
   weekLabel: string | null;
