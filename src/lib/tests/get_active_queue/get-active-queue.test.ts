@@ -2,21 +2,21 @@
  * Tests: getActiveQueue()
  *
  * How to run:
- *   npx tsx src/lib/tests/get-active-queue.test.ts
+ *   npx tsx src/lib/tests/get_active_queue/get-active-queue.test.ts
  *
  * Scenarios covered:
  *   1. No students in queue → returns empty waiting and helping arrays
  *   2. Multiple students waiting → returned in check-in order with correct ranks
  *   3. Student IN_HELP → appears in helping list with no rank
  *   4. Mix of WAITING and IN_HELP → both lists populated correctly
- *   5. COMPLETED and CANCELLED attendances → not returned in either list
- *   6. Student not in offering (STUDENT role) cannot call service → throws Forbidden
+ *   5. Resolved students (in OfficeHourAttendanceRecord) → not returned in either list
+ *   6. Response includes sessionStatus and endsAt metadata
  */
 
 import "dotenv/config";
 
 import { prisma } from "@/lib/prisma";
-import { getActiveQueue } from "@/lib/queries/get-active-queue";
+import { getActiveQueue } from "@/lib/queries/get_active_queue/get-active-queue";
 import {
   TEST_PREFIX,
   TEST_TERM,
@@ -25,7 +25,7 @@ import {
   assertEqual,
   runTest,
   finishTests,
-} from "./_seed";
+} from "../_seed";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -97,7 +97,7 @@ async function setupStudent(suffix: string, offeringId: number) {
 async function checkIn(
   studentId: number,
   sessionId: number,
-  status: "WAITING" | "IN_HELP" | "COMPLETED" | "CANCELLED" | "NO_SHOW",
+  status: "WAITING" | "IN_HELP",
   checkedInAt: Date,
 ) {
   return prisma.officeHourAttendance.create({
@@ -215,8 +215,8 @@ async function main() {
     assertEqual(result.waiting[1].rank, 2, "second waiting student is rank 2");
   });
 
-  // ── Test 5: COMPLETED and CANCELLED attendances → not in results ──────────
-  await runTest("COMPLETED and CANCELLED attendances → not returned", async () => {
+  // ── Test 5: Resolved students in OfficeHourAttendanceRecord → not returned ─
+  await runTest("Resolved students (in AttendanceRecord) → not returned in active queue", async () => {
     await cleanupAll();
 
     const { offering } = await setupOffering();
@@ -224,22 +224,47 @@ async function main() {
 
     const now = Date.now();
 
-    const completedStudent = await setupStudent("done", offering.id);
-    const cancelledStudent = await setupStudent("gone", offering.id);
+    const resolvedStudent = await setupStudent("done", offering.id);
     const waitingStudent  = await setupStudent("here", offering.id);
 
-    await checkIn(completedStudent.id, session.id, "COMPLETED", new Date(now));
-    await checkIn(cancelledStudent.id, session.id, "CANCELLED", new Date(now + 1000));
-    await checkIn(waitingStudent.id,   session.id, "WAITING",   new Date(now + 2000));
+    // Write a resolved record directly to OfficeHourAttendanceRecord (simulates END HELP)
+    await prisma.officeHourAttendanceRecord.create({
+      data: {
+        sessionId: session.id,
+        studentId: resolvedStudent.id,
+        checkedInAt: new Date(now),
+        outcome: "COMPLETED",
+      },
+    });
+
+    await checkIn(waitingStudent.id, session.id, "WAITING", new Date(now + 1000));
 
     const result = await getActiveQueue(session.id);
 
-    // Only the WAITING student should appear
+    // Only the WAITING student should appear — resolved student is in the record table, not here
     assertEqual(result.waiting.length, 1, "only 1 waiting student");
     assertEqual(result.helping.length, 0, "no helping students");
     assert(
       result.waiting[0].studentName.includes("here"),
       "correct student is waiting",
+    );
+  });
+
+  // ── Test 6: Response includes session metadata ───────────────────────────
+  await runTest("Response includes sessionStatus and endsAt", async () => {
+    await cleanupAll();
+
+    const { offering } = await setupOffering();
+    const session = await setupSession(offering.id);
+
+    const result = await getActiveQueue(session.id);
+
+    assert(result.sessionStatus !== undefined, "sessionStatus should be present");
+    assert(result.endsAt !== undefined, "endsAt should be present");
+    assertEqual(result.sessionStatus, "ACTIVE", "sessionStatus should match the created session");
+    assert(
+      !isNaN(new Date(result.endsAt).getTime()),
+      "endsAt should be a valid ISO date string",
     );
   });
 
