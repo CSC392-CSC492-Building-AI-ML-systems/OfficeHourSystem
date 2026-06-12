@@ -1,21 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Bug,
   CalendarRange,
   Check,
   ClipboardPenLine,
-  MapPinned,
   Users,
   X,
 } from "lucide-react";
 
 type SessionType = "drop-in" | "debugging-queue" | "topic-group";
-type LocationMode = "in-person" | "online" | "hybrid";
 
 import type { CreateOneTimeSessionInput } from "@/lib/scheduling/types";
 import {
+  defaultOfficeHourDateInput,
   validateOfficeHourDate,
   validateOfficeHourTimes,
 } from "@/lib/scheduling/time";
@@ -25,6 +24,7 @@ import {
   LOCATION_MAX_LENGTH,
   SESSION_TOPIC_MAX_LENGTH,
 } from "./scheduleFieldLimits";
+import { useModalOverlay } from "./useModalOverlay";
 
 interface AddOneTimeSessionModalProps {
   isOpen: boolean;
@@ -60,12 +60,6 @@ const sessionTypeOptions: Array<{
   },
 ];
 
-const locationModes: Array<{ id: LocationMode; label: string }> = [
-  { id: "in-person", label: "In-person" },
-  { id: "online", label: "Online" },
-  { id: "hybrid", label: "Hybrid" },
-];
-
 export function AddOneTimeSessionModal({
   isOpen,
   onClose,
@@ -73,42 +67,36 @@ export function AddOneTimeSessionModal({
   onSubmit,
   onError,
 }: AddOneTimeSessionModalProps) {
-  const [submitting, setSubmitting] = useState(false);
-  const [selectedType, setSelectedType] = useState<SessionType>("drop-in");
-  const [courseOrTopic, setCourseOrTopic] = useState("");
-  const [date, setDate] = useState("2026-10-25");
-  const [startTime, setStartTime] = useState("14:00");
-  const [endTime, setEndTime] = useState("16:00");
-  const [locationMode, setLocationMode] = useState<LocationMode>("in-person");
-  const [locationDetail, setLocationDetail] = useState("Room 402");
-  const [assignedTa, setAssignedTa] = useState("");
-  const [maxSeats, setMaxSeats] = useState("");
-
-  useEffect(() => {
-    if (!isOpen) {
-      return undefined;
-    }
-
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      window.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, onClose]);
+  useModalOverlay(isOpen, onClose);
 
   if (!isOpen) {
     return null;
   }
+
+  return (
+    <AddOneTimeSessionForm
+      offeringPublicId={offeringPublicId}
+      onClose={onClose}
+      onSubmit={onSubmit}
+      onError={onError}
+    />
+  );
+}
+
+function AddOneTimeSessionForm({
+  offeringPublicId,
+  onClose,
+  onSubmit,
+  onError,
+}: Omit<AddOneTimeSessionModalProps, "isOpen">) {
+  const [submitting, setSubmitting] = useState(false);
+  const [selectedType, setSelectedType] = useState<SessionType>("drop-in");
+  const [courseOrTopic, setCourseOrTopic] = useState("");
+  const [date, setDate] = useState(defaultOfficeHourDateInput);
+  const [startTime, setStartTime] = useState("14:00");
+  const [endTime, setEndTime] = useState("16:00");
+  const [locationDetail, setLocationDetail] = useState("Room 402");
+  const [assignedTa, setAssignedTa] = useState("");
 
   const showError = (message: string) => {
     onError?.(message);
@@ -288,29 +276,7 @@ export function AddOneTimeSessionModal({
             />
           </section>
 
-          <section className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
-            <label className="block">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                Location Details
-              </span>
-              <div className="relative">
-                <MapPinned className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <select
-                  value={locationMode}
-                  onChange={(event) =>
-                    setLocationMode(event.target.value as LocationMode)
-                  }
-                  className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-11 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-                >
-                  {locationModes.map((mode) => (
-                    <option key={mode.id} value={mode.id}>
-                      {mode.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </label>
-
+          <section>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-[#071f41]">
                 Room or Link
@@ -327,7 +293,7 @@ export function AddOneTimeSessionModal({
             </label>
           </section>
 
-          <section className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
+          <section>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-[#071f41]">
                 Assigned TA
@@ -337,19 +303,6 @@ export function AddOneTimeSessionModal({
                 value={assignedTa}
                 onChange={(event) => setAssignedTa(event.target.value)}
                 placeholder="Select TA"
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                Max Seats
-              </span>
-              <input
-                type="text"
-                value={maxSeats}
-                onChange={(event) => setMaxSeats(event.target.value)}
-                placeholder="Max Seats"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
               />
             </label>

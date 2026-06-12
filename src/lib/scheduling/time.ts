@@ -307,6 +307,16 @@ export function parseIsoDateOnly(iso: string): Date {
   return new Date(year, month, day, 0, 0, 0, 0);
 }
 
+/** Next Mon–Fri on or after today, as `YYYY-MM-DD` for date inputs. */
+export function defaultOfficeHourDateInput(now = new Date()): string {
+  const date = new Date(now);
+  date.setHours(0, 0, 0, 0);
+  while (date.getDay() === 0 || date.getDay() === 6) {
+    date.setDate(date.getDate() + 1);
+  }
+  return formatDateOnlyLocal(date);
+}
+
 /** `YYYY-MM-DD` in local time (for date inputs). */
 export function formatDateOnlyLocal(date: Date): string {
   const year = date.getFullYear();
@@ -402,6 +412,11 @@ export function isSameCalendarDay(a: Date, b: Date): boolean {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   );
+}
+
+export function formatCalendarDateLabel(date: Date): string {
+  const month = date.toLocaleString("en-US", { month: "short" });
+  return `${month} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
 export function formatSessionDateLabel(

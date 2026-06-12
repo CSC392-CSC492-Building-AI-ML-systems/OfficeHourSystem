@@ -163,7 +163,8 @@ function EditRecurringBlockForm({
                 Edit Recurring Block
               </h2>
               <p className="mt-1 text-sm text-slate-600">
-                Repeats: {block.repeats} (not editable)
+                Repeats: {block.repeats} ({block.validFrom} – {block.validUntil}
+                ) (not editable)
               </p>
             </div>
           </div>

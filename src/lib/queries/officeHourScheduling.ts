@@ -36,6 +36,7 @@ import {
   combineDateAndMinutes,
   dayOfWeekToKey,
   decimalHourFromDate,
+  formatCalendarDateLabel,
   formatDateTimeLabel,
   formatMinutesAsLabel,
   formatSessionDateLabel,
@@ -459,9 +460,13 @@ export async function listRecurringRules(
 
   const rules: RecurringRuleDto[] = [];
 
+  const termBounds = getTermBounds(access.termCode);
+
   for (const [, group] of byBlock) {
     const first = group[0];
     const repeatDays = group.map((s) => DOW_NAMES[s.dayOfWeek]).join(", ");
+    const validFrom = first.validFrom ?? termBounds.validFrom;
+    const validUntil = first.validUntil ?? termBounds.validUntil;
 
     rules.push({
       id: first.publicId,
@@ -469,6 +474,8 @@ export async function listRecurringRules(
       sessionTypeLabel: officeHourTypeLabel(first.type),
       title: first.title,
       repeats: repeatDays,
+      validFrom: formatCalendarDateLabel(validFrom),
+      validUntil: formatCalendarDateLabel(validUntil),
       defaultTime: `${formatMinutesAsLabel(first.startMinute)} - ${formatMinutesAsLabel(first.endMinute)}`,
       startTime: minutesToTimeInput(first.startMinute),
       endTime: minutesToTimeInput(first.endMinute),

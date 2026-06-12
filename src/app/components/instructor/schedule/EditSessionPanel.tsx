@@ -87,7 +87,7 @@ export function EditSessionPanel({
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
         <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500">
-          SELECTED BLOCK
+          SELECTED SESSION
         </p>
         <h3 className="mt-2 text-lg font-semibold text-[#071f41]">
           {selectedSession.sessionTypeLabel}
@@ -119,12 +119,6 @@ export function EditSessionPanel({
               {selectedSession.topic}
             </div>
           )}
-          <p className="mt-2 text-xs leading-5 text-slate-500">
-            Updating this only affects the {selectedSession.startTime} session{" "}
-            {selectedSession.dateLabel.toLowerCase() === "today"
-              ? "today."
-              : `on ${selectedSession.dateLabel}.`}
-          </p>
         </div>
 
         <div>
@@ -147,11 +141,15 @@ export function EditSessionPanel({
               {selectedSession.location}
             </div>
           )}
-          <p className="mt-2 text-xs leading-5 text-slate-500">
-            This override only affects this specific session occurrence.
-          </p>
         </div>
       </div>
+
+      <p className="mt-6 text-xs italic leading-5 text-slate-500">
+        Updating this only affects the {selectedSession.startTime} session{" "}
+        {selectedSession.dateLabel.toLowerCase() === "today"
+          ? "today."
+          : `on ${selectedSession.dateLabel}.`}
+      </p>
 
       {canEdit ? (
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">

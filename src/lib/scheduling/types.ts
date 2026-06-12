@@ -89,6 +89,8 @@ export type RecurringRuleDto = {
   sessionTypeLabel: string;
   title: string;
   repeats: string;
+  validFrom: string;
+  validUntil: string;
   defaultTime: string;
   startTime: string;
   endTime: string;

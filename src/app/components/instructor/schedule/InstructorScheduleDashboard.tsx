@@ -23,7 +23,11 @@ import { WeeklyCalendar } from "./WeeklyCalendar";
 import type { RecurringRule, ScheduleSession } from "./types";
 import type { CreateOneTimeSessionInput } from "@/lib/scheduling/types";
 import type { CreateRecurringBlockInput } from "@/lib/scheduling/types";
-import type { WeekdayKey } from "@/lib/scheduling/time";
+import {
+  formatDateOnlyLocal,
+  startOfWeekMonday,
+  type WeekdayKey,
+} from "@/lib/scheduling/time";
 
 type ActiveScheduleModal = "one-time" | "recurring" | null;
 
@@ -119,6 +123,11 @@ export default function InstructorScheduleDashboard({
     current.setDate(current.getDate() + direction * 7);
     const next = current.toISOString().slice(0, 10);
     void loadSchedule({ weekStart: next });
+  };
+
+  const goToThisWeek = () => {
+    const monday = formatDateOnlyLocal(startOfWeekMonday(new Date()));
+    void loadSchedule({ weekStart: monday });
   };
 
   const handleCreateRecurring = async (input: {
@@ -281,8 +290,13 @@ export default function InstructorScheduleDashboard({
                 selectedSessionId={selectedSession?.id ?? ""}
                 onSelectSession={setSelectedSessionId}
                 weekLabel={weekLabel}
+                weekStart={weekStart}
                 onPreviousWeek={() => shiftWeek(-1)}
                 onNextWeek={() => shiftWeek(1)}
+                onGoToThisWeek={goToThisWeek}
+                canEdit={canEdit}
+                onCreateRecurring={() => setActiveModal("recurring")}
+                onCreateOneTime={() => setActiveModal("one-time")}
               />
 
               <div className="space-y-6">
@@ -297,7 +311,9 @@ export default function InstructorScheduleDashboard({
                   />
                 ) : (
                   <p className="rounded-[30px] border border-slate-200/80 bg-white p-6 text-sm text-slate-500">
-                    Select a session on the calendar to view details.
+                    {sessions.length === 0
+                      ? "Create a recurring block or add a one-time session to populate the calendar, then select a session here to view or edit it."
+                      : "Select a session on the calendar to view details."}
                   </p>
                 )}
               </div>
@@ -308,6 +324,7 @@ export default function InstructorScheduleDashboard({
             blocks={rules}
             canEdit={canEdit}
             onEditBlock={setEditingRule}
+            onCreateBlock={() => setActiveModal("recurring")}
           />
         </main>
       </div>
