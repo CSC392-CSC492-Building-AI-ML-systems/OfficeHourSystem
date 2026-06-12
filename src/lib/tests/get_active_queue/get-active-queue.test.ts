@@ -124,7 +124,7 @@ async function main() {
     const { offering } = await setupOffering();
     const session = await setupSession(offering.id);
 
-    const result = await getActiveQueue(session.id);
+    const result = await getActiveQueue(session.id, session.status, session.endsAt);
 
     assertEqual(result.waiting.length, 0, "waiting should be empty");
     assertEqual(result.helping.length, 0, "helping should be empty");
@@ -148,7 +148,7 @@ async function main() {
     await checkIn(studentB.id, session.id, "WAITING", new Date(now + 1000));
     await checkIn(studentC.id, session.id, "WAITING", new Date(now + 2000));
 
-    const result = await getActiveQueue(session.id);
+    const result = await getActiveQueue(session.id, session.status, session.endsAt);
 
     assertEqual(result.waiting.length, 3, "should have 3 waiting students");
     assertEqual(result.helping.length, 0, "should have no helping students");
@@ -175,7 +175,7 @@ async function main() {
     const student = await setupStudent("helped", offering.id);
     await checkIn(student.id, session.id, "IN_HELP", new Date());
 
-    const result = await getActiveQueue(session.id);
+    const result = await getActiveQueue(session.id, session.status, session.endsAt);
 
     assertEqual(result.waiting.length, 0, "no one waiting");
     assertEqual(result.helping.length, 1, "one student being helped");
@@ -204,7 +204,7 @@ async function main() {
     await checkIn(helping1.id, session.id, "IN_HELP", new Date(now + 2000));
     await checkIn(helping2.id, session.id, "IN_HELP", new Date(now + 3000));
 
-    const result = await getActiveQueue(session.id);
+    const result = await getActiveQueue(session.id, session.status, session.endsAt);
 
     assertEqual(result.waiting.length, 2, "2 students waiting");
     assertEqual(result.helping.length, 2, "2 students being helped");
@@ -239,7 +239,7 @@ async function main() {
 
     await checkIn(waitingStudent.id, session.id, "WAITING", new Date(now + 1000));
 
-    const result = await getActiveQueue(session.id);
+    const result = await getActiveQueue(session.id, session.status, session.endsAt);
 
     // Only the WAITING student should appear — resolved student is in the record table, not here
     assertEqual(result.waiting.length, 1, "only 1 waiting student");
@@ -257,7 +257,7 @@ async function main() {
     const { offering } = await setupOffering();
     const session = await setupSession(offering.id);
 
-    const result = await getActiveQueue(session.id);
+    const result = await getActiveQueue(session.id, session.status, session.endsAt);
 
     assert(result.sessionStatus !== undefined, "sessionStatus should be present");
     assert(result.endsAt !== undefined, "endsAt should be present");

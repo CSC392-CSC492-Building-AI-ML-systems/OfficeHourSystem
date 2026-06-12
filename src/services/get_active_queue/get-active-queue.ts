@@ -21,6 +21,8 @@ export async function getActiveQueueService(
     select: {
       id: true,
       offeringId: true,
+      status: true,
+      endsAt: true,
     },
   });
 
@@ -32,7 +34,7 @@ export async function getActiveQueueService(
   const membership = await prisma.offeringMember.findUnique({
     where: {
       userId_offeringId: {
-        userId: userId,
+        userId,
         offeringId: ohSession.offeringId,
       },
     },
@@ -44,5 +46,5 @@ export async function getActiveQueueService(
   }
 
   // Step 4: Return the queue state
-  return getActiveQueue(ohSession.id);
+  return getActiveQueue(ohSession.id, ohSession.status, ohSession.endsAt);
 }
