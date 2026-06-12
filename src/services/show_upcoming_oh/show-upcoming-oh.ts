@@ -1,6 +1,6 @@
 import { getRequestSession } from "@/lib/auth/getRequestSession";
 import { parseSessionUserId } from "@/lib/auth/getRequestSession";
-import { getTodaySessionsForTeachingTeam } from "@/lib/queries/show-upcoming-oh";
+import { getTodaySessionsForTeachingTeam } from "@/lib/queries/show_upcoming_oh/show-upcoming-oh";
 import type { UpcomingSessionDto } from "@/lib/types/queue";
 
 // Only INSTRUCTOR and TA are allowed to view upcoming sessions
