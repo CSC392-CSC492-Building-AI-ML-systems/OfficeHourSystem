@@ -24,8 +24,22 @@ export type HelpingStudentDto = {
   studentName: string;
 };
 
+// Identifier types the scan page can receive
+export type IdentifierType = "student_number" | "utorid" | "barcode";
+
+// Result of a scan check-in attempt
+export type ScanCheckInResult =
+  | { outcome: "checked_in";      studentName: string }
+  | { outcome: "already_in_queue"; studentName: string }
+  | { outcome: "mock_user";        studentName: string }  // barcode dev mock
+  | { outcome: "student_not_found" }
+  | { outcome: "not_enrolled" }
+  | { outcome: "session_not_active" };
+
 // Full queue state returned when a TA opens a session
 export type ActiveQueueDto = {
+  sessionStatus: "SCHEDULED" | "ACTIVE" | "DELAYED" | "COMPLETED" | "CANCELLED";
+  endsAt: string; // ISO string — used by the frontend auto-end timer
   waiting: WaitingStudentDto[];
   helping: HelpingStudentDto[];
 };

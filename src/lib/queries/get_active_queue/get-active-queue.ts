@@ -5,6 +5,16 @@ import type { ActiveQueueDto } from "@/lib/types/queue";
 // - all WAITING students ordered by check-in time (earliest = rank 1)
 // - all IN_HELP students (no rank)
 export async function getActiveQueue(sessionId: number): Promise<ActiveQueueDto> {
+  // Fetch session metadata for status and auto-end timer
+  const session = await prisma.officeHourSession.findUnique({
+    where: { id: sessionId },
+    select: { status: true, endsAt: true },
+  });
+
+  if (!session) {
+    throw new Error("Session not found");
+  }
+
   // Fetch all WAITING attendances, sorted by who checked in first
   const waitingRows = await prisma.officeHourAttendance.findMany({
     where: {
@@ -63,5 +73,10 @@ export async function getActiveQueue(sessionId: number): Promise<ActiveQueueDto>
     studentName: resolveName(row.student),
   }));
 
-  return { waiting, helping };
+  return {
+    sessionStatus: session.status,
+    endsAt: session.endsAt.toISOString(),
+    waiting,
+    helping,
+  };
 }

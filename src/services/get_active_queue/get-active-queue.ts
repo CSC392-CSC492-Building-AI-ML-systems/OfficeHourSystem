@@ -1,7 +1,7 @@
 import { getRequestSession } from "@/lib/auth/getRequestSession";
 import { parseSessionUserId } from "@/lib/auth/getRequestSession";
 import { prisma } from "@/lib/prisma";
-import { getActiveQueue } from "@/lib/queries/get-active-queue";
+import { getActiveQueue } from "@/lib/queries/get_active_queue/get-active-queue";
 import type { ActiveQueueDto } from "@/lib/types/queue";
 
 export async function getActiveQueueService(
