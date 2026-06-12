@@ -27,7 +27,8 @@ export async function scanCheckIn(
     return { outcome: "mock_user", studentName: mockName };
   }
 
-  // ── Find the student by student_number or utorid ──────────────────
+  // ── Find the student by student_number or utorid, along with their
+  // membership (if any) in this offering, in a single query ──────────
   const student = await prisma.user.findFirst({
     where:
       identifierType === "student_number"
@@ -38,6 +39,10 @@ export async function scanCheckIn(
       firstName: true,
       lastName: true,
       publicId: true,
+      memberships: {
+        where: { offeringId },
+        select: { role: true },
+      },
     },
   });
 
@@ -48,15 +53,7 @@ export async function scanCheckIn(
     student.publicId;
 
   // ── Verify the student is enrolled in this offering ───────────────
-  const membership = await prisma.offeringMember.findUnique({
-    where: {
-      userId_offeringId: {
-        userId: student.id,
-        offeringId,
-      },
-    },
-    select: { role: true },
-  });
+  const membership = student.memberships[0];
 
   if (!membership || membership.role !== "STUDENT") {
     return { outcome: "not_enrolled" };

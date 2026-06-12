@@ -39,7 +39,6 @@ export async function getTodaySessionsForTeachingTeam(userId: number) {
     where: {
       offeringId: { in: offeringIds },
       startsAt: { gte: start, lte: end },
-      status: { not: "CANCELLED" },
     },
     include: {
       offering: {

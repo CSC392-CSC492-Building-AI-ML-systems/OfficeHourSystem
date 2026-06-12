@@ -63,8 +63,8 @@ export function QueueSessionCard({ session }: QueueSessionCardProps) {
       </div>
 
       <div className="mt-6">
-        {/* ENDED: no action available */}
-        {session.status === "COMPLETED" ? (
+        {/* ENDED: no action available (also covers cancelled sessions) */}
+        {session.status === "COMPLETED" || session.status === "CANCELLED" ? (
           <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-5 py-3 text-sm font-medium text-slate-400">
             Session Ended
           </span>

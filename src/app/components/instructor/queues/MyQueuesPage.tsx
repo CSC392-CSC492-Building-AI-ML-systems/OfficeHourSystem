@@ -62,7 +62,9 @@ export default function MyQueuesPage() {
     s.status === "SCHEDULED" || s.status === "DELAYED",
   );
   const activeSessions = sessions.filter((s) => s.status === "ACTIVE");
-  const endedSessions  = sessions.filter((s) => s.status === "COMPLETED");
+  const endedSessions  = sessions.filter((s) =>
+    s.status === "COMPLETED" || s.status === "CANCELLED",
+  );
 
   const tabSessions: Record<Tab, QueueSession[]> = {
     upcoming: upcomingSessions,

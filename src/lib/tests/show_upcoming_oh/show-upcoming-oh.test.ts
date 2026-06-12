@@ -9,7 +9,7 @@
  * Scenarios covered:
  *   1. TA has no offerings → returns empty array
  *   2. TA in an offering → sees today's sessions
- *   3. CANCELLED session today → not returned
+ *   3. CANCELLED session today → returned (shown in Ended tab)
  *   4. COMPLETED session today → returned (shown in Ended tab)
  *   5. Session scheduled for tomorrow → not returned
  *   6. User is STUDENT (not TA/INSTRUCTOR) → not returned
@@ -129,8 +129,8 @@ async function main() {
     assertEqual(result[0].id, session.id, "should return the correct session");
   });
 
-  // ── Test 3: CANCELLED session today → not returned ───────────────────────
-  await runTest("CANCELLED session today → not returned", async () => {
+  // ── Test 3: CANCELLED session today → returned (shown in Ended tab) ──────
+  await runTest("CANCELLED session today → returned in results", async () => {
     await cleanupAll();
 
     const { offering } = await setupOffering();
@@ -163,12 +163,10 @@ async function main() {
 
     const result = await getTodaySessionsForTeachingTeam(ta.id);
 
-    // Only the SCHEDULED one should appear
-    assertEqual(result.length, 1, "cancelled session should not be returned");
-    assert(
-      result.every((s) => s.status !== "CANCELLED"),
-      "no cancelled sessions in result",
-    );
+    // Both should appear — frontend bucket the cancelled one into the Ended tab
+    assertEqual(result.length, 2, "both SCHEDULED and CANCELLED sessions should be returned");
+    assert(result.some((s) => s.status === "CANCELLED"), "CANCELLED session should be in results");
+    assert(result.some((s) => s.status === "SCHEDULED"), "SCHEDULED session should be in results");
   });
 
   // ── Test 4: COMPLETED session today → returned (frontend shows in Ended tab)
