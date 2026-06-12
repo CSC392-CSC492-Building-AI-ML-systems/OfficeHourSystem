@@ -18,7 +18,8 @@ model User {
   updatedAt     DateTime                 @updatedAt
   studentNumber String?                  @unique @map("student_number")
   memberships   OfferingMember[]
-  visits        OfficeHourAttendance[]   @relation("StudentVisits")
+  visits        OfficeHourAttendance[]        @relation("StudentVisits")
+  records       OfficeHourAttendanceRecord[]  @relation("StudentRecords")
   interests     OfficeHourInterest[]
   scheduleHosts OfficeHourScheduleHost[]
   sessionHosts  OfficeHourSessionHost[]
@@ -112,6 +113,7 @@ model OfficeHourSession {
   createdAt   DateTime                @default(now())
   updatedAt   DateTime                @updatedAt
   attendances OfficeHourAttendance[]
+  records     OfficeHourAttendanceRecord[]
   interests   OfficeHourInterest[]
   offering    CourseOffering          @relation(fields: [offeringId], references: [id])
   schedule    OfficeHourSchedule?     @relation(fields: [scheduleId], references: [id])
@@ -122,13 +124,14 @@ model OfficeHourSession {
 }
 
 model OfficeHourSessionHost {
-  id                Int                    @id @default(autoincrement())
+  id                Int                          @id @default(autoincrement())
   sessionId         Int
   userId            Int
   role              CourseRole
   helpedAttendances OfficeHourAttendance[]
-  session           OfficeHourSession      @relation(fields: [sessionId], references: [id])
-  user              User                   @relation(fields: [userId], references: [id])
+  helpedRecords     OfficeHourAttendanceRecord[]
+  session           OfficeHourSession            @relation(fields: [sessionId], references: [id])
+  user              User                         @relation(fields: [userId], references: [id])
 
   @@unique([sessionId, userId])
   @@index([userId])
@@ -146,6 +149,9 @@ model OfficeHourInterest {
   @@index([sessionId])
 }
 
+// Active queue state only — a student is here while WAITING or IN_HELP.
+// When help ends (END / NO_SHOW / CANCELLED), this row is deleted and a
+// permanent record is written to OfficeHourAttendanceRecord instead.
 model OfficeHourAttendance {
   id             Int                    @id @default(autoincrement())
   publicId       String                 @unique @default(cuid())
@@ -154,9 +160,6 @@ model OfficeHourAttendance {
   helpedByHostId Int?
   checkedInAt    DateTime               @default(now())
   helpStartedAt  DateTime?
-  helpEndedAt    DateTime?
-  checkedOutAt   DateTime?
-  note           String?
   status         AttendanceStatus       @default(WAITING)
   helpedByHost   OfficeHourSessionHost? @relation(fields: [helpedByHostId], references: [id])
   session        OfficeHourSession      @relation(fields: [sessionId], references: [id])
@@ -164,6 +167,28 @@ model OfficeHourAttendance {
 
   @@unique([sessionId, studentId])
   @@index([sessionId, status, checkedInAt])
+  @@index([studentId])
+  @@index([helpedByHostId])
+}
+
+// Permanent history — written when a student's attendance is resolved.
+// outcome records why the attendance ended (COMPLETED / NO_SHOW / CANCELLED).
+model OfficeHourAttendanceRecord {
+  id             Int                    @id @default(autoincrement())
+  publicId       String                 @unique @default(cuid())
+  sessionId      Int
+  studentId      Int
+  helpedByHostId Int?
+  checkedInAt    DateTime
+  helpStartedAt  DateTime?
+  helpEndedAt    DateTime?
+  outcome        AttendanceOutcome
+  createdAt      DateTime               @default(now())
+  helpedByHost   OfficeHourSessionHost? @relation(fields: [helpedByHostId], references: [id])
+  session        OfficeHourSession      @relation(fields: [sessionId], references: [id])
+  student        User                   @relation("StudentRecords", fields: [studentId], references: [id])
+
+  @@index([sessionId, outcome])
   @@index([studentId])
   @@index([helpedByHostId])
 }
@@ -176,9 +201,14 @@ enum OfficeHourSessionStatus {
   COMPLETED
 }
 
+// Active states only — lives in OfficeHourAttendance
 enum AttendanceStatus {
   WAITING
   IN_HELP
+}
+
+// Terminal outcomes — lives in OfficeHourAttendanceRecord
+enum AttendanceOutcome {
   COMPLETED
   NO_SHOW
   CANCELLED
