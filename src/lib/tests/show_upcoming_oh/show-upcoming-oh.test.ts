@@ -2,7 +2,7 @@
  * Tests: getTodaySessionsForTeachingTeam()
  *
  * How to run:
- *   npx tsx src/lib/tests/show-upcoming-oh.test.ts
+ *   npx tsx src/lib/tests/show_upcoming_oh/show-upcoming-oh.test.ts
  *
  * Prerequisite: DATABASE_URL must be set in .env
  *
@@ -10,15 +10,16 @@
  *   1. TA has no offerings → returns empty array
  *   2. TA in an offering → sees today's sessions
  *   3. CANCELLED session today → not returned
- *   4. Session scheduled for tomorrow → not returned
- *   5. User is STUDENT (not TA/INSTRUCTOR) → not returned
- *   6. INSTRUCTOR role → also returned (same as TA)
+ *   4. COMPLETED session today → returned (shown in Ended tab)
+ *   5. Session scheduled for tomorrow → not returned
+ *   6. User is STUDENT (not TA/INSTRUCTOR) → not returned
+ *   7. INSTRUCTOR role → also returned (same as TA)
  */
 
 import "dotenv/config";
 
 import { prisma } from "@/lib/prisma";
-import { getTodaySessionsForTeachingTeam } from "@/lib/queries/show-upcoming-oh";
+import { getTodaySessionsForTeachingTeam } from "@/lib/queries/show_upcoming_oh/show-upcoming-oh";
 import {
   TEST_PREFIX,
   TEST_TERM,
@@ -27,7 +28,7 @@ import {
   assertEqual,
   runTest,
   finishTests,
-} from "./_seed";
+} from "../_seed";
 
 // Helper: create a session that starts today
 function makeTodaySession(offsetMinutes = 0) {
@@ -170,7 +171,31 @@ async function main() {
     );
   });
 
-  // ── Test 4: Session tomorrow → not returned ───────────────────────────────
+  // ── Test 4: COMPLETED session today → returned (frontend shows in Ended tab)
+  await runTest("COMPLETED session today → returned in results", async () => {
+    await cleanupAll();
+
+    const { offering } = await setupOffering();
+    const ta = await setupUser("ta_comp", offering.id, "TA");
+
+    const { startsAt, endsAt } = makeTodaySession();
+
+    await prisma.officeHourSession.create({
+      data: { offeringId: offering.id, title: "Upcoming OH", type: "REGULAR", startsAt, endsAt, status: "SCHEDULED" },
+    });
+    await prisma.officeHourSession.create({
+      data: { offeringId: offering.id, title: "Ended OH", type: "REGULAR", startsAt, endsAt, status: "COMPLETED" },
+    });
+
+    const result = await getTodaySessionsForTeachingTeam(ta.id);
+
+    // Both should appear — frontend separates them into tabs
+    assertEqual(result.length, 2, "both SCHEDULED and COMPLETED sessions should be returned");
+    assert(result.some((s) => s.status === "COMPLETED"), "COMPLETED session should be in results");
+    assert(result.some((s) => s.status === "SCHEDULED"), "SCHEDULED session should be in results");
+  });
+
+  // ── Test 5: Session tomorrow → not returned ───────────────────────────────
   await runTest("Session tomorrow → not returned", async () => {
     await cleanupAll();
 
