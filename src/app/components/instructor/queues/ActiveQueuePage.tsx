@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivitySquare, RefreshCw } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { ActivitySquare, RefreshCw, ScanLine } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "../Navbar";
 import { CurrentlyHelpingCard } from "./CurrentlyHelpingCard";
 import { DUMMY_QUEUE_SESSIONS } from "./data";
 import type { QueueStudent } from "./types";
 import { WaitingRoom } from "./WaitingRoom";
 import { getActiveQueueAction } from "@/actions/get_active_queue/get-active-queue";
+import { startHelpingAction } from "@/actions/start_helping/start-helping";
+import { revertToWaitingAction } from "@/actions/revert_to_waiting/revert-to-waiting";
+import { updateAttendanceStatusAction } from "@/actions/update_attendance_status/update-attendance-status";
+import { endSessionAction } from "@/actions/end_session/end-session";
 
 // Compute initials from a full name e.g. "Alice Chen" → "AC"
 function getInitials(name: string): string {
@@ -27,8 +31,12 @@ type HelpingEntry = {
 };
 
 export default function ActiveQueuePage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("sessionId");
+
+  // Confirmation state for entering scan mode (kiosk lock means no easy back)
+  const [scanState, setScanState] = useState<"idle" | "confirming">("idle");
 
   const [waitingStudents, setWaitingStudents] = useState<QueueStudent[]>([]);
 
@@ -36,6 +44,11 @@ export default function ActiveQueuePage() {
   const [helpingStudents, setHelpingStudents] = useState<HelpingEntry[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [sessionEnded, setSessionEnded] = useState(false);
+  const [endsAt, setEndsAt] = useState<string | null>(null);
+
+  // "idle" | "confirming" | "loading"
+  const [endSessionState, setEndSessionState] = useState<"idle" | "confirming" | "loading">("idle");
 
   // Track which student IDs are currently being started to prevent double-click race
   const startingRef = useRef<Set<string>>(new Set());
@@ -55,6 +68,11 @@ export default function ActiveQueuePage() {
       setLoading(true);
       try {
         const data = await getActiveQueueAction(sessionId);
+
+        setEndsAt(data.endsAt);
+        if (data.sessionStatus === "COMPLETED") {
+          setSessionEnded(true);
+        }
 
         setWaitingStudents(
           data.waiting.map((s) => ({
@@ -98,28 +116,111 @@ export default function ActiveQueuePage() {
     return () => window.clearInterval(timer);
   }, [helpingStudents.length]);
 
-  const handleStartStudent = (student: QueueStudent) => {
-    // Prevent double-click: block if this student is already being started
-    if (startingRef.current.has(student.id)) {
-      return;
-    }
-    startingRef.current.add(student.id);
+  // Auto-end: if 30 minutes past the scheduled endsAt, fire endSessionAction automatically
+  useEffect(() => {
+    if (!sessionId || !endsAt || sessionEnded) return;
 
-    // Move student from waiting list to helping list
-    setHelpingStudents((current) => [
-      ...current,
-      { student, seconds: 0 },
-    ]);
-    setWaitingStudents((current) =>
-      current.filter((s) => s.id !== student.id),
+    const AUTO_END_GRACE_MS = 30 * 60 * 1000; // 30 minutes
+
+    const check = setInterval(() => {
+      const overdue = Date.now() - new Date(endsAt).getTime();
+      if (overdue >= AUTO_END_GRACE_MS) {
+        clearInterval(check);
+        void endSessionAction(sessionId).then(() => {
+          setSessionEnded(true);
+          setWaitingStudents([]);
+          setHelpingStudents([]);
+        });
+      }
+    }, 15 * 60_000); // check every 15 minutes
+
+    return () => clearInterval(check);
+  }, [sessionId, endsAt, sessionEnded]);
+
+  // Reload queue state from the server and sync local state
+  const refreshQueue = async () => {
+    if (!sessionId) return;
+    const data = await getActiveQueueAction(sessionId);
+
+    setWaitingStudents(
+      data.waiting.map((s) => ({
+        id: s.attendancePublicId,
+        name: s.studentName,
+        username: s.studentPublicId,
+        initials: getInitials(s.studentName),
+      })),
+    );
+
+    setHelpingStudents((current) =>
+      data.helping.map((h) => {
+        // Preserve the elapsed timer for students already in the helping list
+        const existing = current.find((e) => e.student.id === h.attendancePublicId);
+        return {
+          student: {
+            id: h.attendancePublicId,
+            name: h.studentName,
+            username: h.studentPublicId,
+            initials: getInitials(h.studentName),
+          },
+          seconds: existing?.seconds ?? 0,
+        };
+      }),
     );
   };
 
-  const handleClearStudent = (studentId: string) => {
-    startingRef.current.delete(studentId);
-    setHelpingStudents((current) =>
-      current.filter((entry) => entry.student.id !== studentId),
-    );
+  const handleStartStudent = (student: QueueStudent) => {
+    // Prevent double-click: block if this student is already being started
+    if (startingRef.current.has(student.id)) return;
+    startingRef.current.add(student.id);
+
+    void (async () => {
+      try {
+        if (!sessionId) return;
+        const result = await startHelpingAction(sessionId, student.id);
+        if (result.outcome === "started") {
+          // Refresh from server so queue reflects the real DB state
+          await refreshQueue();
+        }
+      } finally {
+        startingRef.current.delete(student.id);
+      }
+    })();
+  };
+
+  const handleResolveStudent = (student: QueueStudent, action: "end" | "no_show") => {
+    void (async () => {
+      if (!sessionId) return;
+      const result = await updateAttendanceStatusAction(sessionId, student.id, action);
+      if (result.outcome === "updated") {
+        startingRef.current.delete(student.id);
+        await refreshQueue();
+      }
+    })();
+  };
+
+  const handleEndSession = () => {
+    void (async () => {
+      if (!sessionId) return;
+      setEndSessionState("loading");
+      try {
+        await endSessionAction(sessionId);
+        setSessionEnded(true);
+        setWaitingStudents([]);
+        setHelpingStudents([]);
+      } finally {
+        setEndSessionState("idle");
+      }
+    })();
+  };
+
+  const handleRevertStudent = (student: QueueStudent) => {
+    void (async () => {
+      if (!sessionId) return;
+      const result = await revertToWaitingAction(sessionId, student.id);
+      if (result.outcome === "reverted") {
+        await refreshQueue();
+      }
+    })();
   };
 
   return (
@@ -142,10 +243,88 @@ export default function ActiveQueuePage() {
               </p>
             </div>
 
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d7e7ff] bg-[#eef5ff] px-4 py-2 text-sm font-medium text-[#071f41]">
-              <RefreshCw className="h-4 w-4" />
-              Last scan: {activeSession.lastScanLabel}
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d7e7ff] bg-[#eef5ff] px-4 py-2 text-sm font-medium text-[#071f41]">
+                <RefreshCw className="h-4 w-4" />
+                Last scan: {activeSession.lastScanLabel}
+              </span>
+
+              {/* Scan mode entry — hidden once the session has ended */}
+              {!sessionEnded &&
+                (scanState === "confirming" ? (
+                  <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <p className="text-sm font-medium text-amber-800">
+                      Open scanner? You will not be able to navigate away.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.replace(`/instructor/scan?sessionId=${sessionId}`)
+                        }
+                        className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setScanState("idle")}
+                        className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setScanState("confirming")}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#071f41] px-5 py-2 text-sm font-semibold text-[#071f41] transition hover:bg-[#eef5ff]"
+                  >
+                    <ScanLine className="h-4 w-4" />
+                    Start Scanning
+                  </button>
+                ))}
+
+              {sessionEnded ? (
+                <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-500">
+                  Session Ended
+                </span>
+              ) : endSessionState === "confirming" ? (
+                /* Confirmation prompt — warns TA about students still in progress */
+                <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                  <p className="text-sm font-medium text-amber-800">
+                    End session? Any students still being helped will be marked
+                    complete.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleEndSession}
+                      className="inline-flex items-center justify-center rounded-full bg-[#c8102e] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#a00d25]"
+                    >
+                      Confirm End
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEndSessionState("idle")}
+                      className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={endSessionState === "loading"}
+                  onClick={() => setEndSessionState("confirming")}
+                  className="inline-flex items-center justify-center rounded-full border border-[#c8102e] px-5 py-2 text-sm font-semibold text-[#c8102e] transition hover:bg-[#fff1f2] disabled:opacity-50"
+                >
+                  {endSessionState === "loading" ? "Ending…" : "End Session"}
+                </button>
+              )}
+            </div>
           </section>
 
           <section className="space-y-2">
@@ -161,6 +340,7 @@ export default function ActiveQueuePage() {
               sessionSeconds={0}
               onNoShow={() => undefined}
               onEndHelp={() => undefined}
+              onRevert={() => undefined}
             />
           ) : (
             helpingStudents.map((entry) => (
@@ -168,8 +348,9 @@ export default function ActiveQueuePage() {
                 key={entry.student.id}
                 currentlyHelping={entry.student}
                 sessionSeconds={entry.seconds}
-                onNoShow={() => handleClearStudent(entry.student.id)}
-                onEndHelp={() => handleClearStudent(entry.student.id)}
+                onNoShow={() => handleResolveStudent(entry.student, "no_show")}
+                onEndHelp={() => handleResolveStudent(entry.student, "end")}
+                onRevert={() => handleRevertStudent(entry.student)}
               />
             ))
           )}
