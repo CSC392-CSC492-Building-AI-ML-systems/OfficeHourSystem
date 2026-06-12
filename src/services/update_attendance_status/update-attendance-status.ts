@@ -40,22 +40,24 @@ export async function updateAttendanceStatusService(
     throw new Error("Forbidden: only TAs and instructors can update attendance");
   }
 
-  // Step 3b: Try to find the session host record — used to log who resolved the student
-  const sessionHost = await prisma.officeHourSessionHost.findUnique({
-    where: {
-      sessionId_userId: {
-        sessionId: ohSession.id,
-        userId,
+  // Step 3b/4: Look up the session host record (used to log who resolved the
+  // student) and the attendance record in parallel, since neither depends on
+  // the other.
+  const [sessionHost, attendance] = await Promise.all([
+    prisma.officeHourSessionHost.findUnique({
+      where: {
+        sessionId_userId: {
+          sessionId: ohSession.id,
+          userId,
+        },
       },
-    },
-    select: { id: true },
-  });
-
-  // Step 4: Look up the attendance and verify it belongs to this session
-  const attendance = await prisma.officeHourAttendance.findUnique({
-    where: { publicId: attendancePublicId },
-    select: { id: true, sessionId: true },
-  });
+      select: { id: true },
+    }),
+    prisma.officeHourAttendance.findUnique({
+      where: { publicId: attendancePublicId },
+      select: { id: true, sessionId: true },
+    }),
+  ]);
 
   if (!attendance || attendance.sessionId !== ohSession.id) {
     return { outcome: "not_found" };

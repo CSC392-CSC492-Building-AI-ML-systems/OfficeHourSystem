@@ -37,24 +37,25 @@ export async function startHelpingService(
     throw new Error("Forbidden: only TAs and instructors can start helping");
   }
 
-  // Step 3b: Try to find a registered session host record for this user.
-  // Not required — a TA not listed as session host can still help,
-  // but helpedByHostId will be null in that case.
-  const sessionHost = await prisma.officeHourSessionHost.findUnique({
-    where: {
-      sessionId_userId: {
-        sessionId: ohSession.id,
-        userId,
+  // Step 3b/4: Look up the registered session host record (not required — a
+  // TA not listed as session host can still help, but helpedByHostId will be
+  // null in that case) and the attendance record in parallel, since neither
+  // depends on the other.
+  const [sessionHost, attendance] = await Promise.all([
+    prisma.officeHourSessionHost.findUnique({
+      where: {
+        sessionId_userId: {
+          sessionId: ohSession.id,
+          userId,
+        },
       },
-    },
-    select: { id: true },
-  });
-
-  // Step 4: Look up the attendance record and verify it belongs to this session
-  const attendance = await prisma.officeHourAttendance.findUnique({
-    where: { publicId: attendancePublicId },
-    select: { id: true, sessionId: true },
-  });
+      select: { id: true },
+    }),
+    prisma.officeHourAttendance.findUnique({
+      where: { publicId: attendancePublicId },
+      select: { id: true, sessionId: true },
+    }),
+  ]);
 
   if (!attendance || attendance.sessionId !== ohSession.id) {
     return { outcome: "not_found" };

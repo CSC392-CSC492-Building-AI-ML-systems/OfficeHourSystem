@@ -193,7 +193,7 @@ async function main() {
     await revertToWaiting(attendanceB.id);
 
     // Now all 3 should be WAITING; B should be rank 2
-    const queue = await getActiveQueue(session.id);
+    const queue = await getActiveQueue(session.id, session.status, session.endsAt);
 
     assertEqual(queue.waiting.length, 3, "all 3 students should be WAITING");
     assert(
