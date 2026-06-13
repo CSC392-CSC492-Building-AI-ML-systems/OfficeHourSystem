@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
+import { findOverlappingSession } from "./overlap";
 import {
   combineDateAndMinutes,
   datesForDayOfWeek,
@@ -52,6 +53,15 @@ export async function expandOfficeHourSchedule(scheduleId: number) {
     });
 
     if (existing) {
+      continue;
+    }
+
+    const overlap = await findOverlappingSession(
+      schedule.offeringId,
+      startsAt,
+      endsAt,
+    );
+    if (overlap) {
       continue;
     }
 

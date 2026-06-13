@@ -2,6 +2,18 @@
 
 import { useState } from "react";
 import { CalendarClock, Trash2, X } from "lucide-react";
+import {
+  snapOfficeHourEndTime,
+  snapOfficeHourStartTime,
+  validateOfficeHourTimes,
+} from "@/lib/scheduling/time";
+import { FieldCharLimitHint } from "./FieldCharLimitHint";
+import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
+import {
+  BLOCK_NAME_MAX_LENGTH,
+  clampToMaxLength,
+  LOCATION_MAX_LENGTH,
+} from "./scheduleFieldLimits";
 import type { RecurringRule } from "./types";
 import { useModalOverlay } from "./useModalOverlay";
 
@@ -58,17 +70,38 @@ function EditRecurringBlockForm({
   onDelete: EditRecurringBlockModalProps["onDelete"];
   onError?: EditRecurringBlockModalProps["onError"];
 }) {
-  const [title, setTitle] = useState(block.title);
-  const [location, setLocation] = useState(
-    block.defaultLocation === "TBD" ? "" : block.defaultLocation,
+  const [title, setTitle] = useState(() =>
+    clampToMaxLength(block.title, BLOCK_NAME_MAX_LENGTH),
   );
-  const [startTime, setStartTime] = useState(block.startTime);
-  const [endTime, setEndTime] = useState(block.endTime);
+  const [location, setLocation] = useState(() =>
+    clampToMaxLength(
+      block.defaultLocation === "TBD" ? "" : block.defaultLocation,
+      LOCATION_MAX_LENGTH,
+    ),
+  );
+  const [startTime, setStartTime] = useState(() =>
+    snapOfficeHourStartTime(block.startTime),
+  );
+  const [endTime, setEndTime] = useState(() =>
+    snapOfficeHourEndTime(block.startTime, block.endTime),
+  );
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const showError = (message: string) => {
+    onError?.(message);
+    onClose();
+  };
+
   const handleSave = async () => {
     onError?.(null);
+
+    const timeError = validateOfficeHourTimes(startTime, endTime);
+    if (timeError) {
+      showError(timeError);
+      return;
+    }
+
     setSubmitting(true);
     try {
       await onSave({
@@ -78,7 +111,7 @@ function EditRecurringBlockForm({
         endTime,
       });
     } catch (saveError) {
-      onError?.(
+      showError(
         saveError instanceof Error
           ? saveError.message
           : "Failed to update recurring block.",
@@ -101,7 +134,7 @@ function EditRecurringBlockForm({
     try {
       await onDelete();
     } catch (deleteError) {
-      onError?.(
+      showError(
         deleteError instanceof Error
           ? deleteError.message
           : "Failed to delete recurring block.",
@@ -130,7 +163,8 @@ function EditRecurringBlockForm({
                 Edit Recurring Block
               </h2>
               <p className="mt-1 text-sm text-slate-600">
-                Repeats: {block.repeats} (not editable)
+                Repeats: {block.repeats} ({block.validFrom} – {block.validUntil}
+                ) (not editable)
               </p>
             </div>
           </div>
@@ -152,9 +186,11 @@ function EditRecurringBlockForm({
             <input
               type="text"
               value={title}
+              maxLength={BLOCK_NAME_MAX_LENGTH}
               onChange={(event) => setTitle(event.target.value)}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
             />
+            <FieldCharLimitHint maxLength={BLOCK_NAME_MAX_LENGTH} />
           </label>
 
           <label className="block">
@@ -164,36 +200,20 @@ function EditRecurringBlockForm({
             <input
               type="text"
               value={location}
+              maxLength={LOCATION_MAX_LENGTH}
               onChange={(event) => setLocation(event.target.value)}
               placeholder="Room 402 or Zoom link"
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
             />
+            <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />
           </label>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                Start Time
-              </span>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(event) => setStartTime(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                End Time
-              </span>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(event) => setEndTime(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-              />
-            </label>
-          </div>
+          <OfficeHourTimeFields
+            startTime={startTime}
+            endTime={endTime}
+            onStartTimeChange={setStartTime}
+            onEndTimeChange={setEndTime}
+          />
 
           <p className="text-xs leading-5 text-slate-500">
             Changes apply to the rule and all upcoming scheduled sessions in
