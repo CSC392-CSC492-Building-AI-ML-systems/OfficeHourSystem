@@ -20,6 +20,10 @@ export async function cleanupAll(): Promise<void> {
     where: { session: { offering: { termCode: TEST_TERM } } },
   });
 
+  await prisma.officeHourAttendanceRecord.deleteMany({
+    where: { session: { offering: { termCode: TEST_TERM } } },
+  });
+
   await prisma.officeHourSessionHost.deleteMany({
     where: { session: { offering: { termCode: TEST_TERM } } },
   });

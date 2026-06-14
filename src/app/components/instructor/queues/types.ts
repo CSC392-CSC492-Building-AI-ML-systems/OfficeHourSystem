@@ -7,6 +7,8 @@ export interface QueueSession {
   isHighlighted?: boolean;
   workspaceSubtitle: string;
   lastScanLabel: string;
+  status: "SCHEDULED" | "ACTIVE" | "DELAYED" | "COMPLETED" | "CANCELLED";
+  endsAt: string; // ISO string
 }
 
 export interface QueueStudent {

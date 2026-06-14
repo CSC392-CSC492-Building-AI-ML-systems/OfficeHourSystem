@@ -19,6 +19,14 @@ export type UserLookupClient<TUser = UserIdentifierMatch> = {
   };
 };
 
+export type UserBarcodeLookupClient<TUser = UserIdentifierMatch> = {
+  user: {
+    findFirst(args: {
+      where: { barcodeNumber: string };
+    }): Promise<TUser | null>;
+  };
+};
+
 export function buildUserIdentifierWhere(identifier: string) {
   const keyword = identifier.trim();
 
@@ -64,3 +72,26 @@ export async function findUserWithClient<TUser = UserIdentifierMatch>(
 }
 
 export const findUser = find_user;
+
+/**
+ * Find a user by their TCard barcode number.
+ * Used for scanner-based office hour check-in.
+ * Returns null if no user has this barcode registered.
+ */
+export async function findUserByBarcode<TUser = UserIdentifierMatch>(
+  barcodeNumber: string,
+  client?: UserBarcodeLookupClient<TUser>,
+): Promise<TUser | null> {
+  const barcode = barcodeNumber.trim();
+
+  if (!barcode) {
+    return null;
+  }
+
+  const db = (client ??
+    (await import("../prisma")).prisma) as UserBarcodeLookupClient<TUser>;
+
+  return await db.user.findFirst({
+    where: { barcodeNumber: barcode },
+  });
+}
