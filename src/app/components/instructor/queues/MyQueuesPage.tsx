@@ -13,8 +13,8 @@ type Tab = "upcoming" | "active" | "ended";
 // Format two ISO strings into a readable time range e.g. "10:00 AM - 11:00 AM"
 function formatSessionTime(startsAt: string, endsAt: string): string {
   const opts: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit", hour12: true };
-  const start = new Date(startsAt).toLocaleTimeString([], opts);
-  const end = new Date(endsAt).toLocaleTimeString([], opts);
+  const start = new Date(startsAt).toLocaleTimeString("en-US", opts);
+  const end = new Date(endsAt).toLocaleTimeString("en-US", opts);
   return `${start} - ${end}`;
 }
 

@@ -1,10 +1,7 @@
-import { getRequestSession } from "@/lib/auth/getRequestSession";
-import { parseSessionUserId } from "@/lib/auth/getRequestSession";
+import { getRequestSession, parseSessionUserId } from "@/lib/auth/getRequestSession";
+import { prisma } from "@/lib/prisma";
 import { getTodaySessionsForTeachingTeam } from "@/lib/queries/show_upcoming_oh/show-upcoming-oh";
 import type { UpcomingSessionDto } from "@/lib/types/queue";
-
-// Only INSTRUCTOR and TA are allowed to view upcoming sessions
-const ALLOWED_ROLES = ["INSTRUCTOR", "TA"];
 
 export async function showUpcomingOhService(): Promise<UpcomingSessionDto[]> {
   // Step 1: Read the session cookie
@@ -15,18 +12,25 @@ export async function showUpcomingOhService(): Promise<UpcomingSessionDto[]> {
     throw new Error("Unauthorized");
   }
 
-  // Step 2: Check the user's role is INSTRUCTOR or TA
-  if (!ALLOWED_ROLES.includes(session.role)) {
+  const userId = parseSessionUserId(session);
+
+  // Step 2: Check the user is a TA or INSTRUCTOR in at least one offering
+  const membership = await prisma.offeringMember.findFirst({
+    where: {
+      userId,
+      role: { in: ["INSTRUCTOR", "TA"] },
+    },
+    select: { id: true },
+  });
+
+  if (!membership) {
     throw new Error("Forbidden: only instructors and TAs can view this page");
   }
 
-  // Step 3: Get the user's numeric ID from the session
-  const userId = parseSessionUserId(session);
-
-  // Step 4: Query today's sessions for this user's offerings
+  // Step 3: Query today's sessions for this user's offerings
   const sessions = await getTodaySessionsForTeachingTeam(userId);
 
-  // Step 5: Map DB rows to DTO
+  // Step 4: Map DB rows to DTO
   return sessions.map((session) => ({
     sessionPublicId: session.publicId,
     courseCode: session.offering.course.code,
