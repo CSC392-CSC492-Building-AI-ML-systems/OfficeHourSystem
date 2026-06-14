@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { CalendarClock } from "lucide-react";
+import { FieldCharLimitHint } from "./FieldCharLimitHint";
+import {
+  clampToMaxLength,
+  LOCATION_MAX_LENGTH,
+  SESSION_TOPIC_MAX_LENGTH,
+} from "./scheduleFieldLimits";
 import type { ScheduleSession } from "./types";
 
 interface EditSessionPanelProps {
@@ -15,14 +21,6 @@ interface EditSessionPanelProps {
   onError?: (message: string | null) => void;
 }
 
-function formatSelectedBlockTitle(session: ScheduleSession) {
-  if (session.courseName) {
-    return `${session.courseCode}: ${session.courseName}`;
-  }
-
-  return session.courseCode;
-}
-
 export function EditSessionPanel({
   selectedSession,
   canEdit,
@@ -30,8 +28,12 @@ export function EditSessionPanel({
   onCancelSession,
   onError,
 }: EditSessionPanelProps) {
-  const [topic, setTopic] = useState(selectedSession.topic);
-  const [location, setLocation] = useState(selectedSession.location);
+  const [topic, setTopic] = useState(() =>
+    clampToMaxLength(selectedSession.topic, SESSION_TOPIC_MAX_LENGTH),
+  );
+  const [location, setLocation] = useState(() =>
+    clampToMaxLength(selectedSession.location, LOCATION_MAX_LENGTH),
+  );
   const [savedMessage, setSavedMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -85,10 +87,10 @@ export function EditSessionPanel({
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
         <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500">
-          SELECTED BLOCK
+          SELECTED SESSION
         </p>
         <h3 className="mt-2 text-lg font-semibold text-[#071f41]">
-          {formatSelectedBlockTitle(selectedSession)}
+          {selectedSession.sessionTypeLabel}
         </h3>
         <p className="mt-1 text-sm text-slate-600">
           {selectedSession.dateLabel}, {selectedSession.startTime} -{" "}
@@ -102,23 +104,21 @@ export function EditSessionPanel({
             Session Topic
           </label>
           {canEdit ? (
-            <input
-              type="text"
-              value={topic}
-              onChange={(event) => setTopic(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-            />
+            <>
+              <input
+                type="text"
+                value={topic}
+                maxLength={SESSION_TOPIC_MAX_LENGTH}
+                onChange={(event) => setTopic(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
+              />
+              <FieldCharLimitHint maxLength={SESSION_TOPIC_MAX_LENGTH} />
+            </>
           ) : (
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
               {selectedSession.topic}
             </div>
           )}
-          <p className="mt-2 text-xs leading-5 text-slate-500">
-            Updating this only affects the {selectedSession.startTime} session{" "}
-            {selectedSession.dateLabel.toLowerCase() === "today"
-              ? "today."
-              : `on ${selectedSession.dateLabel}.`}
-          </p>
         </div>
 
         <div>
@@ -126,22 +126,30 @@ export function EditSessionPanel({
             Location
           </label>
           {canEdit ? (
-            <input
-              type="text"
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-            />
+            <>
+              <input
+                type="text"
+                value={location}
+                maxLength={LOCATION_MAX_LENGTH}
+                onChange={(event) => setLocation(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
+              />
+              <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />
+            </>
           ) : (
             <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
               {selectedSession.location}
             </div>
           )}
-          <p className="mt-2 text-xs leading-5 text-slate-500">
-            This override only affects this specific session occurrence.
-          </p>
         </div>
       </div>
+
+      <p className="mt-6 text-xs italic leading-5 text-slate-500">
+        Updating this only affects the {selectedSession.startTime} session{" "}
+        {selectedSession.dateLabel.toLowerCase() === "today"
+          ? "today."
+          : `on ${selectedSession.dateLabel}.`}
+      </p>
 
       {canEdit ? (
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
