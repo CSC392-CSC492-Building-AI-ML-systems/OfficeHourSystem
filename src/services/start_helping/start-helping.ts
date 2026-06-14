@@ -23,7 +23,7 @@ export async function startHelpingService(
   });
   if (!ohSession) throw new Error("Session not found");
 
-  // Step 3: Check that this user is a TA or INSTRUCTOR in the offering
+  // Step 3: Check that this user is a TA or INSTRUCTOR in the offering :)
   const member = await prisma.offeringMember.findUnique({
     where: {
       userId_offeringId: {
