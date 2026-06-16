@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Bell, Search, UserCircle } from "lucide-react";
 
-type InstructorNavItem = "dashboard" | "queues" | "schedule";
+type InstructorNavItem = "command-center" | "queues" | "schedule";
 
 interface NavbarProps {
   activeItem?: InstructorNavItem;
@@ -13,13 +13,13 @@ const navLinks: Array<{
   label: string;
   href: string;
 }> = [
-  { key: "dashboard", label: "Dashboard", href: "/instructor" },
+  { key: "command-center", label: "Command Center", href: "/instructor" },
   { key: "queues", label: "My Queues", href: "/instructor/my-queues" },
   { key: "schedule", label: "Schedule", href: "/instructor/schedule" },
 ];
 
 export function Navbar({
-  activeItem = "dashboard",
+  activeItem = "command-center",
   showSearch = false,
 }: NavbarProps) {
   return (

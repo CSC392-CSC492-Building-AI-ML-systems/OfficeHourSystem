@@ -1,4 +1,5 @@
 import { find_user, type UserLookupClient } from "./users";
+import { getActiveOfferingMembership } from "./offeringMember";
 
 type MarkInterestClient = UserLookupClient & {
   officeHourSession: {
@@ -50,17 +51,28 @@ export async function markInterestedInSession(
   }
 
   // 3. check whether this student belongs to this session's offering
-  const membership = await db.offeringMember.findFirst({
-    where: {
-      userId: user.id,
-      offeringId: session.offeringId,
-      role: "STUDENT",
-    },
-  });
+  if (client) {
+    const membership = await db.offeringMember.findFirst({
+      where: {
+        userId: user.id,
+        offeringId: session.offeringId,
+        role: "STUDENT",
+        status: "ACTIVE",
+      },
+    });
 
-  // if the student is not in this offering, they should not click interested
-  if (!membership) {
-    throw new Error("Student is not enrolled in this offering");
+    if (!membership) {
+      throw new Error("Student is not enrolled in this offering");
+    }
+  } else {
+    const membership = await getActiveOfferingMembership(
+      user.id,
+      session.offeringId,
+    );
+
+    if (!membership || membership.role !== "STUDENT") {
+      throw new Error("Student is not enrolled in this offering");
+    }
   }
 
   // 4. create interest record

@@ -1,5 +1,9 @@
-import { getRequestSession, parseSessionUserId } from "@/lib/auth/getRequestSession";
+import {
+  getRequestSession,
+  parseSessionUserId,
+} from "@/lib/auth/getRequestSession";
 import { prisma } from "@/lib/prisma";
+import { getActiveOfferingMembership } from "@/lib/queries/offeringMember";
 import { startHelping } from "@/lib/queries/start_helping/start-helping";
 
 type StartHelpingResult =
@@ -24,15 +28,10 @@ export async function startHelpingService(
   if (!ohSession) throw new Error("Session not found");
 
   // Step 3: Check that this user is a TA or INSTRUCTOR in the offering :)
-  const member = await prisma.offeringMember.findUnique({
-    where: {
-      userId_offeringId: {
-        userId,
-        offeringId: ohSession.offeringId,
-      },
-    },
-    select: { role: true },
-  });
+  const member = await getActiveOfferingMembership(
+    userId,
+    ohSession.offeringId,
+  );
   if (!member || member.role === "STUDENT") {
     throw new Error("Forbidden: only TAs and instructors can start helping");
   }
@@ -62,7 +61,10 @@ export async function startHelpingService(
   }
 
   // Step 5: Atomically move the student from WAITING → IN_HELP
-  const updatedPublicId = await startHelping(attendance.id, sessionHost?.id ?? null);
+  const updatedPublicId = await startHelping(
+    attendance.id,
+    sessionHost?.id ?? null,
+  );
 
   if (updatedPublicId === null) {
     // count = 0: someone else clicked START on this student a moment ago

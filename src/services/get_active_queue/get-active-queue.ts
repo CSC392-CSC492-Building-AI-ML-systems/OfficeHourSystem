@@ -1,6 +1,7 @@
 import { getRequestSession } from "@/lib/auth/getRequestSession";
 import { parseSessionUserId } from "@/lib/auth/getRequestSession";
 import { prisma } from "@/lib/prisma";
+import { getActiveOfferingMembership } from "@/lib/queries/offeringMember";
 import { getActiveQueue } from "@/lib/queries/get_active_queue/get-active-queue";
 import type { ActiveQueueDto } from "@/lib/types/queue";
 
@@ -31,15 +32,10 @@ export async function getActiveQueueService(
   }
 
   // Step 3: Verify the user is an INSTRUCTOR or TA in this offering
-  const membership = await prisma.offeringMember.findUnique({
-    where: {
-      userId_offeringId: {
-        userId,
-        offeringId: ohSession.offeringId,
-      },
-    },
-    select: { role: true },
-  });
+  const membership = await getActiveOfferingMembership(
+    userId,
+    ohSession.offeringId,
+  );
 
   if (!membership || membership.role === "STUDENT") {
     throw new Error("Forbidden: only instructors and TAs can view the queue");

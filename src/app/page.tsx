@@ -39,10 +39,10 @@ export default function Home() {
               Instructor
             </p>
             <p className="mt-3 text-2xl font-semibold text-[#071f41]">
-              Staff Management
+              Command Center
             </p>
             <p className="mt-2 text-sm text-slate-600">
-              Review the staff summary cards and teaching assistant table.
+              Manage teaching assistants for this course instance.
             </p>
           </Link>
 

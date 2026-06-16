@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getActiveTeachingOfferingIds } from "@/lib/queries/offeringMember";
 
 // Get the start and end of today (midnight to 23:59:59)
 function getTodayRange() {
@@ -14,23 +15,12 @@ function getTodayRange() {
 // Find all office hour sessions happening today
 // for offerings where the user is an INSTRUCTOR or TA
 export async function getTodaySessionsForTeachingTeam(userId: number) {
-  // Step 1: Find all offerings this user belongs to as INSTRUCTOR or TA
-  const memberships = await prisma.offeringMember.findMany({
-    where: {
-      userId: userId,
-      role: { in: ["INSTRUCTOR", "TA"] },
-    },
-    select: {
-      offeringId: true,
-    },
-  });
+  const offeringIds = await getActiveTeachingOfferingIds(userId);
 
   // If the user is not in any offering, return empty list
-  if (memberships.length === 0) {
+  if (offeringIds.length === 0) {
     return [];
   }
-
-  const offeringIds = memberships.map((m) => m.offeringId);
 
   // Step 2: Find all sessions today in those offerings
   const { start, end } = getTodayRange();

@@ -50,17 +50,18 @@ model CourseOffering {
 }
 
 model OfferingMember {
-  id         Int            @id @default(autoincrement())
+  id         Int                   @id @default(autoincrement())
   userId     Int
   offeringId Int
   role       CourseRole
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  offering   CourseOffering @relation(fields: [offeringId], references: [id])
-  user       User           @relation(fields: [userId], references: [id])
+  status     OfferingMemberStatus  @default(ACTIVE)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  offering   CourseOffering        @relation(fields: [offeringId], references: [id])
+  user       User                  @relation(fields: [userId], references: [id])
 
   @@unique([userId, offeringId])
-  @@index([offeringId, role])
+  @@index([offeringId, role, status])
 }
 
 model OfficeHourSchedule {
@@ -218,6 +219,11 @@ enum CourseRole {
   STUDENT
   TA
   INSTRUCTOR
+}
+
+enum OfferingMemberStatus {
+  ACTIVE
+  INACTIVE
 }
 
 enum OfficeHourType {

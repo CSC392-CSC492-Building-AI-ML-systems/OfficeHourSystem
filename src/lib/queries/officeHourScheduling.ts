@@ -1,6 +1,7 @@
 import type { CourseRole, OfficeHourType, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { getActiveOfferingMembership } from "@/lib/queries/offeringMember";
 import { expandOfficeHourSchedule } from "@/lib/scheduling/expandSchedule";
 import {
   assertNoOverlappingRecurringSchedule,
@@ -243,12 +244,7 @@ async function resolveHostRows(
   const hosts: { userId: number; role: CourseRole }[] = [];
 
   for (const user of users) {
-    const member = await prisma.offeringMember.findUnique({
-      where: {
-        userId_offeringId: { userId: user.id, offeringId },
-      },
-      select: { role: true },
-    });
+    const member = await getActiveOfferingMembership(user.id, offeringId);
     if (member && member.role !== "STUDENT") {
       hosts.push({ userId: user.id, role: member.role });
     }

@@ -1,5 +1,8 @@
-import { getRequestSession, parseSessionUserId } from "@/lib/auth/getRequestSession";
-import { prisma } from "@/lib/prisma";
+import {
+  getRequestSession,
+  parseSessionUserId,
+} from "@/lib/auth/getRequestSession";
+import { hasActiveTeachingMembership } from "@/lib/queries/offeringMember";
 import { getTodaySessionsForTeachingTeam } from "@/lib/queries/show_upcoming_oh/show-upcoming-oh";
 import type { UpcomingSessionDto } from "@/lib/types/queue";
 
@@ -15,15 +18,9 @@ export async function showUpcomingOhService(): Promise<UpcomingSessionDto[]> {
   const userId = parseSessionUserId(session);
 
   // Step 2: Check the user is a TA or INSTRUCTOR in at least one offering
-  const membership = await prisma.offeringMember.findFirst({
-    where: {
-      userId,
-      role: { in: ["INSTRUCTOR", "TA"] },
-    },
-    select: { id: true },
-  });
+  const hasTeachingAccess = await hasActiveTeachingMembership(userId);
 
-  if (!membership) {
+  if (!hasTeachingAccess) {
     throw new Error("Forbidden: only instructors and TAs can view this page");
   }
 

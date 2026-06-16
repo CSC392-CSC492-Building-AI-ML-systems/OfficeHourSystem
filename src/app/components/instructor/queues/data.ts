@@ -11,6 +11,8 @@ export const DUMMY_QUEUE_SESSIONS: QueueSession[] = [
     isHighlighted: true,
     workspaceSubtitle: "CSCI 3100: Software Engineering • Lab Session A",
     lastScanLabel: "Sarah Chen checked in",
+    status: "ACTIVE",
+    endsAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: "csc108-office-hours",
@@ -21,6 +23,8 @@ export const DUMMY_QUEUE_SESSIONS: QueueSession[] = [
     workspaceSubtitle:
       "CSC108: Introduction to Computer Science • Studio Hours",
     lastScanLabel: "David Park checked in",
+    status: "SCHEDULED",
+    endsAt: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
   },
 ];
 

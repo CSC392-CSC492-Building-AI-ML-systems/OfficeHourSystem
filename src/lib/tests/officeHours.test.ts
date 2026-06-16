@@ -145,7 +145,7 @@ async function main() {
   // ── Test 3: query by email ────────────────────────────────────────────────
   await runTest("Query by email → result matches utorid query", async () => {
     const sessions = await getUpcomingSessionsByStudentIdentifier(
-      student.email,
+      student.email!,
     );
     assertEqual(sessions.length, 1, "session count");
     assertEqual(sessions[0].id, normalSession.id, "session id");

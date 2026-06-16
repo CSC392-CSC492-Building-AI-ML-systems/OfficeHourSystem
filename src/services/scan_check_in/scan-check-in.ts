@@ -1,5 +1,9 @@
-import { getRequestSession, parseSessionUserId } from "@/lib/auth/getRequestSession";
+import {
+  getRequestSession,
+  parseSessionUserId,
+} from "@/lib/auth/getRequestSession";
 import { prisma } from "@/lib/prisma";
+import { getActiveOfferingMembership } from "@/lib/queries/offeringMember";
 import { scanCheckIn } from "@/lib/queries/scan_check_in/scan-check-in";
 import type { IdentifierType, ScanCheckInResult } from "@/lib/types/queue";
 
@@ -26,19 +30,21 @@ export async function scanCheckInService(
   }
 
   // Step 4: Check the scanner operator is a TA or INSTRUCTOR in this offering
-  const member = await prisma.offeringMember.findUnique({
-    where: {
-      userId_offeringId: {
-        userId,
-        offeringId: ohSession.offeringId,
-      },
-    },
-    select: { role: true },
-  });
+  const member = await getActiveOfferingMembership(
+    userId,
+    ohSession.offeringId,
+  );
   if (!member || member.role === "STUDENT") {
-    throw new Error("Forbidden: only TAs and instructors can operate the scanner");
+    throw new Error(
+      "Forbidden: only TAs and instructors can operate the scanner",
+    );
   }
 
   // Step 5: Look up the student and insert attendance
-  return scanCheckIn(ohSession.id, ohSession.offeringId, identifierType, identifierValue);
+  return scanCheckIn(
+    ohSession.id,
+    ohSession.offeringId,
+    identifierType,
+    identifierValue,
+  );
 }

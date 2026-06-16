@@ -1,6 +1,11 @@
 import type { CourseRole } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import {
+  getActiveOfferingMembership,
+  listActiveTeachingMemberships,
+  type ActiveTeachingMembership,
+} from "@/lib/queries/offeringMember";
 
 export class ScheduleAuthError extends Error {
   constructor(
@@ -39,16 +44,7 @@ export async function getScheduleAccess(
     return null;
   }
 
-  const member = await prisma.offeringMember.findUnique({
-    where: {
-      userId_offeringId: {
-        userId,
-        offeringId: offering.id,
-      },
-    },
-    select: { role: true },
-  });
-
+  const member = await getActiveOfferingMembership(userId, offering.id);
   if (!member || member.role === "STUDENT") {
     return null;
   }
@@ -92,18 +88,8 @@ export async function requireScheduleMutate(
 }
 
 export async function listViewableOfferings(userId: number) {
-  const members = await prisma.offeringMember.findMany({
-    where: {
-      userId,
-      role: { in: ["INSTRUCTOR", "TA"] },
-    },
-    include: {
-      offering: {
-        include: { course: true },
-      },
-    },
-    orderBy: { offering: { termCode: "desc" } },
-  });
+  const members: ActiveTeachingMembership[] =
+    await listActiveTeachingMemberships(userId);
 
   return members.map((member) => ({
     offeringPublicId: member.offering.publicId,

@@ -1,40 +1,42 @@
-export interface StaffMember {
-  id: string;
-  utorid?: string;
-  name: string;
-  program: string;
-  role: "Lead TA" | "TA";
-  email: string;
-  location: string;
-  isRemote: boolean;
+import type { TaListItem } from "@/lib/queries/offeringMember";
+
+export type { TaListItem };
+
+export function formatTaDisplayName(ta: TaListItem): string {
+  const fullName = [ta.firstName, ta.lastName].filter(Boolean).join(" ");
+  return fullName || ta.utorid;
 }
 
-export const DUMMY_STAFF: StaffMember[] = [
-  {
-    id: "1",
-    name: "Sarah Chen",
-    program: "Grad Student",
-    role: "Lead TA",
-    email: "s.chen@university.edu",
-    location: "Tech Plaza, Rm 402",
-    isRemote: false,
-  },
-  {
-    id: "2",
-    name: "Marcus Holloway",
-    program: "Senior Undergraduate",
-    role: "TA",
-    email: "m.holloway@university.edu",
-    location: "Science Center, Lab 1B",
-    isRemote: false,
-  },
-  {
-    id: "3",
-    name: "Elena Rodriguez",
-    program: "Masters Student",
-    role: "TA",
-    email: "e.rodriguez@university.edu",
-    location: "Remote (Zoom)",
-    isRemote: true,
-  },
-];
+export function getTaInitials(ta: TaListItem): string {
+  const displayName = formatTaDisplayName(ta);
+  return displayName
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+export function getTaSearchText(ta: TaListItem): string {
+  return [
+    ta.utorid,
+    ta.firstName,
+    ta.lastName,
+    ta.email,
+    formatTaDisplayName(ta),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+export function taMatchesSearch(ta: TaListItem, query: string): boolean {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  const haystack = getTaSearchText(ta);
+  const tokens = normalizedQuery.split(/\s+/);
+  return tokens.every((token) => haystack.includes(token));
+}

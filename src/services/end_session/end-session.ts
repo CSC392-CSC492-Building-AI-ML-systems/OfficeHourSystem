@@ -1,5 +1,9 @@
-import { getRequestSession, parseSessionUserId } from "@/lib/auth/getRequestSession";
+import {
+  getRequestSession,
+  parseSessionUserId,
+} from "@/lib/auth/getRequestSession";
 import { prisma } from "@/lib/prisma";
+import { getActiveOfferingMembership } from "@/lib/queries/offeringMember";
 import { endSession } from "@/lib/queries/end_session/end-session";
 
 type EndSessionResult =
@@ -23,15 +27,10 @@ export async function endSessionService(
   if (!ohSession) throw new Error("Session not found");
 
   // Step 3: Check the user is a TA or INSTRUCTOR in this offering
-  const member = await prisma.offeringMember.findUnique({
-    where: {
-      userId_offeringId: {
-        userId,
-        offeringId: ohSession.offeringId,
-      },
-    },
-    select: { role: true },
-  });
+  const member = await getActiveOfferingMembership(
+    userId,
+    ohSession.offeringId,
+  );
   if (!member || member.role === "STUDENT") {
     throw new Error("Forbidden: only TAs and instructors can end a session");
   }

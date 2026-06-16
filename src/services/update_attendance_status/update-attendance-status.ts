@@ -1,5 +1,9 @@
-import { getRequestSession, parseSessionUserId } from "@/lib/auth/getRequestSession";
+import {
+  getRequestSession,
+  parseSessionUserId,
+} from "@/lib/auth/getRequestSession";
 import { prisma } from "@/lib/prisma";
+import { getActiveOfferingMembership } from "@/lib/queries/offeringMember";
 import { updateAttendanceStatus } from "@/lib/queries/update_attendance_status/update-attendance-status";
 
 type UpdateAction = "end" | "no_show";
@@ -27,17 +31,14 @@ export async function updateAttendanceStatusService(
   if (!ohSession) throw new Error("Session not found");
 
   // Step 3: Check the user is a TA or INSTRUCTOR in this offering
-  const member = await prisma.offeringMember.findUnique({
-    where: {
-      userId_offeringId: {
-        userId,
-        offeringId: ohSession.offeringId,
-      },
-    },
-    select: { role: true },
-  });
+  const member = await getActiveOfferingMembership(
+    userId,
+    ohSession.offeringId,
+  );
   if (!member || member.role === "STUDENT") {
-    throw new Error("Forbidden: only TAs and instructors can update attendance");
+    throw new Error(
+      "Forbidden: only TAs and instructors can update attendance",
+    );
   }
 
   // Step 3b/4: Look up the session host record (used to log who resolved the

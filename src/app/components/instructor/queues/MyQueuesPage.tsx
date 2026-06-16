@@ -12,7 +12,11 @@ type Tab = "upcoming" | "active" | "ended";
 
 // Format two ISO strings into a readable time range e.g. "10:00 AM - 11:00 AM"
 function formatSessionTime(startsAt: string, endsAt: string): string {
-  const opts: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit", hour12: true };
+  const opts: Intl.DateTimeFormatOptions = {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  };
   const start = new Date(startsAt).toLocaleTimeString("en-US", opts);
   const end = new Date(endsAt).toLocaleTimeString("en-US", opts);
   return `${start} - ${end}`;
@@ -58,30 +62,30 @@ export default function MyQueuesPage() {
   }, []);
 
   // Split sessions into three buckets
-  const upcomingSessions = sessions.filter((s) =>
-    s.status === "SCHEDULED" || s.status === "DELAYED",
+  const upcomingSessions = sessions.filter(
+    (s) => s.status === "SCHEDULED" || s.status === "DELAYED",
   );
   const activeSessions = sessions.filter((s) => s.status === "ACTIVE");
-  const endedSessions  = sessions.filter((s) =>
-    s.status === "COMPLETED" || s.status === "CANCELLED",
+  const endedSessions = sessions.filter(
+    (s) => s.status === "COMPLETED" || s.status === "CANCELLED",
   );
 
   const tabSessions: Record<Tab, QueueSession[]> = {
     upcoming: upcomingSessions,
-    active:   activeSessions,
-    ended:    endedSessions,
+    active: activeSessions,
+    ended: endedSessions,
   };
 
   const tabLabels: Record<Tab, string> = {
     upcoming: `Upcoming (${upcomingSessions.length})`,
-    active:   `Active (${activeSessions.length})`,
-    ended:    `Ended (${endedSessions.length})`,
+    active: `Active (${activeSessions.length})`,
+    ended: `Ended (${endedSessions.length})`,
   };
 
   const emptyMessages: Record<Tab, string> = {
     upcoming: "No upcoming sessions today.",
-    active:   "No active sessions right now.",
-    ended:    "No ended sessions today.",
+    active: "No active sessions right now.",
+    ended: "No ended sessions today.",
   };
 
   return (
@@ -114,10 +118,11 @@ export default function MyQueuesPage() {
                 </span>
                 <div>
                   <h2 className="text-xl font-semibold text-[#071f41]">
-                    Today's Sessions
+                    {"Today's Sessions"}
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    Open the next session workspace when students begin checking in.
+                    Open the next session workspace when students begin checking
+                    in.
                   </p>
                 </div>
               </div>
@@ -150,7 +155,9 @@ export default function MyQueuesPage() {
             {loading ? (
               <p className="mt-8 text-sm text-slate-500">Loading sessions…</p>
             ) : tabSessions[activeTab].length === 0 ? (
-              <p className="mt-8 text-sm text-slate-500">{emptyMessages[activeTab]}</p>
+              <p className="mt-8 text-sm text-slate-500">
+                {emptyMessages[activeTab]}
+              </p>
             ) : (
               <div className="mt-8 grid gap-5 xl:grid-cols-2">
                 {tabSessions[activeTab].map((session) => (

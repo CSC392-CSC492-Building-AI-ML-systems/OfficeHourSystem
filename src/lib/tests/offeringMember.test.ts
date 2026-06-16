@@ -34,7 +34,16 @@ import { prisma } from "@/lib/prisma";
 import {
   getMemberRole,
   addOrUpdateStaffMember,
+  addTaMember,
+  deactivateTaMember,
+  listActiveTas,
 } from "@/lib/queries/offeringMember";
+import {
+  INACTIVE_OFFERING_MEMBER_STATUS,
+  offeringMemberRoleStatusSelect,
+  offeringMemberRow,
+  type OfferingMemberRoleStatus,
+} from "@/lib/queries/offeringMemberConstants";
 import {
   TEST_PREFIX,
   TEST_TERM,
@@ -129,7 +138,7 @@ async function main() {
     "getMemberRole: query by email → returns correct role",
     async () => {
       const result = await getMemberRole(
-        { email: user.email },
+        { email: user.email! },
         { publicId: offering.publicId },
       );
       assert(result !== null, "should not return null");
@@ -441,6 +450,231 @@ async function main() {
       assertEqual(after?.role, "TA", "getMemberRole should return TA");
     },
   );
+
+  // ── Test 17: inactive members are hidden from getMemberRole ───────────────
+  await runTest("getMemberRole: inactive member → returns null", async () => {
+    const inactiveTa = await prisma.user.create({
+      data: {
+        utorid: `${TEST_PREFIX}inactive-ta`,
+        email: `${TEST_PREFIX}inactive-ta@mail.utoronto.ca`,
+      },
+    });
+
+    await prisma.offeringMember.create({
+      data: offeringMemberRow({
+        userId: inactiveTa.id,
+        offeringId: offering.id,
+        role: "TA",
+        status: INACTIVE_OFFERING_MEMBER_STATUS,
+      }),
+    });
+
+    const result = await getMemberRole(
+      { utorid: inactiveTa.utorid },
+      { publicId: offering.publicId },
+    );
+    assertEqual(result, null, "inactive member should return null");
+  });
+
+  // ── Test 18: addTaMember returns already_added for active TA ──────────────
+  await runTest("addTaMember: active TA → already_added", async () => {
+    const taUser = await prisma.user.create({
+      data: { utorid: `${TEST_PREFIX}active-ta` },
+    });
+
+    await prisma.offeringMember.create({
+      data: offeringMemberRow({
+        userId: taUser.id,
+        offeringId: offering.id,
+        role: "TA",
+      }),
+    });
+
+    const result = await addTaMember(
+      { utorid: taUser.utorid },
+      { publicId: offering.publicId },
+    );
+    assertEqual(result.outcome, "already_added", "should report already added");
+  });
+
+  // ── Test 19: addTaMember reactivates inactive TA ──────────────────────────
+  await runTest("addTaMember: inactive TA → reactivated", async () => {
+    const taUser = await prisma.user.create({
+      data: { utorid: `${TEST_PREFIX}reactivate-ta` },
+    });
+
+    await prisma.offeringMember.create({
+      data: offeringMemberRow({
+        userId: taUser.id,
+        offeringId: offering.id,
+        role: "TA",
+        status: INACTIVE_OFFERING_MEMBER_STATUS,
+      }),
+    });
+
+    const result = await addTaMember(
+      { utorid: taUser.utorid },
+      { publicId: offering.publicId },
+    );
+    assertEqual(result.outcome, "reactivated", "should reactivate inactive TA");
+
+    const role = await getMemberRole(
+      { utorid: taUser.utorid },
+      { publicId: offering.publicId },
+    );
+    assertEqual(role?.role, "TA", "reactivated TA should be visible again");
+  });
+
+  // ── Test 20: deactivateTaMember marks TA inactive ─────────────────────────
+  await runTest("deactivateTaMember: active TA → removed", async () => {
+    const taUser = await prisma.user.create({
+      data: { utorid: `${TEST_PREFIX}remove-ta` },
+    });
+
+    await prisma.offeringMember.create({
+      data: offeringMemberRow({
+        userId: taUser.id,
+        offeringId: offering.id,
+        role: "TA",
+      }),
+    });
+
+    const result = await deactivateTaMember(
+      { publicId: taUser.publicId },
+      { publicId: offering.publicId },
+    );
+    assertEqual(result.outcome, "removed", "should deactivate TA");
+
+    const role = await getMemberRole(
+      { utorid: taUser.utorid },
+      { publicId: offering.publicId },
+    );
+    assertEqual(role, null, "deactivated TA should lose active access");
+
+    const row = (await prisma.offeringMember.findUnique({
+      where: {
+        userId_offeringId: {
+          userId: taUser.id,
+          offeringId: offering.id,
+        },
+      },
+      select: offeringMemberRoleStatusSelect,
+    })) as OfferingMemberRoleStatus | null;
+    assertEqual(row?.role, "TA", "historical TA role should remain");
+    assertEqual(
+      row?.status,
+      INACTIVE_OFFERING_MEMBER_STATUS,
+      "status should be INACTIVE",
+    );
+  });
+
+  // ── Test 21: listActiveTas returns only active TAs ────────────────────────
+  await runTest("listActiveTas: returns only active TAs", async () => {
+    const activeTa = await prisma.user.create({
+      data: { utorid: `${TEST_PREFIX}list-active-ta` },
+    });
+    const inactiveTa = await prisma.user.create({
+      data: { utorid: `${TEST_PREFIX}list-inactive-ta` },
+    });
+
+    await prisma.offeringMember.createMany({
+      data: [
+        offeringMemberRow({
+          userId: activeTa.id,
+          offeringId: offering.id,
+          role: "TA",
+        }),
+        offeringMemberRow({
+          userId: inactiveTa.id,
+          offeringId: offering.id,
+          role: "TA",
+          status: INACTIVE_OFFERING_MEMBER_STATUS,
+        }),
+      ],
+    });
+
+    const tas = await listActiveTas({ publicId: offering.publicId });
+    const utorids = tas.map((ta) => ta.utorid);
+    assert(utorids.includes(activeTa.utorid), "active TA should be listed");
+    assert(
+      !utorids.includes(inactiveTa.utorid),
+      "inactive TA should not be listed",
+    );
+  });
+
+  // ── Test 22: addTaMember blocks active instructor ─────────────────────────
+  await runTest("addTaMember: active instructor → blocked", async () => {
+    const instructorUser = await prisma.user.create({
+      data: { utorid: `${TEST_PREFIX}block-instructor` },
+    });
+
+    await prisma.offeringMember.create({
+      data: offeringMemberRow({
+        userId: instructorUser.id,
+        offeringId: offering.id,
+        role: "INSTRUCTOR",
+      }),
+    });
+
+    const result = await addTaMember(
+      { utorid: instructorUser.utorid },
+      { publicId: offering.publicId },
+    );
+    assertEqual(result.outcome, "blocked", "should block instructor");
+    if (result.outcome === "blocked") {
+      assertEqual(result.reason, "instructor", "reason should be instructor");
+    }
+
+    const membership = await prisma.offeringMember.findUnique({
+      where: {
+        userId_offeringId: {
+          userId: instructorUser.id,
+          offeringId: offering.id,
+        },
+      },
+      select: { role: true },
+    });
+    assertEqual(
+      membership?.role,
+      "INSTRUCTOR",
+      "instructor role should remain",
+    );
+  });
+
+  // ── Test 23: addTaMember blocks active student ──────────────────────────────
+  await runTest("addTaMember: active student → blocked", async () => {
+    const studentUser = await prisma.user.create({
+      data: { utorid: `${TEST_PREFIX}block-student` },
+    });
+
+    await prisma.offeringMember.create({
+      data: offeringMemberRow({
+        userId: studentUser.id,
+        offeringId: offering.id,
+        role: "STUDENT",
+      }),
+    });
+
+    const result = await addTaMember(
+      { utorid: studentUser.utorid },
+      { publicId: offering.publicId },
+    );
+    assertEqual(result.outcome, "blocked", "should block student");
+    if (result.outcome === "blocked") {
+      assertEqual(result.reason, "student", "reason should be student");
+    }
+
+    const membership = await prisma.offeringMember.findUnique({
+      where: {
+        userId_offeringId: {
+          userId: studentUser.id,
+          offeringId: offering.id,
+        },
+      },
+      select: { role: true },
+    });
+    assertEqual(membership?.role, "STUDENT", "student role should remain");
+  });
 
   // Cleanup
   await cleanupAll();

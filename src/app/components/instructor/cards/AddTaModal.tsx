@@ -1,35 +1,22 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, useTransition } from "react";
 import { UserPlus, X } from "lucide-react";
-import type { StaffMember } from "./data";
+import { addTaAction } from "@/actions/command-center/command-center";
 
 interface AddTaModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddStaffMember: (staffMember: StaffMember) => void;
+  onSuccess: () => void;
 }
 
-type StaffRole = StaffMember["role"];
-type LocationType = "in-person" | "remote";
-
-const initialRole: StaffRole = "TA";
-const initialLocationType: LocationType = "in-person";
-
-export function AddTaModal({
-  isOpen,
-  onClose,
-  onAddStaffMember,
-}: AddTaModalProps) {
+export function AddTaModal({ isOpen, onClose, onSuccess }: AddTaModalProps) {
   const [utorid, setUtorid] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [program, setProgram] = useState("");
-  const [role, setRole] = useState<StaffRole>(initialRole);
-  const [locationType, setLocationType] =
-    useState<LocationType>(initialLocationType);
-  const [location, setLocation] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!isOpen) {
@@ -62,16 +49,10 @@ export function AddTaModal({
     setFirstName("");
     setLastName("");
     setEmail("");
-    setProgram("");
-    setRole(initialRole);
-    setLocationType(initialLocationType);
-    setLocation("");
+    setError(null);
   };
 
-  const isFormValid =
-    utorid.trim().length > 0 &&
-    program.trim().length > 0 &&
-    location.trim().length > 0;
+  const isFormValid = utorid.trim().length > 0;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -80,22 +61,42 @@ export function AddTaModal({
       return;
     }
 
-    const trimmedUtorid = utorid.trim();
-    const displayName =
-      [firstName.trim(), lastName.trim()].filter(Boolean).join(" ") ||
-      trimmedUtorid;
+    setError(null);
 
-    onAddStaffMember({
-      id: `local-${Date.now()}`,
-      utorid: trimmedUtorid,
-      name: displayName,
-      email: email.trim(),
-      program: program.trim(),
-      role,
-      location: location.trim(),
-      isRemote: locationType === "remote",
+    startTransition(async () => {
+      try {
+        const result = await addTaAction({
+          utorid: utorid.trim(),
+          firstName: firstName.trim() || undefined,
+          lastName: lastName.trim() || undefined,
+          email: email.trim() || undefined,
+        });
+
+        if (result.outcome === "already_added") {
+          setError("Already Added");
+          return;
+        }
+
+        if (result.outcome === "blocked") {
+          setError(
+            result.reason === "instructor"
+              ? "This person is already an instructor for this course."
+              : "This person is already enrolled as a student in this course.",
+          );
+          return;
+        }
+
+        resetForm();
+        onSuccess();
+        onClose();
+      } catch (submitError) {
+        setError(
+          submitError instanceof Error
+            ? submitError.message
+            : "Unable to add teaching assistant.",
+        );
+      }
     });
-    resetForm();
   };
 
   return (
@@ -110,7 +111,7 @@ export function AddTaModal({
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
           <div>
             <p className="text-xs font-semibold tracking-[0.18em] text-slate-500">
-              STAFF MANAGEMENT
+              COMMAND CENTER
             </p>
             <h2 className="mt-2 text-xl font-semibold text-[#071f41]">
               Add teaching assistant
@@ -174,67 +175,11 @@ export function AddTaModal({
             />
           </label>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="space-y-2 text-sm font-medium text-[#071f41]">
-              <span>Program</span>
-              <input
-                required
-                value={program}
-                onChange={(event) => setProgram(event.target.value)}
-                placeholder="Senior Undergraduate"
-                className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
-              />
-            </label>
-
-            <label className="space-y-2 text-sm font-medium text-[#071f41]">
-              <span>Role</span>
-              <select
-                value={role}
-                onChange={(event) => setRole(event.target.value as StaffRole)}
-                className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41] focus:bg-white"
-              >
-                <option value="TA">TA</option>
-                <option value="Lead TA">Lead TA</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 text-sm font-medium text-[#071f41]">
-              <span>Location type</span>
-              <div className="grid grid-cols-2 rounded-2xl border border-slate-200 bg-[#f8fafc] p-1">
-                {(["in-person", "remote"] as LocationType[]).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setLocationType(type)}
-                    className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                      locationType === type
-                        ? "bg-[#071f41] text-white shadow-[0_12px_24px_-20px_rgba(7,31,65,0.8)]"
-                        : "text-slate-500 hover:text-[#071f41]"
-                    }`}
-                  >
-                    {type === "in-person" ? "In person" : "Remote"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <label className="space-y-2 text-sm font-medium text-[#071f41]">
-              <span>Office location</span>
-              <input
-                required
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
-                placeholder={
-                  locationType === "remote"
-                    ? "Remote (Zoom)"
-                    : "Tech Plaza, Rm 402"
-                }
-                className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
-              />
-            </label>
-          </div>
+          {error ? (
+            <p className="rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#9f1239]">
+              {error}
+            </p>
+          ) : null}
 
           <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
             <button
@@ -246,11 +191,11 @@ export function AddTaModal({
             </button>
             <button
               type="submit"
-              disabled={!isFormValid}
+              disabled={!isFormValid || isPending}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(7,31,65,0.7)] transition hover:bg-[#0f2942] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
             >
               <UserPlus className="h-4 w-4" />
-              Add TA
+              {isPending ? "Adding..." : "Add TA"}
             </button>
           </div>
         </form>
