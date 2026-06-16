@@ -6,7 +6,7 @@ set -e
 
 if [ -n "$DATABASE_URL" ]; then
   echo "[entrypoint] Applying database migrations..."
-  npx prisma migrate deploy
+  ./node_modules/.bin/prisma migrate deploy
 else
   echo "[entrypoint] DATABASE_URL not set; skipping migrations."
 fi

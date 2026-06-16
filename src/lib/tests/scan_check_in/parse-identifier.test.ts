@@ -2,7 +2,7 @@
  * Tests: parseIdentifier()
  *
  * How to run:
- *   npx tsx src/lib/tests/scan_check_in/parse-identifier.test.ts
+ *   pnpm dlx tsx src/lib/tests/scan_check_in/parse-identifier.test.ts
  *
  * No database needed — pure function tests.
  *
@@ -76,7 +76,10 @@ test("TCard swipe — ASCII separators (^) extracts student number", () => {
 
 test("TCard swipe — uppercase name, Chinese ellipsis (……) separator", () => {
   // Real swipe from field testing
-  const raw = "%HAOZHE\u2026\u2026HUO\u2026\u2026" + "1011661168" + "\u2026\u20268/20/2024\uff1f\uff1b2176103009687101\uff1f";
+  const raw =
+    "%HAOZHE\u2026\u2026HUO\u2026\u2026" +
+    "1011661168" +
+    "\u2026\u20268/20/2024\uff1f\uff1b2176103009687101\uff1f";
   expect(parseIdentifier(raw), { type: "student_number", value: "1011661168" });
 });
 
@@ -88,12 +91,18 @@ test("TCard swipe — different student (jingcheng liang)", () => {
 
 test("TCard swipe — single-char separator wrapping student number", () => {
   // Simplified: ;1234567890;
-  expect(parseIdentifier(";1234567890;"), { type: "student_number", value: "1234567890" });
+  expect(parseIdentifier(";1234567890;"), {
+    type: "student_number",
+    value: "1234567890",
+  });
 });
 
 test("TCard swipe — full-width question marks as separator", () => {
   // ？1234567890？
-  expect(parseIdentifier("\uff1f1234567890\uff1f"), { type: "student_number", value: "1234567890" });
+  expect(parseIdentifier("\uff1f1234567890\uff1f"), {
+    type: "student_number",
+    value: "1234567890",
+  });
 });
 
 // ── TCard swipe: edge-case (missing trailing separator) ───────────────────────
@@ -101,7 +110,9 @@ test("TCard swipe — full-width question marks as separator", () => {
 test("TCard swipe fallback — missing trailing separator, extracts barcode", () => {
   // Date digits (8/20) fused into student number → swiper regex fails,
   // fallback finds the 16-digit barcode that follows
-  const raw = "%HAOZHE\u2026\u2026HUO\u2026\u20261011661168" + "8/20/2024\uff1f\uff1b2176103009687101\uff1f";
+  const raw =
+    "%HAOZHE\u2026\u2026HUO\u2026\u20261011661168" +
+    "8/20/2024\uff1f\uff1b2176103009687101\uff1f";
   // Student number would be 10116611688 (11 digits) — no match for regex
   // Barcode fallback: first 16-digit run = 2176103009687101
   expect(parseIdentifier(raw), { type: "barcode", value: "2176103009687101" });
@@ -115,29 +126,47 @@ test("TCard swipe fallback — % prefix but no 16-digit sequence → null", () =
 // ── Barcode (standalone) ──────────────────────────────────────────────────────
 
 test("Barcode — exactly 16 digits", () => {
-  expect(parseIdentifier("2176301960087102"), { type: "barcode", value: "2176301960087102" });
+  expect(parseIdentifier("2176301960087102"), {
+    type: "barcode",
+    value: "2176301960087102",
+  });
 });
 
 test("Barcode — 16 digits with surrounding whitespace", () => {
-  expect(parseIdentifier("  2176301960087102  "), { type: "barcode", value: "2176301960087102" });
+  expect(parseIdentifier("  2176301960087102  "), {
+    type: "barcode",
+    value: "2176301960087102",
+  });
 });
 
 test("Barcode — all zeros (valid 16-digit string)", () => {
-  expect(parseIdentifier("0000000000000000"), { type: "barcode", value: "0000000000000000" });
+  expect(parseIdentifier("0000000000000000"), {
+    type: "barcode",
+    value: "0000000000000000",
+  });
 });
 
 // ── Student number (manual) ───────────────────────────────────────────────────
 
 test("Student number — exactly 10 digits", () => {
-  expect(parseIdentifier("1234567890"), { type: "student_number", value: "1234567890" });
+  expect(parseIdentifier("1234567890"), {
+    type: "student_number",
+    value: "1234567890",
+  });
 });
 
 test("Student number — 10 digits with surrounding whitespace", () => {
-  expect(parseIdentifier("  1234567890  "), { type: "student_number", value: "1234567890" });
+  expect(parseIdentifier("  1234567890  "), {
+    type: "student_number",
+    value: "1234567890",
+  });
 });
 
 test("Student number — 10 zeros", () => {
-  expect(parseIdentifier("0000000000"), { type: "student_number", value: "0000000000" });
+  expect(parseIdentifier("0000000000"), {
+    type: "student_number",
+    value: "0000000000",
+  });
 });
 
 // ── UTORid (manual) ───────────────────────────────────────────────────────────
@@ -155,7 +184,10 @@ test("UTORid — all lowercase letters", () => {
 });
 
 test("UTORid — with leading/trailing whitespace", () => {
-  expect(parseIdentifier("  chenjohn  "), { type: "utorid", value: "chenjohn" });
+  expect(parseIdentifier("  chenjohn  "), {
+    type: "utorid",
+    value: "chenjohn",
+  });
 });
 
 // ── Invalid inputs ────────────────────────────────────────────────────────────
@@ -213,7 +245,10 @@ test("Invalid — looks like swipe but separator doesn't match (asymmetric) → 
 
 test("Newline appended by scanner — stripped before parse (student number)", () => {
   // ScanPage strips \\n before calling parseIdentifier
-  expect(parseIdentifier("1234567890\n"), { type: "student_number", value: "1234567890" });
+  expect(parseIdentifier("1234567890\n"), {
+    type: "student_number",
+    value: "1234567890",
+  });
 });
 
 test("Newline appended by scanner — stripped before parse (UTORid)", () => {
