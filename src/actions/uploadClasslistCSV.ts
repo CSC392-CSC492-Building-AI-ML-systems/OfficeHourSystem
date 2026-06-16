@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import {
   uploadClasslistFromFormData,
   type ClasslistUploadResult,
@@ -20,5 +22,11 @@ import {
 export async function uploadClasslistCSV(
   formData: FormData,
 ): Promise<ClasslistUploadResult> {
-  return uploadClasslistFromFormData(formData);
+  const result = await uploadClasslistFromFormData(formData);
+
+  if (result.ok) {
+    revalidatePath("/instructor");
+  }
+
+  return result;
 }

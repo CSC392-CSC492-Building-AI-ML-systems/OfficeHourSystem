@@ -6,9 +6,11 @@ import { UserPlus } from "lucide-react";
 import type { CommandCenterPageData } from "@/lib/queries/commandCenter";
 import { Navbar } from "./Navbar";
 import { AddTaModal } from "./cards/AddTaModal";
+import { ClasslistUploadSection } from "./cards/ClasslistUploadSection";
 import { StaffTable } from "./cards/StaffTable";
 
-const INSTRUCTOR_ONLY_HINT = "Only instructors can add or remove TAs.";
+const INSTRUCTOR_ONLY_HINT =
+  "Only instructors can add or remove TAs or import classlists.";
 
 type CommandCenterProps = {
   initialData: CommandCenterPageData;
@@ -62,6 +64,13 @@ export default function CommandCenter({ initialData }: CommandCenterProps) {
             tas={initialData.tas}
             canManageTas={canManageTas}
             onRemoveSuccess={refreshPage}
+          />
+
+          <ClasslistUploadSection
+            courseCode={initialData.offering.courseCode}
+            termCode={initialData.offering.termCode}
+            canImport={canManageTas}
+            onImportSuccess={refreshPage}
           />
         </main>
       </div>
