@@ -5,7 +5,7 @@ services:
     build:
       context: .
     volumes:
-      - ./whitelist.txt:/app/whitelist.txt:ro
+      - ./adminList.txt:/app/adminList.txt:ro
       - ./uploads:/app/uploads
     env_file: .env
     environment:

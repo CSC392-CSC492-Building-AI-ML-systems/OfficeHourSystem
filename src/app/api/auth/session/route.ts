@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionOptions, type SessionData } from "@/lib/session";
-import { getRoleFromWhitelist } from "@/lib/whitelist";
 
 // ---------------------------------------------------------------------------
 // GET /api/auth/session
@@ -24,15 +23,12 @@ import { getRoleFromWhitelist } from "@/lib/whitelist";
 // (defaults to "/").
 // ---------------------------------------------------------------------------
 
-function buildUserProfileUpdateData(
-  profile: {
-    firstName: string | null;
-    lastName: string | null;
-    email: string | null;
-  },
-  isInstructor: boolean,
-): Prisma.UserUpdateInput {
-  const data = { isInstructor } as Prisma.UserUpdateInput;
+function buildUserProfileUpdateData(profile: {
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+}): Prisma.UserUpdateInput {
+  const data: Prisma.UserUpdateInput = {};
 
   if (profile.firstName) {
     data.firstName = profile.firstName;
@@ -54,9 +50,8 @@ function buildUserCreateData(
     lastName: string | null;
     email: string | null;
   },
-  isInstructor: boolean,
 ): Prisma.UserUncheckedCreateInput {
-  const data = { utorid, isInstructor } as Prisma.UserUncheckedCreateInput;
+  const data = { utorid } as Prisma.UserUncheckedCreateInput;
 
   if (profile.firstName) {
     data.firstName = profile.firstName;
@@ -111,26 +106,19 @@ export async function GET(request: NextRequest) {
   }
 
   // ------------------------------------------------------------------
-  // 2. Resolve instructor flag from the whitelist (whitelist.txt).
-  //    Per-course TA/instructor roles are stored in OfferingMember.
-  // ------------------------------------------------------------------
-  const isInstructor = getRoleFromWhitelist(utorid) === "INSTRUCTOR";
-
-  // ------------------------------------------------------------------
-  // 3. Upsert user in Postgres.
-  //    isInstructor is re-evaluated on every login so whitelist changes
-  //    take effect on the user's next sign-in.
+  // 2. Upsert user in Postgres (profile fields only; isInstructor is managed
+  //    separately via /admin or other instructor-management flows).
   // ------------------------------------------------------------------
   const profile = { firstName, lastName, email };
 
   const user = await prisma.user.upsert({
     where: { utorid },
-    update: buildUserProfileUpdateData(profile, isInstructor),
-    create: buildUserCreateData(utorid, profile, isInstructor),
+    update: buildUserProfileUpdateData(profile),
+    create: buildUserCreateData(utorid, profile),
   });
 
   // ------------------------------------------------------------------
-  // 4. Write the iron-session cookie
+  // 3. Write the iron-session cookie
   // ------------------------------------------------------------------
   const session = await getIronSession<SessionData>(
     await cookies(),
@@ -144,7 +132,7 @@ export async function GET(request: NextRequest) {
   await session.save();
 
   // ------------------------------------------------------------------
-  // 5. Redirect to the original destination (default: "/")
+  // 4. Redirect to the original destination (default: "/")
   // ------------------------------------------------------------------
   const redirectTo = request.nextUrl.searchParams.get("redirect") ?? "/";
   // Guard against open redirects — only allow relative paths on this origin.
