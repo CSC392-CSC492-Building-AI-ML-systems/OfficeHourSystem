@@ -14,6 +14,7 @@ model User {
   email         String?
   firstName     String?
   lastName      String?
+  isInstructor  Boolean                  @default(false)
   createdAt     DateTime                 @default(now())
   updatedAt     DateTime                 @updatedAt
   studentNumber String?                  @unique @map("student_number")

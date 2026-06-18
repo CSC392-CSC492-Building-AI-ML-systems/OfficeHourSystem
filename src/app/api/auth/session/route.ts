@@ -24,12 +24,15 @@ import { getRoleFromWhitelist } from "@/lib/whitelist";
 // (defaults to "/").
 // ---------------------------------------------------------------------------
 
-function buildUserProfileUpdateData(profile: {
-  firstName: string | null;
-  lastName: string | null;
-  email: string | null;
-}): Prisma.UserUpdateInput {
-  const data: Prisma.UserUpdateInput = {};
+function buildUserProfileUpdateData(
+  profile: {
+    firstName: string | null;
+    lastName: string | null;
+    email: string | null;
+  },
+  isInstructor: boolean,
+): Prisma.UserUpdateInput {
+  const data = { isInstructor } as Prisma.UserUpdateInput;
 
   if (profile.firstName) {
     data.firstName = profile.firstName;
@@ -51,8 +54,9 @@ function buildUserCreateData(
     lastName: string | null;
     email: string | null;
   },
+  isInstructor: boolean,
 ): Prisma.UserUncheckedCreateInput {
-  const data = { utorid } as Prisma.UserUncheckedCreateInput;
+  const data = { utorid, isInstructor } as Prisma.UserUncheckedCreateInput;
 
   if (profile.firstName) {
     data.firstName = profile.firstName;
@@ -107,33 +111,26 @@ export async function GET(request: NextRequest) {
   }
 
   // ------------------------------------------------------------------
-  // 2. Resolve role from the instructor whitelist.
-  //    INSTRUCTOR → listed in whitelist.txt
-  //    TA         → assigned per course via the UI
-  //    STUDENT    → everyone else (default)
-  //    In dev mode DEV_ROLE overrides the whitelist (for testing instructor UI).
+  // 2. Resolve instructor flag from the whitelist (whitelist.txt).
+  //    Per-course TA/instructor roles are stored in OfferingMember.
   // ------------------------------------------------------------------
-  const whitelistRole = getRoleFromWhitelist(utorid);
-  const role =
-    !isProd && process.env.DEV_ROLE
-      ? (process.env.DEV_ROLE as "STUDENT" | "TA" | "INSTRUCTOR")
-      : whitelistRole;
+  const isInstructor = getRoleFromWhitelist(utorid) === "INSTRUCTOR";
 
   // ------------------------------------------------------------------
   // 3. Upsert user in Postgres.
-  //    Role is re-evaluated on every login so whitelist changes take
-  //    effect immediately on the user's next sign-in.
+  //    isInstructor is re-evaluated on every login so whitelist changes
+  //    take effect on the user's next sign-in.
   // ------------------------------------------------------------------
   const profile = { firstName, lastName, email };
 
   const user = await prisma.user.upsert({
     where: { utorid },
-    update: buildUserProfileUpdateData(profile),
-    create: buildUserCreateData(utorid, profile),
+    update: buildUserProfileUpdateData(profile, isInstructor),
+    create: buildUserCreateData(utorid, profile, isInstructor),
   });
 
   // ------------------------------------------------------------------
-  // 3. Write the iron-session cookie
+  // 4. Write the iron-session cookie
   // ------------------------------------------------------------------
   const session = await getIronSession<SessionData>(
     await cookies(),
@@ -144,11 +141,10 @@ export async function GET(request: NextRequest) {
   session.email = user.email ?? "";
   session.firstName = user.firstName ?? "";
   session.lastName = user.lastName ?? "";
-  session.role = role;
   await session.save();
 
   // ------------------------------------------------------------------
-  // 4. Redirect to the original destination (default: "/")
+  // 5. Redirect to the original destination (default: "/")
   // ------------------------------------------------------------------
   const redirectTo = request.nextUrl.searchParams.get("redirect") ?? "/";
   // Guard against open redirects — only allow relative paths on this origin.
