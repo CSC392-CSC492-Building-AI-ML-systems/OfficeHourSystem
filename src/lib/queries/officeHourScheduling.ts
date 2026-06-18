@@ -3,6 +3,11 @@ import type { CourseRole, OfficeHourType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { expandOfficeHourSchedule } from "@/lib/scheduling/expandSchedule";
 import {
+  assertNoOverlappingRecurringSchedule,
+  assertNoOverlappingSession,
+  assertNoOverlappingSessionsForRecurringOccurrences,
+} from "@/lib/scheduling/overlap";
+import {
   requireScheduleMutate,
   requireScheduleView,
   listViewableOfferings,
@@ -19,17 +24,24 @@ import type {
   UpdateRecurringBlockInput,
   UpdateSessionInput,
 } from "@/lib/scheduling/types";
-import { uiSessionTypeToOfficeHourType } from "@/lib/scheduling/types";
+import {
+  officeHourTypeLabel,
+  uiSessionTypeToOfficeHourType,
+} from "@/lib/scheduling/types";
 import {
   addDays,
+  assertOfficeHourWeekday,
+  assertOfficeHourWindow,
   buildWeekCalendarDays,
   combineDateAndMinutes,
   dayOfWeekToKey,
   decimalHourFromDate,
+  formatCalendarDateLabel,
   formatDateTimeLabel,
   formatMinutesAsLabel,
   formatSessionDateLabel,
   formatWeekRangeLabel,
+  getTermBounds,
   minutesToTimeInput,
   parseIsoDateOnly,
   parseTimeToMinutes,
@@ -181,16 +193,24 @@ function mapSessionToDto(
 ): ScheduleSessionDto {
   const defaultLocation = session.schedule?.location ?? session.location ?? "";
   const sessionLocation = session.location ?? defaultLocation;
+  const schedule = session.schedule;
+  const isRecurringOccurrence = session.scheduleId != null && schedule != null;
+  const hasTitleOverride =
+    isRecurringOccurrence && session.title !== schedule.title;
   const hasLocationOverride =
-    session.scheduleId != null &&
+    isRecurringOccurrence &&
     session.location != null &&
-    session.location !== session.schedule?.location;
+    session.location !== schedule.location;
+  const hasOverride = hasTitleOverride || hasLocationOverride;
+
+  const sessionTypeLabel = officeHourTypeLabel(session.type);
 
   return {
     id: session.publicId,
     courseCode,
     courseName: undefined,
-    calendarLabel: courseCode,
+    sessionTypeLabel,
+    calendarLabel: sessionTypeLabel,
     title: session.title,
     topic: session.title,
     day: dayOfWeekToKey(session.startsAt.getDay()),
@@ -202,8 +222,7 @@ function mapSessionToDto(
     location: sessionLocation,
     mode: inferLocationMode(sessionLocation),
     accent: accentForType(session.type),
-    hasWarning: session.type === "DEBUGGING",
-    hasLocationOverride,
+    hasOverride,
     overrideLocation: hasLocationOverride ? sessionLocation : undefined,
   };
 }
@@ -245,10 +264,7 @@ export async function createRecurringBlock(
   const access = await requireScheduleMutate(userId, input.offeringPublicId);
   const startMinute = parseTimeToMinutes(input.startTime);
   const endMinute = parseTimeToMinutes(input.endTime);
-
-  if (endMinute <= startMinute) {
-    throw new Error("End time must be after start time.");
-  }
+  assertOfficeHourWindow(startMinute, endMinute);
 
   const days = weekdayKeysToDayOfWeek(input.weekdayKeys);
   if (days.length === 0) {
@@ -265,6 +281,26 @@ export async function createRecurringBlock(
     access.offeringId,
     input.hostUserPublicIds,
   );
+
+  for (const dayOfWeek of days) {
+    await assertNoOverlappingRecurringSchedule(
+      access.offeringId,
+      access.termCode,
+      dayOfWeek,
+      startMinute,
+      endMinute,
+      scheduleBounds.validFrom,
+      scheduleBounds.validUntil,
+    );
+    await assertNoOverlappingSessionsForRecurringOccurrences(
+      access.offeringId,
+      dayOfWeek,
+      startMinute,
+      endMinute,
+      scheduleBounds.validFrom,
+      scheduleBounds.validUntil,
+    );
+  }
 
   const schedulePublicIds: string[] = [];
   let sessionsCreated = 0;
@@ -315,20 +351,20 @@ export async function createOneTimeSession(
 ) {
   const access = await requireScheduleMutate(userId, input.offeringPublicId);
   const day = parseIsoDateOnly(input.date);
+  assertOfficeHourWeekday(day);
   const startMinute = parseTimeToMinutes(input.startTime);
   const endMinute = parseTimeToMinutes(input.endTime);
+  assertOfficeHourWindow(startMinute, endMinute);
   const startsAt = combineDateAndMinutes(day, startMinute);
   const endsAt = combineDateAndMinutes(day, endMinute);
-
-  if (endsAt <= startsAt) {
-    throw new Error("End time must be after start time.");
-  }
 
   const type = uiSessionTypeToOfficeHourType(input.uiType);
   const hosts = await resolveHostRows(
     access.offeringId,
     input.hostUserPublicIds,
   );
+
+  await assertNoOverlappingSession(access.offeringId, startsAt, endsAt);
 
   const session = await prisma.$transaction(async (tx) => {
     const created = await tx.officeHourSession.create({
@@ -375,7 +411,7 @@ export async function listScheduleWeek(
   const weekStart = weekStartInput
     ? startOfWeekMonday(parseIsoDateOnly(weekStartInput))
     : startOfWeekMonday(new Date());
-  const weekEnd = addDays(weekStart, 7);
+  const weekEnd = addDays(weekStart, 5);
 
   const sessions = await prisma.officeHourSession.findMany({
     where: {
@@ -424,15 +460,22 @@ export async function listRecurringRules(
 
   const rules: RecurringRuleDto[] = [];
 
+  const termBounds = getTermBounds(access.termCode);
+
   for (const [, group] of byBlock) {
     const first = group[0];
     const repeatDays = group.map((s) => DOW_NAMES[s.dayOfWeek]).join(", ");
+    const validFrom = first.validFrom ?? termBounds.validFrom;
+    const validUntil = first.validUntil ?? termBounds.validUntil;
 
     rules.push({
       id: first.publicId,
       courseCode: access.courseCode,
+      sessionTypeLabel: officeHourTypeLabel(first.type),
       title: first.title,
       repeats: repeatDays,
+      validFrom: formatCalendarDateLabel(validFrom),
+      validUntil: formatCalendarDateLabel(validUntil),
       defaultTime: `${formatMinutesAsLabel(first.startMinute)} - ${formatMinutesAsLabel(first.endMinute)}`,
       startTime: minutesToTimeInput(first.startMinute),
       endTime: minutesToTimeInput(first.endMinute),
@@ -467,13 +510,37 @@ export async function updateRecurringBlock(
 
   const startMinute = nextStartMinute ?? group[0].startMinute;
   const endMinute = nextEndMinute ?? group[0].endMinute;
-
-  if (endMinute <= startMinute) {
-    throw new Error("End time must be after start time.");
-  }
+  assertOfficeHourWindow(startMinute, endMinute);
 
   const scheduleIds = group.map((row) => row.id);
   const now = new Date();
+
+  if (nextStartMinute !== undefined || nextEndMinute !== undefined) {
+    const termBounds = getTermBounds(anchor.offering.termCode);
+    for (const row of group) {
+      const validFrom = row.validFrom ?? termBounds.validFrom;
+      const validUntil = row.validUntil ?? termBounds.validUntil;
+      await assertNoOverlappingRecurringSchedule(
+        anchor.offeringId,
+        anchor.offering.termCode,
+        row.dayOfWeek,
+        startMinute,
+        endMinute,
+        validFrom,
+        validUntil,
+        scheduleIds,
+      );
+      await assertNoOverlappingSessionsForRecurringOccurrences(
+        anchor.offeringId,
+        row.dayOfWeek,
+        startMinute,
+        endMinute,
+        validFrom,
+        validUntil,
+        { excludeScheduleIds: scheduleIds, onlyFrom: now },
+      );
+    }
+  }
 
   await prisma.$transaction(async (tx) => {
     await tx.officeHourSchedule.updateMany({
@@ -572,6 +639,7 @@ export async function updateSession(
     const day = patch.date
       ? parseIsoDateOnly(patch.date)
       : new Date(existing.startsAt);
+    assertOfficeHourWeekday(day);
     const startMinute = patch.startTime
       ? parseTimeToMinutes(patch.startTime)
       : existing.startsAt.getHours() * 60 + existing.startsAt.getMinutes();
@@ -583,9 +651,9 @@ export async function updateSession(
     endsAt = combineDateAndMinutes(day, parseTimeToMinutes(patch.endTime));
   }
 
-  if (endsAt <= startsAt) {
-    throw new Error("End time must be after start time.");
-  }
+  const startMinute = startsAt.getHours() * 60 + startsAt.getMinutes();
+  const endMinute = endsAt.getHours() * 60 + endsAt.getMinutes();
+  assertOfficeHourWindow(startMinute, endMinute);
 
   const updated = await prisma.officeHourSession.update({
     where: { id: existing.id },
@@ -635,7 +703,6 @@ export async function getInstructorSchedulePage(
 
   if (offerings.length === 0) {
     return {
-      offerings: [],
       offering: null,
       weekStart: null,
       weekLabel: null,
@@ -657,7 +724,6 @@ export async function getInstructorSchedulePage(
   );
 
   return {
-    offerings,
     offering: {
       offeringPublicId: selected.offeringPublicId,
       courseCode: selected.courseCode,

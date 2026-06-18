@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Clock3, Dot, UserRound } from "lucide-react";
 import type { QueueStudent } from "./types";
 
@@ -6,12 +9,12 @@ interface CurrentlyHelpingCardProps {
   sessionSeconds: number;
   onNoShow: () => void;
   onEndHelp: () => void;
+  onRevert: () => void;
 }
 
 function formatSessionDuration(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-
   return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
 }
 
@@ -20,7 +23,19 @@ export function CurrentlyHelpingCard({
   sessionSeconds,
   onNoShow,
   onEndHelp,
+  onRevert,
 }: CurrentlyHelpingCardProps) {
+  // Track which action is pending confirmation: null means normal state
+  const [confirmingAction, setConfirmingAction] = useState<"end" | "no_show" | null>(null);
+
+  const handleConfirm = () => {
+    if (confirmingAction === "end") onEndHelp();
+    if (confirmingAction === "no_show") onNoShow();
+    setConfirmingAction(null);
+  };
+
+  const handleCancel = () => setConfirmingAction(null);
+
   return (
     <section className="rounded-[30px] border border-slate-200/80 bg-white shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
       <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
@@ -52,22 +67,58 @@ export function CurrentlyHelpingCard({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={onNoShow}
-              className="inline-flex items-center justify-center rounded-full border border-[#c8102e] px-5 py-3 text-sm font-semibold text-[#c8102e] transition hover:bg-[#fff1f2]"
-            >
-              No-Show
-            </button>
-            <button
-              type="button"
-              onClick={onEndHelp}
-              className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
-            >
-              End Help
-            </button>
-          </div>
+          {confirmingAction ? (
+            /* Confirmation prompt — replaces the action buttons to prevent accidental clicks */
+            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-sm font-medium text-amber-800">
+                {confirmingAction === "end"
+                  ? "End help for this student?"
+                  : "Mark this student as no-show?"}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
+                >
+                  Confirm
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Normal action buttons */
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmingAction("no_show")}
+                className="inline-flex items-center justify-center rounded-full border border-[#c8102e] px-5 py-3 text-sm font-semibold text-[#c8102e] transition hover:bg-[#fff1f2]"
+              >
+                No-Show
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingAction("end")}
+                className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
+              >
+                End Help
+              </button>
+              {/* Revert: put the student back to WAITING if the TA started the wrong person */}
+              <button
+                type="button"
+                onClick={onRevert}
+                className="inline-flex items-center justify-center rounded-full border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+              >
+                Revert
+              </button>
+            </div>
+          )}
 
           <p className="text-sm leading-6 text-slate-500">
             Help finished? Remind student to scan out at the door.

@@ -17,6 +17,17 @@ export function uiSessionTypeToOfficeHourType(
   }
 }
 
+export function officeHourTypeLabel(type: OfficeHourType): string {
+  switch (type) {
+    case "DEBUGGING":
+      return "Debugging Queue";
+    case "GROUP":
+      return "Topic Group";
+    default:
+      return "Drop-in";
+  }
+}
+
 export type CreateRecurringBlockInput = {
   offeringPublicId: string;
   title: string;
@@ -55,6 +66,7 @@ export type ScheduleSessionDto = {
   id: string;
   courseCode: string;
   courseName?: string;
+  sessionTypeLabel: string;
   calendarLabel: string;
   title: string;
   topic: string;
@@ -67,16 +79,18 @@ export type ScheduleSessionDto = {
   location: string;
   mode: "in-person" | "online" | "hybrid";
   accent: "navy-yellow" | "navy-red" | "yellow";
-  hasWarning?: boolean;
-  hasLocationOverride?: boolean;
+  hasOverride?: boolean;
   overrideLocation?: string;
 };
 
 export type RecurringRuleDto = {
   id: string;
   courseCode: string;
+  sessionTypeLabel: string;
   title: string;
   repeats: string;
+  validFrom: string;
+  validUntil: string;
   defaultTime: string;
   startTime: string;
   endTime: string;
@@ -118,7 +132,6 @@ export type ViewableOffering = {
 };
 
 export type SchedulePageResponse = {
-  offerings: ViewableOffering[];
   offering: ViewableOffering | null;
   weekStart: string | null;
   weekLabel: string | null;

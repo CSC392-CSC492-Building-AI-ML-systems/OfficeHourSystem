@@ -5,9 +5,7 @@ import {
   Bug,
   CalendarRange,
   Check,
-  Layers3,
-  MapPinned,
-  MonitorPlay,
+  ClipboardPenLine,
   Users,
   X,
 } from "lucide-react";
@@ -15,13 +13,19 @@ import type { CreateRecurringBlockInput } from "@/lib/scheduling/types";
 import {
   formatDateOnlyLocal,
   getTermBounds,
+  validateOfficeHourTimes,
   type WeekdayKey,
 } from "@/lib/scheduling/time";
+import { FieldCharLimitHint } from "./FieldCharLimitHint";
+import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
+import {
+  BLOCK_NAME_MAX_LENGTH,
+  LOCATION_MAX_LENGTH,
+} from "./scheduleFieldLimits";
 import { useModalOverlay } from "./useModalOverlay";
 
 type SessionType = "drop-in" | "debugging-queue" | "topic-group";
 type ScheduleDay = "mon" | "tue" | "wed" | "thu" | "fri";
-type LocationMode = "in-person" | "online" | "hybrid";
 
 interface CreateRecurringBlockModalProps {
   isOpen: boolean;
@@ -74,12 +78,6 @@ const weekdayOptions: Array<{ id: ScheduleDay; label: string }> = [
   { id: "fri", label: "F" },
 ];
 
-const locationModes: Array<{ id: LocationMode; label: string }> = [
-  { id: "in-person", label: "In-person" },
-  { id: "online", label: "Online" },
-  { id: "hybrid", label: "Hybrid" },
-];
-
 export function CreateRecurringBlockModal({
   isOpen,
   onClose,
@@ -126,10 +124,8 @@ function CreateRecurringBlockForm({
   );
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("16:00");
-  const [locationMode, setLocationMode] = useState<LocationMode>("in-person");
-  const [locationDetail, setLocationDetail] = useState("Room 402 or Zoom Link");
-  const [topic, setTopic] = useState("");
-  const [maxSeats, setMaxSeats] = useState("");
+  const [locationDetail, setLocationDetail] = useState("Room 402");
+  const [blockName, setBlockName] = useState("");
 
   const toggleDay = (day: ScheduleDay) => {
     setSelectedDays((currentDays) =>
@@ -143,23 +139,34 @@ function CreateRecurringBlockForm({
     onClose();
   };
 
+  const showError = (message: string) => {
+    onError?.(message);
+    onClose();
+  };
+
   const handleCreate = async () => {
     onError?.(null);
 
     if (!validFromDate || !validUntilDate) {
-      onError?.("Start and end dates are required.");
+      showError("Start and end dates are required.");
       return;
     }
 
     if (validFromDate > validUntilDate) {
-      onError?.("End date must be on or after start date.");
+      showError("End date must be on or after start date.");
+      return;
+    }
+
+    const timeError = validateOfficeHourTimes(startTime, endTime);
+    if (timeError) {
+      showError(timeError);
       return;
     }
 
     setSubmitting(true);
     try {
       await onSubmit({
-        title: topic.trim() || "Office Hours",
+        title: blockName.trim() || "Office Hours",
         uiType: selectedType,
         weekdayKeys: selectedDays as WeekdayKey[],
         startTime,
@@ -169,7 +176,7 @@ function CreateRecurringBlockForm({
         location: locationDetail.trim() || undefined,
       });
     } catch (submitError) {
-      onError?.(
+      showError(
         submitError instanceof Error
           ? submitError.message
           : "Failed to create recurring block.",
@@ -265,63 +272,57 @@ function CreateRecurringBlockForm({
           <section className="space-y-4">
             <div className="flex items-center gap-3">
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eef5ff] text-[#071f41]">
-                <Layers3 className="h-5 w-5" />
+                <ClipboardPenLine className="h-5 w-5" />
               </span>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  Recurring Schedule
+                  Session Details
                 </p>
                 <p className="mt-1 text-sm text-slate-600">
-                  Select the weekly pattern for this block.
+                  Configure the recurring block details and time window.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              {weekdayOptions.map((day) => {
-                const isSelected = selectedDays.includes(day.id);
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-[#071f41]">
+                Block Name
+              </span>
+              <input
+                type="text"
+                value={blockName}
+                maxLength={BLOCK_NAME_MAX_LENGTH}
+                onChange={(event) => setBlockName(event.target.value)}
+                placeholder="e.g. Exam Review or Kernel Synchronization"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
+              />
+              <FieldCharLimitHint maxLength={BLOCK_NAME_MAX_LENGTH} />
+            </label>
 
-                return (
-                  <button
-                    key={day.id}
-                    type="button"
-                    onClick={() => toggleDay(day.id)}
-                    className={`inline-flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold transition ${
-                      isSelected
-                        ? "border-[#071f41] bg-[#071f41] text-white"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                    }`}
-                  >
-                    {day.label}
-                  </button>
-                );
-              })}
-            </div>
+            <div>
+              <span className="mb-2 block text-sm font-medium text-[#071f41]">
+                Repeats On
+              </span>
+              <div className="flex flex-wrap gap-3">
+                {weekdayOptions.map((day) => {
+                  const isSelected = selectedDays.includes(day.id);
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                  Start Time
-                </span>
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(event) => setStartTime(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                  End Time
-                </span>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(event) => setEndTime(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-                />
-              </label>
+                  return (
+                    <button
+                      key={day.id}
+                      type="button"
+                      onClick={() => toggleDay(day.id)}
+                      className={`inline-flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold transition ${
+                        isSelected
+                          ? "border-[#071f41] bg-[#071f41] text-white"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      {day.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -349,35 +350,21 @@ function CreateRecurringBlockForm({
                 />
               </label>
             </div>
+
             <p className="text-xs leading-5 text-slate-500">
               Sessions generate on the selected weekdays between these dates
               (inclusive). Defaults are based on term {termCode}.
             </p>
+
+            <OfficeHourTimeFields
+              startTime={startTime}
+              endTime={endTime}
+              onStartTimeChange={setStartTime}
+              onEndTimeChange={setEndTime}
+            />
           </section>
 
-          <section className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
-            <label className="block">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                Location Details
-              </span>
-              <div className="relative">
-                <MapPinned className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <select
-                  value={locationMode}
-                  onChange={(event) =>
-                    setLocationMode(event.target.value as LocationMode)
-                  }
-                  className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-11 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
-                >
-                  {locationModes.map((mode) => (
-                    <option key={mode.id} value={mode.id}>
-                      {mode.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </label>
-
+          <section>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-[#071f41]">
                 Room or Link
@@ -385,56 +372,13 @@ function CreateRecurringBlockForm({
               <input
                 type="text"
                 value={locationDetail}
+                maxLength={LOCATION_MAX_LENGTH}
                 onChange={(event) => setLocationDetail(event.target.value)}
-                placeholder="Room 402 or Zoom Link"
+                placeholder="Room 402 or Zoom"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
               />
+              <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />
             </label>
-          </section>
-
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eef5ff] text-[#071f41]">
-                <MonitorPlay className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  Group Constraints
-                </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  Optional details for topic-focused or capacity-limited
-                  sessions.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                  Topic
-                </span>
-                <input
-                  type="text"
-                  value={topic}
-                  onChange={(event) => setTopic(event.target.value)}
-                  placeholder="Topic: e.g. Final Exam Review"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                  Max Seats
-                </span>
-                <input
-                  type="text"
-                  value={maxSeats}
-                  onChange={(event) => setMaxSeats(event.target.value)}
-                  placeholder="Max Seats"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
-                />
-              </label>
-            </div>
           </section>
 
           <section className="rounded-[26px] border border-[#d7e7ff] bg-[#eef5ff] px-5 py-4">
