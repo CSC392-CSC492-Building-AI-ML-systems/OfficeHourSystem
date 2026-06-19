@@ -1,2 +1,2 @@
-npm run typecheck
-npm exec lint-staged
+pnpm typecheck
+pnpm exec lint-staged
