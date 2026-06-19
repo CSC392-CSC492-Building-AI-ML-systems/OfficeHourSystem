@@ -1,7 +1,7 @@
 /**
  * Tests: office hour scheduling (recurring expand, one-time, auth, cancel)
  *
- * Run: npx tsx src/lib/tests/officeHourScheduling.test.ts
+ * Run: pnpm dlx tsx src/lib/tests/officeHourScheduling.test.ts
  */
 
 import "dotenv/config";

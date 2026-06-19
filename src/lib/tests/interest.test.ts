@@ -2,7 +2,7 @@
  * Tests: markInterestedInSession() / getSessionInterestCount()
  *
  * How to run:
- *   npx tsx tests/lib/interest.test.ts
+ *   pnpm dlx tsx tests/lib/interest.test.ts
  *
  * Prerequisite: DATABASE_URL must be configured in .env or as an environment variable.
  *

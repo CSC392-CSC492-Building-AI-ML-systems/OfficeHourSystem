@@ -2,7 +2,7 @@
  * Tests: importClasslist()
  *
  * How to run:
- *   npx tsx tests/lib/classlist.test.ts
+ *   pnpm dlx tsx tests/lib/classlist.test.ts
  *
  * Prerequisite: DATABASE_URL must be configured in .env or as an environment variable.
  *

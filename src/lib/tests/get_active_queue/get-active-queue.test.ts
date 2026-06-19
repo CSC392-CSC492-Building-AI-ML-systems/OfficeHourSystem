@@ -2,7 +2,7 @@
  * Tests: getActiveQueue()
  *
  * How to run:
- *   npx tsx src/lib/tests/get_active_queue/get-active-queue.test.ts
+ *   pnpm dlx tsx src/lib/tests/get_active_queue/get-active-queue.test.ts
  *
  * Scenarios covered:
  *   1. No students in queue → returns empty waiting and helping arrays
@@ -118,52 +118,66 @@ async function main() {
   await cleanupAll();
 
   // ── Test 1: No students in queue → empty lists ────────────────────────────
-  await runTest("No students in queue → returns empty waiting and helping", async () => {
-    await cleanupAll();
+  await runTest(
+    "No students in queue → returns empty waiting and helping",
+    async () => {
+      await cleanupAll();
 
-    const { offering } = await setupOffering();
-    const session = await setupSession(offering.id);
+      const { offering } = await setupOffering();
+      const session = await setupSession(offering.id);
 
-    const result = await getActiveQueue(session.id, session.status, session.endsAt);
+      const result = await getActiveQueue(
+        session.id,
+        session.status,
+        session.endsAt,
+      );
 
-    assertEqual(result.waiting.length, 0, "waiting should be empty");
-    assertEqual(result.helping.length, 0, "helping should be empty");
-  });
+      assertEqual(result.waiting.length, 0, "waiting should be empty");
+      assertEqual(result.helping.length, 0, "helping should be empty");
+    },
+  );
 
   // ── Test 2: Multiple students waiting → correct order and ranks ───────────
-  await runTest("3 students waiting → returned in check-in order with ranks 1, 2, 3", async () => {
-    await cleanupAll();
+  await runTest(
+    "3 students waiting → returned in check-in order with ranks 1, 2, 3",
+    async () => {
+      await cleanupAll();
 
-    const { offering } = await setupOffering();
-    const session = await setupSession(offering.id);
+      const { offering } = await setupOffering();
+      const session = await setupSession(offering.id);
 
-    const now = Date.now();
+      const now = Date.now();
 
-    // Check in 3 students at different times (A first, C last)
-    const studentA = await setupStudent("A", offering.id);
-    const studentB = await setupStudent("B", offering.id);
-    const studentC = await setupStudent("C", offering.id);
+      // Check in 3 students at different times (A first, C last)
+      const studentA = await setupStudent("A", offering.id);
+      const studentB = await setupStudent("B", offering.id);
+      const studentC = await setupStudent("C", offering.id);
 
-    await checkIn(studentA.id, session.id, "WAITING", new Date(now));
-    await checkIn(studentB.id, session.id, "WAITING", new Date(now + 1000));
-    await checkIn(studentC.id, session.id, "WAITING", new Date(now + 2000));
+      await checkIn(studentA.id, session.id, "WAITING", new Date(now));
+      await checkIn(studentB.id, session.id, "WAITING", new Date(now + 1000));
+      await checkIn(studentC.id, session.id, "WAITING", new Date(now + 2000));
 
-    const result = await getActiveQueue(session.id, session.status, session.endsAt);
+      const result = await getActiveQueue(
+        session.id,
+        session.status,
+        session.endsAt,
+      );
 
-    assertEqual(result.waiting.length, 3, "should have 3 waiting students");
-    assertEqual(result.helping.length, 0, "should have no helping students");
+      assertEqual(result.waiting.length, 3, "should have 3 waiting students");
+      assertEqual(result.helping.length, 0, "should have no helping students");
 
-    // Check order and ranks
-    assertEqual(result.waiting[0].rank, 1, "first student rank");
-    assertEqual(result.waiting[1].rank, 2, "second student rank");
-    assertEqual(result.waiting[2].rank, 3, "third student rank");
+      // Check order and ranks
+      assertEqual(result.waiting[0].rank, 1, "first student rank");
+      assertEqual(result.waiting[1].rank, 2, "second student rank");
+      assertEqual(result.waiting[2].rank, 3, "third student rank");
 
-    // Check correct student is first (Student A checked in first)
-    assert(
-      result.waiting[0].studentName.includes("A"),
-      "Student A should be first in queue",
-    );
-  });
+      // Check correct student is first (Student A checked in first)
+      assert(
+        result.waiting[0].studentName.includes("A"),
+        "Student A should be first in queue",
+      );
+    },
+  );
 
   // ── Test 3: Student IN_HELP → appears in helping list with no rank ────────
   await runTest("Student IN_HELP → appears in helping list", async () => {
@@ -175,7 +189,11 @@ async function main() {
     const student = await setupStudent("helped", offering.id);
     await checkIn(student.id, session.id, "IN_HELP", new Date());
 
-    const result = await getActiveQueue(session.id, session.status, session.endsAt);
+    const result = await getActiveQueue(
+      session.id,
+      session.status,
+      session.endsAt,
+    );
 
     assertEqual(result.waiting.length, 0, "no one waiting");
     assertEqual(result.helping.length, 1, "one student being helped");
@@ -186,69 +204,92 @@ async function main() {
   });
 
   // ── Test 4: Mix of WAITING and IN_HELP → both lists populated ────────────
-  await runTest("Mix of WAITING and IN_HELP → both lists populated correctly", async () => {
-    await cleanupAll();
+  await runTest(
+    "Mix of WAITING and IN_HELP → both lists populated correctly",
+    async () => {
+      await cleanupAll();
 
-    const { offering } = await setupOffering();
-    const session = await setupSession(offering.id);
+      const { offering } = await setupOffering();
+      const session = await setupSession(offering.id);
 
-    const now = Date.now();
+      const now = Date.now();
 
-    const waiting1 = await setupStudent("w1", offering.id);
-    const waiting2 = await setupStudent("w2", offering.id);
-    const helping1 = await setupStudent("h1", offering.id);
-    const helping2 = await setupStudent("h2", offering.id);
+      const waiting1 = await setupStudent("w1", offering.id);
+      const waiting2 = await setupStudent("w2", offering.id);
+      const helping1 = await setupStudent("h1", offering.id);
+      const helping2 = await setupStudent("h2", offering.id);
 
-    await checkIn(waiting1.id, session.id, "WAITING", new Date(now));
-    await checkIn(waiting2.id, session.id, "WAITING", new Date(now + 1000));
-    await checkIn(helping1.id, session.id, "IN_HELP", new Date(now + 2000));
-    await checkIn(helping2.id, session.id, "IN_HELP", new Date(now + 3000));
+      await checkIn(waiting1.id, session.id, "WAITING", new Date(now));
+      await checkIn(waiting2.id, session.id, "WAITING", new Date(now + 1000));
+      await checkIn(helping1.id, session.id, "IN_HELP", new Date(now + 2000));
+      await checkIn(helping2.id, session.id, "IN_HELP", new Date(now + 3000));
 
-    const result = await getActiveQueue(session.id, session.status, session.endsAt);
+      const result = await getActiveQueue(
+        session.id,
+        session.status,
+        session.endsAt,
+      );
 
-    assertEqual(result.waiting.length, 2, "2 students waiting");
-    assertEqual(result.helping.length, 2, "2 students being helped");
+      assertEqual(result.waiting.length, 2, "2 students waiting");
+      assertEqual(result.helping.length, 2, "2 students being helped");
 
-    // Helping students should NOT have a rank field with a meaningful value
-    // (they are in the helping array, not the waiting array)
-    assertEqual(result.waiting[0].rank, 1, "first waiting student is rank 1");
-    assertEqual(result.waiting[1].rank, 2, "second waiting student is rank 2");
-  });
+      // Helping students should NOT have a rank field with a meaningful value
+      // (they are in the helping array, not the waiting array)
+      assertEqual(result.waiting[0].rank, 1, "first waiting student is rank 1");
+      assertEqual(
+        result.waiting[1].rank,
+        2,
+        "second waiting student is rank 2",
+      );
+    },
+  );
 
   // ── Test 5: Resolved students in OfficeHourAttendanceRecord → not returned ─
-  await runTest("Resolved students (in AttendanceRecord) → not returned in active queue", async () => {
-    await cleanupAll();
+  await runTest(
+    "Resolved students (in AttendanceRecord) → not returned in active queue",
+    async () => {
+      await cleanupAll();
 
-    const { offering } = await setupOffering();
-    const session = await setupSession(offering.id);
+      const { offering } = await setupOffering();
+      const session = await setupSession(offering.id);
 
-    const now = Date.now();
+      const now = Date.now();
 
-    const resolvedStudent = await setupStudent("done", offering.id);
-    const waitingStudent  = await setupStudent("here", offering.id);
+      const resolvedStudent = await setupStudent("done", offering.id);
+      const waitingStudent = await setupStudent("here", offering.id);
 
-    // Write a resolved record directly to OfficeHourAttendanceRecord (simulates END HELP)
-    await prisma.officeHourAttendanceRecord.create({
-      data: {
-        sessionId: session.id,
-        studentId: resolvedStudent.id,
-        checkedInAt: new Date(now),
-        outcome: "COMPLETED",
-      },
-    });
+      // Write a resolved record directly to OfficeHourAttendanceRecord (simulates END HELP)
+      await prisma.officeHourAttendanceRecord.create({
+        data: {
+          sessionId: session.id,
+          studentId: resolvedStudent.id,
+          checkedInAt: new Date(now),
+          outcome: "COMPLETED",
+        },
+      });
 
-    await checkIn(waitingStudent.id, session.id, "WAITING", new Date(now + 1000));
+      await checkIn(
+        waitingStudent.id,
+        session.id,
+        "WAITING",
+        new Date(now + 1000),
+      );
 
-    const result = await getActiveQueue(session.id, session.status, session.endsAt);
+      const result = await getActiveQueue(
+        session.id,
+        session.status,
+        session.endsAt,
+      );
 
-    // Only the WAITING student should appear — resolved student is in the record table, not here
-    assertEqual(result.waiting.length, 1, "only 1 waiting student");
-    assertEqual(result.helping.length, 0, "no helping students");
-    assert(
-      result.waiting[0].studentName.includes("here"),
-      "correct student is waiting",
-    );
-  });
+      // Only the WAITING student should appear — resolved student is in the record table, not here
+      assertEqual(result.waiting.length, 1, "only 1 waiting student");
+      assertEqual(result.helping.length, 0, "no helping students");
+      assert(
+        result.waiting[0].studentName.includes("here"),
+        "correct student is waiting",
+      );
+    },
+  );
 
   // ── Test 6: Response includes session metadata ───────────────────────────
   await runTest("Response includes sessionStatus and endsAt", async () => {
@@ -257,11 +298,22 @@ async function main() {
     const { offering } = await setupOffering();
     const session = await setupSession(offering.id);
 
-    const result = await getActiveQueue(session.id, session.status, session.endsAt);
+    const result = await getActiveQueue(
+      session.id,
+      session.status,
+      session.endsAt,
+    );
 
-    assert(result.sessionStatus !== undefined, "sessionStatus should be present");
+    assert(
+      result.sessionStatus !== undefined,
+      "sessionStatus should be present",
+    );
     assert(result.endsAt !== undefined, "endsAt should be present");
-    assertEqual(result.sessionStatus, "ACTIVE", "sessionStatus should match the created session");
+    assertEqual(
+      result.sessionStatus,
+      "ACTIVE",
+      "sessionStatus should match the created session",
+    );
     assert(
       !isNaN(new Date(result.endsAt).getTime()),
       "endsAt should be a valid ISO date string",
