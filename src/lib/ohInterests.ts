@@ -1,0 +1,62 @@
+import { prisma } from "@/lib/prisma";
+
+export type RecordInterestResult = {
+  interestId: number;
+  userId: number;
+  sessionId: number;
+};
+
+/**
+ * Record that a user is interested in an office hour session.
+ *
+ * The user must be a member of the session's course offering.
+ * If an interest row already exists, this is a no-op and returns the existing record.
+ */
+export async function recordSessionInterest(
+  userId: number,
+  sessionId: number,
+): Promise<RecordInterestResult> {
+  const session = await prisma.officeHourSession.findUnique({
+    where: { id: sessionId },
+    select: { id: true, offeringId: true },
+  });
+
+  if (!session) {
+    throw new Error("Office hour session not found");
+  }
+
+  const membership = await prisma.offeringMember.findUnique({
+    where: {
+      userId_offeringId: {
+        userId,
+        offeringId: session.offeringId,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (!membership) {
+    throw new Error("You are not a member of this course offering");
+  }
+
+  const interest = await prisma.officeHourInterest.upsert({
+    where: {
+      userId_sessionId: {
+        userId,
+        sessionId: session.id,
+      },
+    },
+    update: {},
+    create: {
+      userId,
+      sessionId: session.id,
+    },
+    select: { id: true },
+  });
+
+  return {
+    interestId: interest.id,
+    userId,
+    sessionId: session.id,
+  };
+}
