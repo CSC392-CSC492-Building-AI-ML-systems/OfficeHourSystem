@@ -24,3 +24,12 @@ export function parseSessionUserId(session: SessionData): number {
   }
   return userId;
 }
+
+/** Require an authenticated session and return the user's numeric id. */
+export async function requireSessionUserId(): Promise<number> {
+  const session = await getRequestSession();
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+  return parseSessionUserId(session);
+}

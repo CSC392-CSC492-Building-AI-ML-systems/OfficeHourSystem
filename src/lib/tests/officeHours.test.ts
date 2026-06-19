@@ -2,7 +2,7 @@
  * Tests: getUpcomingSessionsByStudentIdentifier()
  *
  * How to run:
- *   npx tsx tests/lib/officeHours.test.ts
+ *   pnpm dlx tsx tests/lib/officeHours.test.ts
  *
  * Prerequisite: DATABASE_URL must be configured in .env or as an environment variable.
  *
@@ -145,7 +145,7 @@ async function main() {
   // ── Test 3: query by email ────────────────────────────────────────────────
   await runTest("Query by email → result matches utorid query", async () => {
     const sessions = await getUpcomingSessionsByStudentIdentifier(
-      student.email,
+      student.email!,
     );
     assertEqual(sessions.length, 1, "session count");
     assertEqual(sessions[0].id, normalSession.id, "session id");

@@ -2,7 +2,7 @@
  * Tests: getMemberRole() / addOrUpdateStaffMember()
  *
  * How to run:
- *   npx tsx tests/lib/offeringMember.test.ts
+ *   pnpm dlx tsx tests/lib/offeringMember.test.ts
  *
  * Prerequisite: DATABASE_URL must be configured in .env or as an environment variable.
  *
@@ -129,7 +129,7 @@ async function main() {
     "getMemberRole: query by email → returns correct role",
     async () => {
       const result = await getMemberRole(
-        { email: user.email },
+        { email: user.email! },
         { publicId: offering.publicId },
       );
       assert(result !== null, "should not return null");

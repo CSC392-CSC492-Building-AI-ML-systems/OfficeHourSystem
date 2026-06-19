@@ -2,7 +2,7 @@
  * Tests: getTodaySessionsForTeachingTeam()
  *
  * How to run:
- *   npx tsx src/lib/tests/show_upcoming_oh/show-upcoming-oh.test.ts
+ *   pnpm dlx tsx src/lib/tests/show_upcoming_oh/show-upcoming-oh.test.ts
  *
  * Prerequisite: DATABASE_URL must be set in .env
  *
@@ -64,7 +64,11 @@ async function setupOffering() {
 }
 
 // Create a user and add them to the offering with a given role
-async function setupUser(utorid: string, offeringId: number, role: "INSTRUCTOR" | "TA" | "STUDENT") {
+async function setupUser(
+  utorid: string,
+  offeringId: number,
+  role: "INSTRUCTOR" | "TA" | "STUDENT",
+) {
   const user = await prisma.user.create({
     data: {
       utorid: `${TEST_PREFIX}${utorid}`,
@@ -164,9 +168,19 @@ async function main() {
     const result = await getTodaySessionsForTeachingTeam(ta.id);
 
     // Both should appear — frontend bucket the cancelled one into the Ended tab
-    assertEqual(result.length, 2, "both SCHEDULED and CANCELLED sessions should be returned");
-    assert(result.some((s) => s.status === "CANCELLED"), "CANCELLED session should be in results");
-    assert(result.some((s) => s.status === "SCHEDULED"), "SCHEDULED session should be in results");
+    assertEqual(
+      result.length,
+      2,
+      "both SCHEDULED and CANCELLED sessions should be returned",
+    );
+    assert(
+      result.some((s) => s.status === "CANCELLED"),
+      "CANCELLED session should be in results",
+    );
+    assert(
+      result.some((s) => s.status === "SCHEDULED"),
+      "SCHEDULED session should be in results",
+    );
   });
 
   // ── Test 4: COMPLETED session today → returned (frontend shows in Ended tab)
@@ -179,18 +193,42 @@ async function main() {
     const { startsAt, endsAt } = makeTodaySession();
 
     await prisma.officeHourSession.create({
-      data: { offeringId: offering.id, title: "Upcoming OH", type: "REGULAR", startsAt, endsAt, status: "SCHEDULED" },
+      data: {
+        offeringId: offering.id,
+        title: "Upcoming OH",
+        type: "REGULAR",
+        startsAt,
+        endsAt,
+        status: "SCHEDULED",
+      },
     });
     await prisma.officeHourSession.create({
-      data: { offeringId: offering.id, title: "Ended OH", type: "REGULAR", startsAt, endsAt, status: "COMPLETED" },
+      data: {
+        offeringId: offering.id,
+        title: "Ended OH",
+        type: "REGULAR",
+        startsAt,
+        endsAt,
+        status: "COMPLETED",
+      },
     });
 
     const result = await getTodaySessionsForTeachingTeam(ta.id);
 
     // Both should appear — frontend separates them into tabs
-    assertEqual(result.length, 2, "both SCHEDULED and COMPLETED sessions should be returned");
-    assert(result.some((s) => s.status === "COMPLETED"), "COMPLETED session should be in results");
-    assert(result.some((s) => s.status === "SCHEDULED"), "SCHEDULED session should be in results");
+    assertEqual(
+      result.length,
+      2,
+      "both SCHEDULED and COMPLETED sessions should be returned",
+    );
+    assert(
+      result.some((s) => s.status === "COMPLETED"),
+      "COMPLETED session should be in results",
+    );
+    assert(
+      result.some((s) => s.status === "SCHEDULED"),
+      "SCHEDULED session should be in results",
+    );
   });
 
   // ── Test 5: Session tomorrow → not returned ───────────────────────────────
@@ -218,53 +256,63 @@ async function main() {
   });
 
   // ── Test 5: STUDENT role → not returned ──────────────────────────────────
-  await runTest("STUDENT in offering → cannot see sessions via this query", async () => {
-    await cleanupAll();
+  await runTest(
+    "STUDENT in offering → cannot see sessions via this query",
+    async () => {
+      await cleanupAll();
 
-    const { offering } = await setupOffering();
-    const student = await setupUser("student1", offering.id, "STUDENT");
+      const { offering } = await setupOffering();
+      const student = await setupUser("student1", offering.id, "STUDENT");
 
-    // Create a today session
-    const { startsAt, endsAt } = makeTodaySession();
-    await prisma.officeHourSession.create({
-      data: {
-        offeringId: offering.id,
-        title: "Today OH",
-        type: "REGULAR",
-        startsAt,
-        endsAt,
-        status: "SCHEDULED",
-      },
-    });
+      // Create a today session
+      const { startsAt, endsAt } = makeTodaySession();
+      await prisma.officeHourSession.create({
+        data: {
+          offeringId: offering.id,
+          title: "Today OH",
+          type: "REGULAR",
+          startsAt,
+          endsAt,
+          status: "SCHEDULED",
+        },
+      });
 
-    // Student is not TA/INSTRUCTOR, so query should return nothing
-    const result = await getTodaySessionsForTeachingTeam(student.id);
-    assertEqual(result.length, 0, "student should not see sessions");
-  });
+      // Student is not TA/INSTRUCTOR, so query should return nothing
+      const result = await getTodaySessionsForTeachingTeam(student.id);
+      assertEqual(result.length, 0, "student should not see sessions");
+    },
+  );
 
   // ── Test 6: INSTRUCTOR role → also returned ──────────────────────────────
-  await runTest("INSTRUCTOR in offering → also sees today's sessions", async () => {
-    await cleanupAll();
+  await runTest(
+    "INSTRUCTOR in offering → also sees today's sessions",
+    async () => {
+      await cleanupAll();
 
-    const { offering } = await setupOffering();
-    const instructor = await setupUser("instructor1", offering.id, "INSTRUCTOR");
+      const { offering } = await setupOffering();
+      const instructor = await setupUser(
+        "instructor1",
+        offering.id,
+        "INSTRUCTOR",
+      );
 
-    const { startsAt, endsAt } = makeTodaySession();
-    const session = await prisma.officeHourSession.create({
-      data: {
-        offeringId: offering.id,
-        title: "Instructor OH",
-        type: "REGULAR",
-        startsAt,
-        endsAt,
-        status: "SCHEDULED",
-      },
-    });
+      const { startsAt, endsAt } = makeTodaySession();
+      const session = await prisma.officeHourSession.create({
+        data: {
+          offeringId: offering.id,
+          title: "Instructor OH",
+          type: "REGULAR",
+          startsAt,
+          endsAt,
+          status: "SCHEDULED",
+        },
+      });
 
-    const result = await getTodaySessionsForTeachingTeam(instructor.id);
-    assertEqual(result.length, 1, "instructor should see today's sessions");
-    assertEqual(result[0].id, session.id, "correct session returned");
-  });
+      const result = await getTodaySessionsForTeachingTeam(instructor.id);
+      assertEqual(result.length, 1, "instructor should see today's sessions");
+      assertEqual(result[0].id, session.id, "correct session returned");
+    },
+  );
 
   // Cleanup all test data
   await cleanupAll();
