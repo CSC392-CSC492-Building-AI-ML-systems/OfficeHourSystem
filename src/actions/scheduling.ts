@@ -2,10 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import {
-  getRequestSession,
-  parseSessionUserId,
-} from "@/lib/auth/getRequestSession";
+import { requireSessionUserId } from "@/lib/auth/getRequestSession";
 import {
   cancelSession,
   createOneTimeSession,
@@ -25,14 +22,6 @@ import type {
   UpdateRecurringBlockInput,
   UpdateSessionInput,
 } from "@/lib/scheduling/types";
-
-async function requireSessionUserId(): Promise<number> {
-  const session = await getRequestSession();
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-  return parseSessionUserId(session);
-}
 
 function revalidateSchedulingPaths() {
   revalidatePath("/instructor/schedule");

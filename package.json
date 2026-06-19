@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "prepare": "husky",
     "postinstall": "prisma generate",
     "db:setup": "docker compose up -d postgres --wait && prisma migrate deploy",

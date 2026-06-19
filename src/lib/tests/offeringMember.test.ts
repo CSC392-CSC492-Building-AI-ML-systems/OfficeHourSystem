@@ -129,7 +129,7 @@ async function main() {
     "getMemberRole: query by email → returns correct role",
     async () => {
       const result = await getMemberRole(
-        { email: user.email },
+        { email: user.email! },
         { publicId: offering.publicId },
       );
       assert(result !== null, "should not return null");
