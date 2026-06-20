@@ -19,21 +19,18 @@ export type InstructorOfferingPageContext = {
 };
 
 export async function resolveInstructorOfferingPage(
-  offeringParam: string | undefined,
+  offeringPublicId: string | undefined,
   redirectPath: string,
 ): Promise<InstructorOfferingPageContext> {
   const session = await getRequestSession();
   if (!session) {
-    const params = offeringParam
-      ? `?redirect=${encodeURIComponent(`${redirectPath}?offering=${offeringParam}`)}`
-      : `?redirect=${encodeURIComponent(redirectPath)}`;
-    redirect(`/api/auth/session${params}`);
+    redirect(`/api/auth/session?redirect=${encodeURIComponent(redirectPath)}`);
   }
 
   const userId = parseSessionUserId(session);
   const context = await requireOfferingTeachingStaff(
     userId,
-    offeringParam ?? "",
+    offeringPublicId ?? "",
   );
 
   return {

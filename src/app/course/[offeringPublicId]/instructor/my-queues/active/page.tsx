@@ -8,19 +8,22 @@ import ActiveQueuePage from "@/app/components/instructor/queues/ActiveQueuePage"
 import { resolveInstructorOfferingPage } from "@/lib/auth/instructorPage";
 
 type PageProps = {
-  searchParams: Promise<{ offering?: string; sessionId?: string }>;
+  params: Promise<{ offeringPublicId: string }>;
+  searchParams: Promise<{ sessionId?: string }>;
 };
 
 export default async function InstructorActiveQueueRoute({
+  params,
   searchParams,
 }: PageProps) {
-  const { offering, sessionId } = await searchParams;
+  const { offeringPublicId } = await params;
+  const { sessionId } = await searchParams;
 
   let pageContext;
   try {
     pageContext = await resolveInstructorOfferingPage(
-      offering,
-      "/instructor/my-queues/active",
+      offeringPublicId,
+      `/course/${offeringPublicId}/instructor/my-queues/active`,
     );
   } catch (error) {
     return <OfferingAccessMessage error={offeringAccessFromUnknown(error)} />;

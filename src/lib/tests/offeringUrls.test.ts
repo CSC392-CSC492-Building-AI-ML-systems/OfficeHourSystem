@@ -8,58 +8,64 @@
 import "dotenv/config";
 
 import {
+  courseBasePath,
+  courseRouteHref,
   instructorDashboardHref,
   instructorRouteHref,
-  withOfferingParam,
 } from "@/lib/offeringUrls";
 import { assertEqual, finishTests, runTest } from "./_seed";
 
 async function main() {
   console.log("=== offeringUrls.test.ts ===\n");
 
-  const offeringId = "clxyz123offering";
+  const offeringPublicId = "clxyz123offering";
 
-  await runTest("withOfferingParam appends offering query param", async () => {
+  await runTest("courseBasePath builds the course-scoped base", async () => {
     assertEqual(
-      withOfferingParam("/instructor", offeringId),
-      "/instructor?offering=clxyz123offering",
+      courseBasePath(offeringPublicId),
+      "/course/clxyz123offering",
+      "base path",
+    );
+  });
+
+  await runTest("courseRouteHref prefixes the course-scoped base", async () => {
+    assertEqual(
+      courseRouteHref("/instructor", offeringPublicId),
+      "/course/clxyz123offering/instructor",
       "basic path",
     );
   });
 
-  await runTest(
-    "withOfferingParam preserves and overrides existing query params",
-    async () => {
-      assertEqual(
-        withOfferingParam(
-          "/instructor/schedule?weekStart=2026-01-05",
-          offeringId,
-        ),
-        "/instructor/schedule?weekStart=2026-01-05&offering=clxyz123offering",
-        "existing query preserved",
-      );
-    },
-  );
+  await runTest("courseRouteHref preserves existing query params", async () => {
+    assertEqual(
+      courseRouteHref(
+        "/instructor/schedule?weekStart=2026-01-05",
+        offeringPublicId,
+      ),
+      "/course/clxyz123offering/instructor/schedule?weekStart=2026-01-05",
+      "existing query preserved",
+    );
+  });
 
   await runTest(
-    "instructorDashboardHref targets instructor dashboard",
+    "instructorDashboardHref targets the course instructor dashboard",
     async () => {
       assertEqual(
-        instructorDashboardHref(offeringId),
-        "/instructor?offering=clxyz123offering",
+        instructorDashboardHref(offeringPublicId),
+        "/course/clxyz123offering/instructor",
         "dashboard href",
       );
     },
   );
 
   await runTest(
-    "instructorRouteHref includes offering and optional sessionId",
+    "instructorRouteHref includes the course path and optional sessionId",
     async () => {
       assertEqual(
-        instructorRouteHref("/instructor/my-queues/active", offeringId, {
+        instructorRouteHref("/instructor/my-queues/active", offeringPublicId, {
           sessionId: "sess-abc",
         }),
-        "/instructor/my-queues/active?offering=clxyz123offering&sessionId=sess-abc",
+        "/course/clxyz123offering/instructor/my-queues/active?sessionId=sess-abc",
         "active queue href",
       );
     },

@@ -8,11 +8,13 @@ import { ScanPage } from "@/app/components/instructor/scan/ScanPage";
 import { resolveInstructorOfferingPage } from "@/lib/auth/instructorPage";
 
 type PageProps = {
-  searchParams: Promise<{ offering?: string; sessionId?: string }>;
+  params: Promise<{ offeringPublicId: string }>;
+  searchParams: Promise<{ sessionId?: string }>;
 };
 
-export default async function ScanRoute({ searchParams }: PageProps) {
-  const { offering, sessionId } = await searchParams;
+export default async function ScanRoute({ params, searchParams }: PageProps) {
+  const { offeringPublicId } = await params;
+  const { sessionId } = await searchParams;
 
   if (!sessionId) {
     return (
@@ -22,9 +24,11 @@ export default async function ScanRoute({ searchParams }: PageProps) {
     );
   }
 
-  let pageContext;
   try {
-    await resolveInstructorOfferingPage(offering, "/instructor/scan");
+    await resolveInstructorOfferingPage(
+      offeringPublicId,
+      `/course/${offeringPublicId}/instructor/scan`,
+    );
   } catch (error) {
     return <OfferingAccessMessage error={offeringAccessFromUnknown(error)} />;
   }

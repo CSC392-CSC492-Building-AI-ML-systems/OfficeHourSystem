@@ -11,8 +11,10 @@ export default function Home() {
           Frontend dashboard entry points
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-          Use these routes to review the current student and instructor
-          dashboard implementations with mock data.
+          Instructor and student dashboards are now scoped to a specific course
+          offering (<code>/course/&lt;offeringPublicId&gt;/…</code>). Open a
+          course workspace from the admin page to review them with real offering
+          data.
         </p>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -28,82 +30,6 @@ export default function Home() {
             </p>
             <p className="mt-2 text-sm text-slate-600">
               Create offerings, import classlists, and open course workspaces.
-            </p>
-          </Link>
-
-          <Link
-            href="/student"
-            className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
-          >
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Student
-            </p>
-            <p className="mt-3 text-2xl font-semibold text-[#071f41]">
-              Student Dashboard
-            </p>
-            <p className="mt-2 text-sm text-slate-600">
-              Review the triple-stream student support layout.
-            </p>
-          </Link>
-
-          <Link
-            href="/instructor"
-            className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
-          >
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Instructor
-            </p>
-            <p className="mt-3 text-2xl font-semibold text-[#071f41]">
-              Staff Management
-            </p>
-            <p className="mt-2 text-sm text-slate-600">
-              Review the staff summary cards and teaching assistant table.
-            </p>
-          </Link>
-
-          <Link
-            href="/instructor/schedule"
-            className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
-          >
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Schedule
-            </p>
-            <p className="mt-3 text-2xl font-semibold text-[#071f41]">
-              Master Schedule
-            </p>
-            <p className="mt-2 text-sm text-slate-600">
-              Review the weekly calendar, session overrides, and recurring rules
-              UI.
-            </p>
-          </Link>
-
-          <Link
-            href="/instructor/my-queues"
-            className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
-          >
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Queues
-            </p>
-            <p className="mt-3 text-2xl font-semibold text-[#071f41]">
-              My Queues
-            </p>
-            <p className="mt-2 text-sm text-slate-600">
-              Review upcoming queue sessions and open the active workspace.
-            </p>
-          </Link>
-
-          <Link
-            href="/instructor/my-queues/active"
-            className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
-          >
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Workspace
-            </p>
-            <p className="mt-3 text-2xl font-semibold text-[#071f41]">
-              Active Queue
-            </p>
-            <p className="mt-2 text-sm text-slate-600">
-              Open the live queue workspace directly for local UI testing.
             </p>
           </Link>
         </div>

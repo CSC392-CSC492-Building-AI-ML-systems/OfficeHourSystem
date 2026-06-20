@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Bell, Search, UserCircle } from "lucide-react";
 
-import { withOfferingParam } from "@/lib/offeringUrls";
+import { courseRouteHref } from "@/lib/offeringUrls";
 
 export type InstructorNavItem = "dashboard" | "queues" | "schedule";
 
@@ -42,7 +42,7 @@ export function Navbar({
           <nav className="flex flex-wrap items-center gap-6 text-sm font-medium">
             {navPaths.map((link) => {
               const isActive = link.key === activeItem;
-              const href = withOfferingParam(link.path, offeringPublicId);
+              const href = courseRouteHref(link.path, offeringPublicId);
 
               return (
                 <Link

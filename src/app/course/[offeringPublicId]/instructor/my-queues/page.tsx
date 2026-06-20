@@ -2,26 +2,29 @@ import {
   OfferingAccessMessage,
   offeringAccessFromUnknown,
 } from "@/app/components/instructor/OfferingAccessMessage";
-import InstructorDashboard from "@/app/components/instructor/InstructorDashboard";
+import MyQueuesPage from "@/app/components/instructor/queues/MyQueuesPage";
 import { resolveInstructorOfferingPage } from "@/lib/auth/instructorPage";
 
 type PageProps = {
-  searchParams: Promise<{ offering?: string }>;
+  params: Promise<{ offeringPublicId: string }>;
 };
 
-export default async function InstructorPage({ searchParams }: PageProps) {
-  const { offering } = await searchParams;
+export default async function InstructorMyQueuesPage({ params }: PageProps) {
+  const { offeringPublicId } = await params;
 
   let pageContext;
   try {
-    pageContext = await resolveInstructorOfferingPage(offering, "/instructor");
+    pageContext = await resolveInstructorOfferingPage(
+      offeringPublicId,
+      `/course/${offeringPublicId}/instructor/my-queues`,
+    );
   } catch (error) {
     return <OfferingAccessMessage error={offeringAccessFromUnknown(error)} />;
   }
 
   return (
     <main>
-      <InstructorDashboard
+      <MyQueuesPage
         offeringPublicId={pageContext.offeringPublicId}
         courseLabel={pageContext.courseLabel}
       />

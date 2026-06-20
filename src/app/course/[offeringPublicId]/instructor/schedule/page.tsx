@@ -11,19 +11,17 @@ import {
 import { getInstructorSchedulePage } from "@/lib/queries/officeHourScheduling";
 
 type PageProps = {
-  searchParams: Promise<{ offering?: string }>;
+  params: Promise<{ offeringPublicId: string }>;
 };
 
-export default async function InstructorSchedulePage({
-  searchParams,
-}: PageProps) {
-  const { offering } = await searchParams;
+export default async function InstructorSchedulePage({ params }: PageProps) {
+  const { offeringPublicId } = await params;
 
   let pageContext;
   try {
     pageContext = await resolveInstructorOfferingPage(
-      offering,
-      "/instructor/schedule",
+      offeringPublicId,
+      `/course/${offeringPublicId}/instructor/schedule`,
     );
   } catch (error) {
     return <OfferingAccessMessage error={offeringAccessFromUnknown(error)} />;
