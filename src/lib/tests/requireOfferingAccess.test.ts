@@ -12,6 +12,7 @@ import "dotenv/config";
 import {
   OfferingAccessError,
   getOfferingContextForUser,
+  requireOfferingStudent,
   requireOfferingTeachingStaff,
 } from "@/lib/auth/requireOfferingAccess";
 import { prisma } from "@/lib/prisma";
@@ -198,6 +199,59 @@ async function main() {
       assert(context === null, "should return null without membership");
     },
   );
+
+  await runTest(
+    "requireOfferingStudent → allows enrolled STUDENT",
+    async () => {
+      const context = await requireOfferingStudent(
+        student.id,
+        offering.publicId,
+      );
+      assertEqual(context.role, "STUDENT", "role");
+      assertEqual(context.canEdit, false, "canEdit");
+    },
+  );
+
+  await runTest(
+    "requireOfferingStudent → forbidden for INSTRUCTOR",
+    async () => {
+      let threw = false;
+      try {
+        await requireOfferingStudent(instructor.id, offering.publicId);
+      } catch (error) {
+        threw = true;
+        assert(
+          error instanceof OfferingAccessError,
+          "expected OfferingAccessError",
+        );
+        assertEqual(
+          (error as OfferingAccessError).code,
+          "forbidden",
+          "error code",
+        );
+      }
+      assert(threw, "instructor should not access student area");
+    },
+  );
+
+  await runTest("requireOfferingStudent → forbidden for outsider", async () => {
+    let threw = false;
+    try {
+      await requireOfferingStudent(outsider.id, offering.publicId);
+    } catch (error) {
+      threw = true;
+      assert(
+        error instanceof OfferingAccessError,
+        "expected OfferingAccessError",
+      );
+      assertEqual(
+        (error as OfferingAccessError).code,
+        "forbidden",
+        "error code",
+      );
+    }
+    assert(threw, "outsider should not access student area");
+  });
 
   await cleanupAll();
   await finishTests();

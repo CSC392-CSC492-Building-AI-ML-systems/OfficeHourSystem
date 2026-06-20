@@ -1,35 +1,55 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+import { resolveHomeRedirectPath } from "@/lib/auth/resolveHomeRedirect";
+import {
+  getRequestSession,
+  parseSessionUserId,
+} from "@/lib/auth/getRequestSession";
+
+export default async function Home() {
+  const session = await getRequestSession();
+  if (session) {
+    const userId = parseSessionUserId(session);
+    redirect(await resolveHomeRedirectPath(userId, session.utorid));
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-16">
       <section className="w-full max-w-3xl rounded-[36px] border border-slate-200/80 bg-white px-8 py-10 shadow-[0_30px_80px_-40px_rgba(7,31,65,0.45)] sm:px-12">
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#c8102e]">
-          OHMS Development
+          OHMS
         </p>
         <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[#071f41]">
-          Frontend dashboard entry points
+          Office Hour Management System
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-          Instructor and student dashboards are now scoped to a specific course
-          offering (<code>/course/&lt;offeringPublicId&gt;/…</code>). Open a
-          course workspace from the admin page to review them with real offering
-          data.
+          Sign in to view your courses. Instructors open the admin portal;
+          students open their course list and select an offering.
         </p>
 
-        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-10 grid gap-4 md:grid-cols-2">
           <Link
-            href="/admin"
+            href="/api/auth/session?redirect=/admin"
             className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
           >
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Admin
+              Instructors
             </p>
             <p className="mt-3 text-2xl font-semibold text-[#071f41]">
-              Course Administration
+              Course administration
             </p>
-            <p className="mt-2 text-sm text-slate-600">
-              Create offerings, import classlists, and open course workspaces.
+          </Link>
+
+          <Link
+            href="/api/auth/session?redirect=/student"
+            className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
+          >
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Students
+            </p>
+            <p className="mt-3 text-2xl font-semibold text-[#071f41]">
+              My courses
             </p>
           </Link>
         </div>

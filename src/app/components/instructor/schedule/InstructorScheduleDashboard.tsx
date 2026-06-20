@@ -218,7 +218,6 @@ export default function InstructorScheduleDashboard({
           activeItem="schedule"
           showSearch
           offeringPublicId={offeringPublicIdProp}
-          courseLabel={courseLabel}
         />
 
         <main className="mt-10 space-y-8">

@@ -99,3 +99,34 @@ export async function requireOfferingTeachingStaff(
 
   return context;
 }
+
+/** Require membership as a student on the offering. */
+export async function requireOfferingStudent(
+  userId: number,
+  offeringPublicId: string,
+): Promise<OfferingContext> {
+  if (!offeringPublicId.trim()) {
+    throw new OfferingAccessError("Course offering is required.", "missing");
+  }
+
+  const context = await getOfferingContextForUser(userId, offeringPublicId);
+  if (!context) {
+    const offering = await getOfferingByPublicId(offeringPublicId);
+    if (!offering) {
+      throw new OfferingAccessError("Course offering not found.", "not_found");
+    }
+    throw new OfferingAccessError(
+      "You are not enrolled in this course offering.",
+      "forbidden",
+    );
+  }
+
+  if (context.role !== "STUDENT") {
+    throw new OfferingAccessError(
+      "This area is for enrolled students only.",
+      "forbidden",
+    );
+  }
+
+  return context;
+}

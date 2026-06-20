@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Bug, CalendarDays, Users } from "lucide-react";
 import { Navbar } from "./Navbar";
 import {
@@ -6,26 +7,46 @@ import {
   DUMMY_GROUP_TOPIC_SESSIONS,
 } from "./data";
 import { DropInCard } from "./cards/DropInCard";
-import { FeatureBanner } from "./cards/FeatureBanner";
 import { GroupTopicCard } from "./cards/GroupTopicCard";
 import { QueueCard } from "./cards/QueueCard";
 
 const columnBaseClass =
   "rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]";
 
-export default function StudentDashboard() {
+type StudentDashboardProps = {
+  offeringPublicId: string;
+  courseLabel: string;
+  firstName: string;
+};
+
+export default function StudentDashboard({
+  offeringPublicId,
+  courseLabel,
+  firstName,
+}: StudentDashboardProps) {
+  const displayName = firstName.trim() || "Student";
+
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <Navbar />
 
-        <main className="mt-10 space-y-8">
+        <Link
+          href="/student"
+          className="mt-6 inline-block text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
+        >
+          Back to my courses
+        </Link>
+
+        <main className="mt-6 space-y-8">
           <section className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
-              Welcome back, Alex!
+              Welcome back, {displayName}!
             </h1>
-            <p className="text-base text-slate-600">
-              CSC108: Introduction to Computer Programming.
+            <p className="text-base text-slate-600">{courseLabel}</p>
+            <p className="text-sm text-slate-400">
+              Offering {offeringPublicId.slice(0, 8)}… · session data below is
+              placeholder UI until student queues are wired up.
             </p>
           </section>
 
@@ -105,12 +126,6 @@ export default function StudentDashboard() {
               </div>
             </div>
           </section>
-
-          <FeatureBanner
-            title="Enhance Your Learning Experience"
-            description="Our Triple-Stream system ensures you get the right support at the right time. From quick questions to deep technical debugging."
-            buttonText="How it works"
-          />
         </main>
       </div>
     </div>

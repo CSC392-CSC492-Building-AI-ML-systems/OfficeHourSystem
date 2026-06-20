@@ -97,11 +97,7 @@ export default function MyQueuesPage({
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <Navbar
-          activeItem="queues"
-          offeringPublicId={offeringPublicId}
-          courseLabel={courseLabel}
-        />
+        <Navbar activeItem="queues" offeringPublicId={offeringPublicId} />
 
         <main className="mt-10 space-y-8">
           <section className="space-y-2">

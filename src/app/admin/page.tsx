@@ -33,12 +33,20 @@ export default async function AdminPage() {
             Your UTORid (<span className="font-mono">{session.utorid}</span>) is
             not on the admin list and does not have instructor access.
           </p>
-          <Link
-            href="/"
-            className="mt-8 inline-block rounded-full bg-[#071f41] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2a57]"
-          >
-            Return home
-          </Link>
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <Link
+              href="/student"
+              className="inline-block rounded-full border border-slate-200 px-6 py-3 text-sm font-semibold text-[#071f41] transition hover:bg-slate-50"
+            >
+              Go to my courses
+            </Link>
+            <Link
+              href="/"
+              className="inline-block rounded-full bg-[#071f41] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2a57]"
+            >
+              Return home
+            </Link>
+          </div>
         </section>
       </main>
     );
@@ -56,6 +64,7 @@ export default async function AdminPage() {
         firstName={session.firstName}
         lastName={session.lastName}
         canBulkAddInstructors={isAdmin(session.utorid)}
+        canUploadClasslist={isAdmin(session.utorid)}
         offerings={offerings}
       />
     </main>

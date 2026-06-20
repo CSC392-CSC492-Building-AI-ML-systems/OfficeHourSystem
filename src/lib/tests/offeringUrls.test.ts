@@ -9,9 +9,11 @@ import "dotenv/config";
 
 import {
   courseBasePath,
+  courseInstructorSchedulePath,
   courseRouteHref,
   instructorDashboardHref,
   instructorRouteHref,
+  studentDashboardHref,
 } from "@/lib/offeringUrls";
 import { assertEqual, finishTests, runTest } from "./_seed";
 
@@ -67,6 +69,28 @@ async function main() {
         }),
         "/course/clxyz123offering/instructor/my-queues/active?sessionId=sess-abc",
         "active queue href",
+      );
+    },
+  );
+
+  await runTest(
+    "studentDashboardHref targets course student dashboard",
+    async () => {
+      assertEqual(
+        studentDashboardHref(offeringPublicId),
+        "/course/clxyz123offering/student",
+        "student dashboard href",
+      );
+    },
+  );
+
+  await runTest(
+    "courseInstructorSchedulePath builds revalidation path",
+    async () => {
+      assertEqual(
+        courseInstructorSchedulePath(offeringPublicId),
+        "/course/clxyz123offering/instructor/schedule",
+        "schedule path",
       );
     },
   );

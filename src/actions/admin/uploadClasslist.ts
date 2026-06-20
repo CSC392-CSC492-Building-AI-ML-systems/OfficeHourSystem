@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { requireAdminPageAccess } from "@/lib/auth/canAccessAdmin";
+import { requireSuperAdminAccess } from "@/lib/auth/canAccessAdmin";
 import { parseClasslistCSVText } from "@/lib/csv/parseCSV";
 import { importClasslist } from "@/lib/queries/classlist";
 import { addOrUpdateStaffMember } from "@/lib/queries/offeringMember";
@@ -29,7 +29,7 @@ export async function uploadAdminClasslistAction(
   formData: FormData,
 ): Promise<AdminClasslistUploadResult> {
   try {
-    const session = await requireAdminPageAccess();
+    const session = await requireSuperAdminAccess();
 
     const termCode = formData.get("termCode");
     if (typeof termCode !== "string" || termCode.trim().length === 0) {

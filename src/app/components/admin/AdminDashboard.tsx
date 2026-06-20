@@ -6,7 +6,6 @@ import { useState } from "react";
 import { ArrowRight, BookOpen, UserPlus } from "lucide-react";
 
 import type { AdminOfferingListItem } from "@/lib/queries/admin/offerings";
-import { instructorDashboardHref } from "@/lib/offeringUrls";
 
 import { AddOfferingInstructorModal } from "./AddOfferingInstructorModal";
 import { AdminClasslistUploadSection } from "./AdminClasslistUploadSection";
@@ -17,6 +16,7 @@ type AdminDashboardProps = {
   firstName: string;
   lastName: string;
   canBulkAddInstructors: boolean;
+  canUploadClasslist: boolean;
   offerings: AdminOfferingListItem[];
 };
 
@@ -25,6 +25,7 @@ export function AdminDashboard({
   firstName,
   lastName,
   canBulkAddInstructors,
+  canUploadClasslist,
   offerings: initialOfferings,
 }: AdminDashboardProps) {
   const router = useRouter();
@@ -49,6 +50,12 @@ export function AdminDashboard({
             <span className="font-mono text-[#071f41]">{utorid}</span> (
             {firstName} {lastName})
           </p>
+          <Link
+            href="/student"
+            className="mt-4 inline-block text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
+          >
+            View my enrolled courses
+          </Link>
         </header>
 
         {canBulkAddInstructors ? (
@@ -71,7 +78,20 @@ export function AdminDashboard({
           </section>
         ) : null}
 
-        <AdminClasslistUploadSection onSuccess={refresh} />
+        {canUploadClasslist ? (
+          <AdminClasslistUploadSection onSuccess={refresh} />
+        ) : (
+          <section className="rounded-[30px] border border-slate-200/80 bg-white px-6 py-5 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
+            <h2 className="text-lg font-semibold text-[#071f41]">
+              Create course offerings
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Classlist upload is limited to super-admins. Ask a platform admin
+              to import a roster or add you as an instructor on an existing
+              course.
+            </p>
+          </section>
+        )}
 
         <section className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
           <div className="border-b border-slate-200 px-6 py-5">
@@ -79,7 +99,7 @@ export function AdminDashboard({
               Course offerings
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Open a course workspace or add another instructor to an offering.
+              Open a course workspace based on your role for that offering.
             </p>
           </div>
 
@@ -92,7 +112,6 @@ export function AdminDashboard({
             <ul className="divide-y divide-slate-200">
               {initialOfferings.map((offering) => {
                 const label = `${offering.courseCode} · Term ${offering.termCode}`;
-                const href = instructorDashboardHref(offering.offeringPublicId);
 
                 return (
                   <li
@@ -112,6 +131,9 @@ export function AdminDashboard({
                           {offering.studentCount === 1 ? "" : "s"} ·{" "}
                           {offering.instructorCount} instructor
                           {offering.instructorCount === 1 ? "" : "s"}
+                          {offering.roleLabel
+                            ? ` · Your role: ${offering.roleLabel}`
+                            : ""}
                         </p>
                       </div>
                     </div>
@@ -130,13 +152,22 @@ export function AdminDashboard({
                       >
                         Add instructor
                       </button>
-                      <Link
-                        href={href}
-                        className="inline-flex items-center gap-2 rounded-full bg-[#071f41] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
-                      >
-                        Open course
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
+                      {offering.canOpenCourse && offering.workspaceHref ? (
+                        <Link
+                          href={offering.workspaceHref}
+                          className="inline-flex items-center gap-2 rounded-full bg-[#071f41] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
+                        >
+                          {offering.workspaceLabel}
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      ) : (
+                        <span
+                          title="Add yourself as an instructor on this course to open it."
+                          className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-400"
+                        >
+                          Open course
+                        </span>
+                      )}
                     </div>
                   </li>
                 );

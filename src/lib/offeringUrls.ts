@@ -26,6 +26,10 @@ export function instructorDashboardHref(offeringPublicId: string): string {
   return courseRouteHref("/instructor", offeringPublicId);
 }
 
+export function studentDashboardHref(offeringPublicId: string): string {
+  return courseRouteHref("/student", offeringPublicId);
+}
+
 /** Build course-scoped instructor route URLs with an optional `sessionId`. */
 export function instructorRouteHref(
   pathname: string,
@@ -33,4 +37,19 @@ export function instructorRouteHref(
   extra?: { sessionId?: string },
 ): string {
   return courseRouteHref(pathname, offeringPublicId, extra);
+}
+
+/** Paths used with `revalidatePath` after schedule/queue mutations. */
+export function courseInstructorSchedulePath(offeringPublicId: string): string {
+  return courseRouteHref("/instructor/schedule", offeringPublicId);
+}
+
+export function courseInstructorQueuesPath(offeringPublicId: string): string {
+  return courseRouteHref("/instructor/my-queues", offeringPublicId);
+}
+
+export function courseInstructorActiveQueuePath(
+  offeringPublicId: string,
+): string {
+  return courseRouteHref("/instructor/my-queues/active", offeringPublicId);
 }

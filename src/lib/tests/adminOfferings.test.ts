@@ -10,6 +10,7 @@
 import "dotenv/config";
 
 import { listAllOfferings } from "@/lib/queries/admin/offerings";
+import { instructorDashboardHref } from "@/lib/offeringUrls";
 import { prisma } from "@/lib/prisma";
 import {
   TEST_PREFIX,
@@ -139,6 +140,24 @@ async function main() {
   });
 
   await runTest(
+    "listAllOfferings → non-super-admin only sees staff courses",
+    async () => {
+      const platformView = await listAllOfferings({
+        viewerUserId: platformInstructor.id,
+        viewerIsSuperAdmin: false,
+      });
+      const testRows = platformView.filter((item) =>
+        item.courseCode.startsWith(TEST_PREFIX),
+      );
+      assertEqual(
+        testRows.length,
+        0,
+        "platform instructor sees no test offerings",
+      );
+    },
+  );
+
+  await runTest(
     "listAllOfferings → canAddInstructor true only for courses the viewer teaches",
     async () => {
       const instructorView = await listAllOfferings({
@@ -170,8 +189,8 @@ async function main() {
       assert(instructorRowA !== undefined, "instructor should see offering A");
       assert(instructorRowB !== undefined, "instructor should see offering B");
       assert(
-        platformRowA !== undefined,
-        "platform instructor should see offering A",
+        platformRowA === undefined,
+        "platform instructor without membership should not see offering A",
       );
       assert(superAdminRowA !== undefined, "super-admin should see offering A");
 
@@ -181,19 +200,34 @@ async function main() {
         "course instructor can add on their course",
       );
       assertEqual(
+        instructorRowA!.canOpenCourse,
+        true,
+        "course instructor can open workspace",
+      );
+      assertEqual(
+        instructorRowA!.workspaceHref,
+        instructorDashboardHref(offeringA.publicId),
+        "instructor workspace href",
+      );
+      assertEqual(
         instructorRowB!.canAddInstructor,
         true,
         "course instructor can add on another course they teach",
       );
       assertEqual(
-        platformRowA!.canAddInstructor,
-        false,
+        platformRowA,
+        undefined,
         "platform instructor without membership cannot add",
       );
       assertEqual(
         superAdminRowA!.canAddInstructor,
         true,
         "super-admin can add on any course",
+      );
+      assertEqual(
+        superAdminRowA!.canOpenCourse,
+        false,
+        "super-admin without membership cannot open until added",
       );
     },
   );

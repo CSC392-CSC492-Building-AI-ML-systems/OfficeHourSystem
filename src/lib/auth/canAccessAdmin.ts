@@ -5,6 +5,25 @@ import type { SessionData } from "@/lib/session";
 
 import { getRequestSession, parseSessionUserId } from "./getRequestSession";
 
+/** Only super-admins (adminList.txt) may upload classlists and create new offerings. */
+export function canUploadAdminClasslist(utorid: string): boolean {
+  return isAdmin(utorid);
+}
+
+/** Require login and super-admin (adminList.txt) access. */
+export async function requireSuperAdminAccess(): Promise<SessionData> {
+  const session = await getRequestSession();
+  if (!session) {
+    throw new Error("Authentication required");
+  }
+
+  if (!isAdmin(session.utorid)) {
+    throw new Error("Super-admin access required");
+  }
+
+  return session;
+}
+
 /** Super-admins may add instructors to any offering; others only on courses they teach. */
 export async function canAddOfferingInstructor(
   userId: number,

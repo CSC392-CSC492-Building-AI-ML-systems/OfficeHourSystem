@@ -12,6 +12,7 @@ import "dotenv/config";
 import { isAdmin } from "@/lib/adminList";
 import {
   canAddOfferingInstructor,
+  canUploadAdminClasslist,
   userCanAccessAdmin,
 } from "@/lib/auth/canAccessAdmin";
 import { prisma } from "@/lib/prisma";
@@ -97,25 +98,6 @@ async function main() {
   );
 
   await runTest(
-    "canAddOfferingInstructor → true for super-admin on any offering",
-    async () => {
-      const course = await prisma.course.create({
-        data: { code: `${TEST_PREFIX}CSC999H5` },
-      });
-      const offering = await prisma.courseOffering.create({
-        data: { courseId: course.id, termCode: TEST_TERM },
-      });
-
-      const allowed = await canAddOfferingInstructor(
-        regularUser.id,
-        "testprof",
-        offering.publicId,
-      );
-      assertEqual(allowed, true, "super-admin can add on any offering");
-    },
-  );
-
-  await runTest(
     "canAddOfferingInstructor → true only when viewer is offering instructor",
     async () => {
       const course = await prisma.course.create({
@@ -153,6 +135,46 @@ async function main() {
         allowedForOutsider,
         false,
         "non-instructor cannot add instructors",
+      );
+    },
+  );
+
+  await runTest(
+    "canAddOfferingInstructor → true for super-admin on any offering",
+    async () => {
+      const course = await prisma.course.create({
+        data: { code: `${TEST_PREFIX}CSC999H5` },
+      });
+      const offering = await prisma.courseOffering.create({
+        data: { courseId: course.id, termCode: TEST_TERM },
+      });
+
+      const allowed = await canAddOfferingInstructor(
+        regularUser.id,
+        "testprof",
+        offering.publicId,
+      );
+      assertEqual(allowed, true, "super-admin can add on any offering");
+    },
+  );
+
+  await runTest(
+    "canUploadAdminClasslist → true only for super-admin UTORids",
+    async () => {
+      assertEqual(
+        canUploadAdminClasslist("testprof"),
+        true,
+        "super-admin can upload",
+      );
+      assertEqual(
+        canUploadAdminClasslist(platformInstructor.utorid),
+        false,
+        "platform instructor cannot upload",
+      );
+      assertEqual(
+        canUploadAdminClasslist(regularUser.utorid),
+        false,
+        "regular user cannot upload",
       );
     },
   );

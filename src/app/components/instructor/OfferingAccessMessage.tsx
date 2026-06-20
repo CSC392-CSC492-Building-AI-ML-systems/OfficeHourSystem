@@ -4,9 +4,15 @@ import { OfferingAccessError } from "@/lib/auth/requireOfferingAccess";
 
 type OfferingAccessMessageProps = {
   error: OfferingAccessError;
+  backHref?: string;
+  backLabel?: string;
 };
 
-export function OfferingAccessMessage({ error }: OfferingAccessMessageProps) {
+export function OfferingAccessMessage({
+  error,
+  backHref = "/admin",
+  backLabel = "Back to admin",
+}: OfferingAccessMessageProps) {
   const title =
     error.code === "missing"
       ? "No course selected"
@@ -24,10 +30,10 @@ export function OfferingAccessMessage({ error }: OfferingAccessMessageProps) {
           {error.message}
         </p>
         <Link
-          href="/admin"
+          href={backHref}
           className="mt-8 inline-block rounded-full bg-[#071f41] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0a2a57]"
         >
-          Back to admin
+          {backLabel}
         </Link>
       </section>
     </main>
