@@ -120,7 +120,13 @@ export function AdminDashboard({
                       <button
                         type="button"
                         onClick={() => setAddInstructorTarget(offering)}
-                        className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+                        disabled={!offering.canAddInstructor}
+                        title={
+                          offering.canAddInstructor
+                            ? undefined
+                            : "You must be an instructor for this course to add instructors."
+                        }
+                        className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50 disabled:text-slate-400"
                       >
                         Add instructor
                       </button>

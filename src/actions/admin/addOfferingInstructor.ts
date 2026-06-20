@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 
-import { requireAdminPageAccess } from "@/lib/auth/canAccessAdmin";
+import {
+  canAddOfferingInstructor,
+  requireAdminPageAccess,
+} from "@/lib/auth/canAccessAdmin";
+import { parseSessionUserId } from "@/lib/auth/getRequestSession";
 import { addOrUpdateStaffMember } from "@/lib/queries/offeringMember";
 
 export type AddOfferingInstructorResult =
@@ -14,7 +18,19 @@ export async function addOfferingInstructorAction(input: {
   utorid: string;
 }): Promise<AddOfferingInstructorResult> {
   try {
-    await requireAdminPageAccess();
+    const session = await requireAdminPageAccess();
+    const userId = parseSessionUserId(session);
+
+    const allowed = await canAddOfferingInstructor(
+      userId,
+      session.utorid,
+      input.offeringPublicId,
+    );
+    if (!allowed) {
+      throw new Error(
+        "You must be an instructor for this course to add instructors.",
+      );
+    }
 
     const utorid = input.utorid.trim();
     if (!utorid) {

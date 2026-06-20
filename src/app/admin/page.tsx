@@ -44,7 +44,10 @@ export default async function AdminPage() {
     );
   }
 
-  const offerings = await listAllOfferings();
+  const offerings = await listAllOfferings({
+    viewerUserId: userId,
+    viewerIsSuperAdmin: isAdmin(session.utorid),
+  });
 
   return (
     <main className="min-h-screen bg-[#f4f7fb]">

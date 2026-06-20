@@ -10,10 +10,14 @@
 import "dotenv/config";
 
 import { isAdmin } from "@/lib/adminList";
-import { userCanAccessAdmin } from "@/lib/auth/canAccessAdmin";
+import {
+  canAddOfferingInstructor,
+  userCanAccessAdmin,
+} from "@/lib/auth/canAccessAdmin";
 import { prisma } from "@/lib/prisma";
 import {
   TEST_PREFIX,
+  TEST_TERM,
   cleanupAll,
   assert,
   assertEqual,
@@ -88,6 +92,67 @@ async function main() {
       assert(
         allowed,
         "adminList UTORid should access admin even without isInstructor",
+      );
+    },
+  );
+
+  await runTest(
+    "canAddOfferingInstructor → true for super-admin on any offering",
+    async () => {
+      const course = await prisma.course.create({
+        data: { code: `${TEST_PREFIX}CSC999H5` },
+      });
+      const offering = await prisma.courseOffering.create({
+        data: { courseId: course.id, termCode: TEST_TERM },
+      });
+
+      const allowed = await canAddOfferingInstructor(
+        regularUser.id,
+        "testprof",
+        offering.publicId,
+      );
+      assertEqual(allowed, true, "super-admin can add on any offering");
+    },
+  );
+
+  await runTest(
+    "canAddOfferingInstructor → true only when viewer is offering instructor",
+    async () => {
+      const course = await prisma.course.create({
+        data: { code: `${TEST_PREFIX}CSC888H5` },
+      });
+      const offering = await prisma.courseOffering.create({
+        data: { courseId: course.id, termCode: TEST_TERM },
+      });
+
+      await prisma.offeringMember.create({
+        data: {
+          userId: platformInstructor.id,
+          offeringId: offering.id,
+          role: "INSTRUCTOR",
+        },
+      });
+
+      const allowedForMember = await canAddOfferingInstructor(
+        platformInstructor.id,
+        platformInstructor.utorid,
+        offering.publicId,
+      );
+      const allowedForOutsider = await canAddOfferingInstructor(
+        regularUser.id,
+        regularUser.utorid,
+        offering.publicId,
+      );
+
+      assertEqual(
+        allowedForMember,
+        true,
+        "offering instructor can add instructors",
+      );
+      assertEqual(
+        allowedForOutsider,
+        false,
+        "non-instructor cannot add instructors",
       );
     },
   );

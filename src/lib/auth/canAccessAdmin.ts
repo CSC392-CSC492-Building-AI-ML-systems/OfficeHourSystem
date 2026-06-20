@@ -1,8 +1,23 @@
 import { isAdmin } from "@/lib/adminList";
+import { getOfferingContextForUser } from "@/lib/auth/requireOfferingAccess";
 import { prisma } from "@/lib/prisma";
 import type { SessionData } from "@/lib/session";
 
 import { getRequestSession, parseSessionUserId } from "./getRequestSession";
+
+/** Super-admins may add instructors to any offering; others only on courses they teach. */
+export async function canAddOfferingInstructor(
+  userId: number,
+  utorid: string,
+  offeringPublicId: string,
+): Promise<boolean> {
+  if (isAdmin(utorid)) {
+    return true;
+  }
+
+  const context = await getOfferingContextForUser(userId, offeringPublicId);
+  return context?.role === "INSTRUCTOR";
+}
 
 /** True when the user is on adminList.txt or has `isInstructor` in the database. */
 export async function userCanAccessAdmin(

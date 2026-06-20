@@ -78,7 +78,10 @@ async function main() {
   await runTest(
     "listAllOfferings → includes test offerings with correct member counts",
     async () => {
-      const list = await listAllOfferings();
+      const list = await listAllOfferings({
+        viewerUserId: instructor.id,
+        viewerIsSuperAdmin: false,
+      });
 
       const rowA = list.find(
         (item) => item.offeringPublicId === offeringA.publicId,
@@ -104,7 +107,10 @@ async function main() {
   await runTest(
     "listAllOfferings → same term sorted by course code ascending",
     async () => {
-      const list = await listAllOfferings();
+      const list = await listAllOfferings({
+        viewerUserId: instructor.id,
+        viewerIsSuperAdmin: false,
+      });
       const testRows = list.filter((item) =>
         item.courseCode.startsWith(TEST_PREFIX),
       );
@@ -121,6 +127,73 @@ async function main() {
       assert(
         indexA < indexB,
         "CSC108 should appear before CSC148 when term codes match",
+      );
+    },
+  );
+
+  const platformInstructor = await prisma.user.create({
+    data: {
+      utorid: `${TEST_PREFIX}platform_only`,
+      isInstructor: true,
+    },
+  });
+
+  await runTest(
+    "listAllOfferings → canAddInstructor true only for courses the viewer teaches",
+    async () => {
+      const instructorView = await listAllOfferings({
+        viewerUserId: instructor.id,
+        viewerIsSuperAdmin: false,
+      });
+      const platformView = await listAllOfferings({
+        viewerUserId: platformInstructor.id,
+        viewerIsSuperAdmin: false,
+      });
+      const superAdminView = await listAllOfferings({
+        viewerUserId: platformInstructor.id,
+        viewerIsSuperAdmin: true,
+      });
+
+      const instructorRowA = instructorView.find(
+        (item) => item.offeringPublicId === offeringA.publicId,
+      );
+      const instructorRowB = instructorView.find(
+        (item) => item.offeringPublicId === offeringB.publicId,
+      );
+      const platformRowA = platformView.find(
+        (item) => item.offeringPublicId === offeringA.publicId,
+      );
+      const superAdminRowA = superAdminView.find(
+        (item) => item.offeringPublicId === offeringA.publicId,
+      );
+
+      assert(instructorRowA !== undefined, "instructor should see offering A");
+      assert(instructorRowB !== undefined, "instructor should see offering B");
+      assert(
+        platformRowA !== undefined,
+        "platform instructor should see offering A",
+      );
+      assert(superAdminRowA !== undefined, "super-admin should see offering A");
+
+      assertEqual(
+        instructorRowA!.canAddInstructor,
+        true,
+        "course instructor can add on their course",
+      );
+      assertEqual(
+        instructorRowB!.canAddInstructor,
+        true,
+        "course instructor can add on another course they teach",
+      );
+      assertEqual(
+        platformRowA!.canAddInstructor,
+        false,
+        "platform instructor without membership cannot add",
+      );
+      assertEqual(
+        superAdminRowA!.canAddInstructor,
+        true,
+        "super-admin can add on any course",
       );
     },
   );
