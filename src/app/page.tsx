@@ -15,7 +15,22 @@ export default function Home() {
           dashboard implementations with mock data.
         </p>
 
-        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <Link
+            href="/admin"
+            className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
+          >
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Admin
+            </p>
+            <p className="mt-3 text-2xl font-semibold text-[#071f41]">
+              Course Administration
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              Create offerings, import classlists, and open course workspaces.
+            </p>
+          </Link>
+
           <Link
             href="/student"
             className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"

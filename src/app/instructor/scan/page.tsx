@@ -1,12 +1,18 @@
 import { Suspense } from "react";
-import { ScanPage } from "@/app/components/instructor/scan/ScanPage";
 
-interface PageProps {
-  searchParams: Promise<{ sessionId?: string }>;
-}
+import {
+  OfferingAccessMessage,
+  offeringAccessFromUnknown,
+} from "@/app/components/instructor/OfferingAccessMessage";
+import { ScanPage } from "@/app/components/instructor/scan/ScanPage";
+import { resolveInstructorOfferingPage } from "@/lib/auth/instructorPage";
+
+type PageProps = {
+  searchParams: Promise<{ offering?: string; sessionId?: string }>;
+};
 
 export default async function ScanRoute({ searchParams }: PageProps) {
-  const { sessionId } = await searchParams;
+  const { offering, sessionId } = await searchParams;
 
   if (!sessionId) {
     return (
@@ -14,6 +20,13 @@ export default async function ScanRoute({ searchParams }: PageProps) {
         <p className="text-sm text-slate-500">Missing session ID.</p>
       </div>
     );
+  }
+
+  let pageContext;
+  try {
+    await resolveInstructorOfferingPage(offering, "/instructor/scan");
+  } catch (error) {
+    return <OfferingAccessMessage error={offeringAccessFromUnknown(error)} />;
   }
 
   return (

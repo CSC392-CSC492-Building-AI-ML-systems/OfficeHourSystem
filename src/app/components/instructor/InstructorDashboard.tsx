@@ -8,7 +8,15 @@ import { DUMMY_STAFF, type StaffMember } from "./cards/data";
 import { StatCard } from "./cards/StatCard";
 import { StaffTable } from "./cards/StaffTable";
 
-export default function InstructorDashboard() {
+type InstructorDashboardProps = {
+  offeringPublicId: string;
+  courseLabel: string;
+};
+
+export default function InstructorDashboard({
+  offeringPublicId,
+  courseLabel,
+}: InstructorDashboardProps) {
   const [staff, setStaff] = useState<StaffMember[]>(DUMMY_STAFF);
   const [isAddTaModalOpen, setIsAddTaModalOpen] = useState(false);
 
@@ -31,7 +39,11 @@ export default function InstructorDashboard() {
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <Navbar activeItem="dashboard" />
+        <Navbar
+          activeItem="dashboard"
+          offeringPublicId={offeringPublicId}
+          courseLabel={courseLabel}
+        />
 
         <main className="mt-10 space-y-8">
           <section className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -39,9 +51,7 @@ export default function InstructorDashboard() {
               <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
                 Staff Management
               </h1>
-              <p className="text-base text-slate-600">
-                CS 101: Introduction to Computer Science (Fall 2023)
-              </p>
+              <p className="text-base text-slate-600">{courseLabel}</p>
             </div>
 
             <button

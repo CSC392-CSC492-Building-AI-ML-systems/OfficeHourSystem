@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivitySquare, RefreshCw, ScanLine } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Navbar } from "../Navbar";
+import { instructorRouteHref } from "@/lib/offeringUrls";
 import { CurrentlyHelpingCard } from "./CurrentlyHelpingCard";
 import { DUMMY_QUEUE_SESSIONS } from "./data";
 import type { QueueStudent } from "./types";
@@ -30,10 +31,16 @@ type HelpingEntry = {
   seconds: number;
 };
 
-export default function ActiveQueuePage() {
+export default function ActiveQueuePage({
+  offeringPublicId,
+  courseLabel,
+  sessionId,
+}: {
+  offeringPublicId: string;
+  courseLabel: string;
+  sessionId?: string;
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get("sessionId");
 
   // Confirmation state for entering scan mode (kiosk lock means no easy back)
   const [scanState, setScanState] = useState<"idle" | "confirming">("idle");
@@ -48,7 +55,9 @@ export default function ActiveQueuePage() {
   const [endsAt, setEndsAt] = useState<string | null>(null);
 
   // "idle" | "confirming" | "loading"
-  const [endSessionState, setEndSessionState] = useState<"idle" | "confirming" | "loading">("idle");
+  const [endSessionState, setEndSessionState] = useState<
+    "idle" | "confirming" | "loading"
+  >("idle");
 
   // Track which student IDs are currently being started to prevent double-click race
   const startingRef = useRef<Set<string>>(new Set());
@@ -154,7 +163,9 @@ export default function ActiveQueuePage() {
     setHelpingStudents((current) =>
       data.helping.map((h) => {
         // Preserve the elapsed timer for students already in the helping list
-        const existing = current.find((e) => e.student.id === h.attendancePublicId);
+        const existing = current.find(
+          (e) => e.student.id === h.attendancePublicId,
+        );
         return {
           student: {
             id: h.attendancePublicId,
@@ -187,10 +198,17 @@ export default function ActiveQueuePage() {
     })();
   };
 
-  const handleResolveStudent = (student: QueueStudent, action: "end" | "no_show") => {
+  const handleResolveStudent = (
+    student: QueueStudent,
+    action: "end" | "no_show",
+  ) => {
     void (async () => {
       if (!sessionId) return;
-      const result = await updateAttendanceStatusAction(sessionId, student.id, action);
+      const result = await updateAttendanceStatusAction(
+        sessionId,
+        student.id,
+        action,
+      );
       if (result.outcome === "updated") {
         startingRef.current.delete(student.id);
         await refreshQueue();
@@ -226,153 +244,177 @@ export default function ActiveQueuePage() {
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <Navbar activeItem="queues" />
+        <Navbar
+          activeItem="queues"
+          offeringPublicId={offeringPublicId}
+          courseLabel={courseLabel}
+        />
 
         <main className="mt-10 space-y-8">
-          {loading ? (
+          {!sessionId ? (
+            <p className="text-sm text-slate-500">
+              Missing session ID. Start a session from My Queues.
+            </p>
+          ) : null}
+
+          {sessionId && loading ? (
             <p className="text-sm text-slate-500">Loading queue…</p>
           ) : null}
 
-          <section className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
-                My Queue
-              </h1>
-              <p className="text-base text-slate-600">
-                {activeSession.workspaceSubtitle}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d7e7ff] bg-[#eef5ff] px-4 py-2 text-sm font-medium text-[#071f41]">
-                <RefreshCw className="h-4 w-4" />
-                Last scan: {activeSession.lastScanLabel}
-              </span>
-
-              {/* Scan mode entry — hidden once the session has ended */}
-              {!sessionEnded &&
-                (scanState === "confirming" ? (
-                  <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                    <p className="text-sm font-medium text-amber-800">
-                      Open scanner? You will not be able to navigate away.
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          router.replace(`/instructor/scan?sessionId=${sessionId}`)
-                        }
-                        className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
-                      >
-                        Confirm
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setScanState("idle")}
-                        className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setScanState("confirming")}
-                    className="inline-flex items-center gap-2 rounded-full border border-[#071f41] px-5 py-2 text-sm font-semibold text-[#071f41] transition hover:bg-[#eef5ff]"
-                  >
-                    <ScanLine className="h-4 w-4" />
-                    Start Scanning
-                  </button>
-                ))}
-
-              {sessionEnded ? (
-                <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-500">
-                  Session Ended
-                </span>
-              ) : endSessionState === "confirming" ? (
-                /* Confirmation prompt — warns TA about students still in progress */
-                <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                  <p className="text-sm font-medium text-amber-800">
-                    End session? Any students still being helped will be marked
-                    complete.
+          {sessionId ? (
+            <>
+              <section className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
+                    My Queue
+                  </h1>
+                  <p className="text-base text-slate-600">
+                    {activeSession.workspaceSubtitle}
                   </p>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={handleEndSession}
-                      className="inline-flex items-center justify-center rounded-full bg-[#c8102e] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#a00d25]"
-                    >
-                      Confirm End
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEndSessionState("idle")}
-                      className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
-                    >
-                      Cancel
-                    </button>
-                  </div>
                 </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d7e7ff] bg-[#eef5ff] px-4 py-2 text-sm font-medium text-[#071f41]">
+                    <RefreshCw className="h-4 w-4" />
+                    Last scan: {activeSession.lastScanLabel}
+                  </span>
+
+                  {/* Scan mode entry — hidden once the session has ended */}
+                  {!sessionEnded &&
+                    (scanState === "confirming" ? (
+                      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                        <p className="text-sm font-medium text-amber-800">
+                          Open scanner? You will not be able to navigate away.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              router.replace(
+                                instructorRouteHref(
+                                  "/instructor/scan",
+                                  offeringPublicId,
+                                  { sessionId: sessionId ?? undefined },
+                                ),
+                              )
+                            }
+                            className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setScanState("idle")}
+                            className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setScanState("confirming")}
+                        className="inline-flex items-center gap-2 rounded-full border border-[#071f41] px-5 py-2 text-sm font-semibold text-[#071f41] transition hover:bg-[#eef5ff]"
+                      >
+                        <ScanLine className="h-4 w-4" />
+                        Start Scanning
+                      </button>
+                    ))}
+
+                  {sessionEnded ? (
+                    <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-500">
+                      Session Ended
+                    </span>
+                  ) : endSessionState === "confirming" ? (
+                    /* Confirmation prompt — warns TA about students still in progress */
+                    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                      <p className="text-sm font-medium text-amber-800">
+                        End session? Any students still being helped will be
+                        marked complete.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleEndSession}
+                          className="inline-flex items-center justify-center rounded-full bg-[#c8102e] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#a00d25]"
+                        >
+                          Confirm End
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEndSessionState("idle")}
+                          className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={endSessionState === "loading"}
+                      onClick={() => setEndSessionState("confirming")}
+                      className="inline-flex items-center justify-center rounded-full border border-[#c8102e] px-5 py-2 text-sm font-semibold text-[#c8102e] transition hover:bg-[#fff1f2] disabled:opacity-50"
+                    >
+                      {endSessionState === "loading"
+                        ? "Ending…"
+                        : "End Session"}
+                    </button>
+                  )}
+                </div>
+              </section>
+
+              <section className="space-y-2">
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
+                  The Active Workspace
+                </p>
+              </section>
+
+              {/* Render one card per student being helped */}
+              {helpingStudents.length === 0 ? (
+                <CurrentlyHelpingCard
+                  currentlyHelping={null}
+                  sessionSeconds={0}
+                  onNoShow={() => undefined}
+                  onEndHelp={() => undefined}
+                  onRevert={() => undefined}
+                />
               ) : (
-                <button
-                  type="button"
-                  disabled={endSessionState === "loading"}
-                  onClick={() => setEndSessionState("confirming")}
-                  className="inline-flex items-center justify-center rounded-full border border-[#c8102e] px-5 py-2 text-sm font-semibold text-[#c8102e] transition hover:bg-[#fff1f2] disabled:opacity-50"
-                >
-                  {endSessionState === "loading" ? "Ending…" : "End Session"}
-                </button>
+                helpingStudents.map((entry) => (
+                  <CurrentlyHelpingCard
+                    key={entry.student.id}
+                    currentlyHelping={entry.student}
+                    sessionSeconds={entry.seconds}
+                    onNoShow={() =>
+                      handleResolveStudent(entry.student, "no_show")
+                    }
+                    onEndHelp={() => handleResolveStudent(entry.student, "end")}
+                    onRevert={() => handleRevertStudent(entry.student)}
+                  />
+                ))
               )}
-            </div>
-          </section>
 
-          <section className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
-              The Active Workspace
-            </p>
-          </section>
+              <section className="rounded-[30px] border border-[#d7e7ff] bg-[#eef5ff] px-6 py-5 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.25)]">
+                <div className="flex items-start gap-3">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#071f41] shadow-sm">
+                    <ActivitySquare className="h-5 w-5" />
+                  </span>
+                  <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                    Multiple students can be helped at the same time. Start a
+                    student from the waiting room below.
+                  </p>
+                </div>
+              </section>
 
-          {/* Render one card per student being helped */}
-          {helpingStudents.length === 0 ? (
-            <CurrentlyHelpingCard
-              currentlyHelping={null}
-              sessionSeconds={0}
-              onNoShow={() => undefined}
-              onEndHelp={() => undefined}
-              onRevert={() => undefined}
-            />
-          ) : (
-            helpingStudents.map((entry) => (
-              <CurrentlyHelpingCard
-                key={entry.student.id}
-                currentlyHelping={entry.student}
-                sessionSeconds={entry.seconds}
-                onNoShow={() => handleResolveStudent(entry.student, "no_show")}
-                onEndHelp={() => handleResolveStudent(entry.student, "end")}
-                onRevert={() => handleRevertStudent(entry.student)}
+              {/* START buttons are always enabled — no single-student restriction */}
+              <WaitingRoom
+                waitingStudents={waitingStudents}
+                hasActiveStudent={false}
+                onStartStudent={handleStartStudent}
               />
-            ))
-          )}
-
-          <section className="rounded-[30px] border border-[#d7e7ff] bg-[#eef5ff] px-6 py-5 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.25)]">
-            <div className="flex items-start gap-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#071f41] shadow-sm">
-                <ActivitySquare className="h-5 w-5" />
-              </span>
-              <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                Multiple students can be helped at the same time. Start a
-                student from the waiting room below.
-              </p>
-            </div>
-          </section>
-
-          {/* START buttons are always enabled — no single-student restriction */}
-          <WaitingRoom
-            waitingStudents={waitingStudents}
-            hasActiveStudent={false}
-            onStartStudent={handleStartStudent}
-          />
+            </>
+          ) : null}
         </main>
       </div>
     </div>
