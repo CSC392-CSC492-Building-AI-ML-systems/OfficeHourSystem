@@ -9,6 +9,7 @@ export interface QueueSession {
   lastScanLabel: string;
   status: "SCHEDULED" | "ACTIVE" | "DELAYED" | "COMPLETED" | "CANCELLED";
   endsAt: string; // ISO string
+  interestedCount: number;
 }
 
 export interface QueueStudent {

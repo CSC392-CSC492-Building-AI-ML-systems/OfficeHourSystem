@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivitySquare, RefreshCw, ScanLine } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "../Navbar";
 import { CurrentlyHelpingCard } from "./CurrentlyHelpingCard";
-import { DUMMY_QUEUE_SESSIONS } from "./data";
 import type { QueueStudent } from "./types";
 import { WaitingRoom } from "./WaitingRoom";
 import { getActiveQueueAction } from "@/actions/get_active_queue/get-active-queue";
@@ -47,18 +46,17 @@ export default function ActiveQueuePage() {
   const [sessionEnded, setSessionEnded] = useState(false);
   const [endsAt, setEndsAt] = useState<string | null>(null);
 
+  // Real session meta from the server (was previously hardcoded dummy data)
+  const [subtitle, setSubtitle] = useState("");
+  const [lastScanName, setLastScanName] = useState<string | null>(null);
+
   // "idle" | "confirming" | "loading"
-  const [endSessionState, setEndSessionState] = useState<"idle" | "confirming" | "loading">("idle");
+  const [endSessionState, setEndSessionState] = useState<
+    "idle" | "confirming" | "loading"
+  >("idle");
 
   // Track which student IDs are currently being started to prevent double-click race
   const startingRef = useRef<Set<string>>(new Set());
-
-  const activeSession = useMemo(
-    () =>
-      DUMMY_QUEUE_SESSIONS.find((session) => session.id === sessionId) ??
-      DUMMY_QUEUE_SESSIONS[0],
-    [sessionId],
-  );
 
   // Load queue data from the server when the page opens
   useEffect(() => {
@@ -70,6 +68,8 @@ export default function ActiveQueuePage() {
         const data = await getActiveQueueAction(sessionId);
 
         setEndsAt(data.endsAt);
+        setSubtitle(`${data.courseCode}: ${data.title}`);
+        setLastScanName(data.lastCheckInName);
         if (data.sessionStatus === "COMPLETED") {
           setSessionEnded(true);
         }
@@ -142,6 +142,8 @@ export default function ActiveQueuePage() {
     if (!sessionId) return;
     const data = await getActiveQueueAction(sessionId);
 
+    setLastScanName(data.lastCheckInName);
+
     setWaitingStudents(
       data.waiting.map((s) => ({
         id: s.attendancePublicId,
@@ -154,7 +156,9 @@ export default function ActiveQueuePage() {
     setHelpingStudents((current) =>
       data.helping.map((h) => {
         // Preserve the elapsed timer for students already in the helping list
-        const existing = current.find((e) => e.student.id === h.attendancePublicId);
+        const existing = current.find(
+          (e) => e.student.id === h.attendancePublicId,
+        );
         return {
           student: {
             id: h.attendancePublicId,
@@ -187,10 +191,17 @@ export default function ActiveQueuePage() {
     })();
   };
 
-  const handleResolveStudent = (student: QueueStudent, action: "end" | "no_show") => {
+  const handleResolveStudent = (
+    student: QueueStudent,
+    action: "end" | "no_show",
+  ) => {
     void (async () => {
       if (!sessionId) return;
-      const result = await updateAttendanceStatusAction(sessionId, student.id, action);
+      const result = await updateAttendanceStatusAction(
+        sessionId,
+        student.id,
+        action,
+      );
       if (result.outcome === "updated") {
         startingRef.current.delete(student.id);
         await refreshQueue();
@@ -238,15 +249,13 @@ export default function ActiveQueuePage() {
               <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
                 My Queue
               </h1>
-              <p className="text-base text-slate-600">
-                {activeSession.workspaceSubtitle}
-              </p>
+              <p className="text-base text-slate-600">{subtitle}</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d7e7ff] bg-[#eef5ff] px-4 py-2 text-sm font-medium text-[#071f41]">
                 <RefreshCw className="h-4 w-4" />
-                Last scan: {activeSession.lastScanLabel}
+                Last scan: {lastScanName ?? "No check-ins yet"}
               </span>
 
               {/* Scan mode entry — hidden once the session has ended */}
@@ -260,7 +269,9 @@ export default function ActiveQueuePage() {
                       <button
                         type="button"
                         onClick={() =>
-                          router.replace(`/instructor/scan?sessionId=${sessionId}`)
+                          router.replace(
+                            `/instructor/scan?sessionId=${sessionId}`,
+                          )
                         }
                         className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
                       >
