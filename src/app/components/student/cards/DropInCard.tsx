@@ -2,16 +2,26 @@ import { Clock3, MapPin, UserRound } from "lucide-react";
 import { InterestedButton } from "./InterestedButton";
 
 interface DropInCardProps {
+  sessionPublicId: string;
   title: string;
   time: string;
   location?: string;
+  courseCode: string;
 }
 
-export function DropInCard({ title, time, location }: DropInCardProps) {
+export function DropInCard({
+  title,
+  time,
+  location,
+  courseCode,
+}: DropInCardProps) {
   return (
     <div className="rounded-2xl border border-[#d8e5f2] bg-[#f5faff] p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#1e4fa1]">
+            {courseCode}
+          </p>
           <h3 className="text-base font-semibold text-[#071f41]">{title}</h3>
           <div className="space-y-2 text-sm text-slate-600">
             <p className="flex items-center gap-2">
