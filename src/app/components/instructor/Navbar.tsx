@@ -1,7 +1,12 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, Search, UserCircle } from "lucide-react";
 
-type InstructorNavItem = "dashboard" | "queues" | "schedule";
+import { canViewCourseStatsAction } from "@/actions/course_stats/course-stats";
+
+type InstructorNavItem = "dashboard" | "queues" | "schedule" | "stats";
 
 interface NavbarProps {
   activeItem?: InstructorNavItem;
@@ -16,12 +21,29 @@ const navLinks: Array<{
   { key: "dashboard", label: "Dashboard", href: "/instructor" },
   { key: "queues", label: "My Queues", href: "/instructor/my-queues" },
   { key: "schedule", label: "Schedule", href: "/instructor/schedule" },
+  {
+    key: "stats",
+    label: "My Course Stats",
+    href: "/instructor/course-stats/overview",
+  },
 ];
 
 export function Navbar({
   activeItem = "dashboard",
   showSearch = false,
 }: NavbarProps) {
+  // "My Course Stats" is INSTRUCTOR-only; hide the link for everyone else.
+  const [canViewStats, setCanViewStats] = useState(false);
+  useEffect(() => {
+    void canViewCourseStatsAction()
+      .then(setCanViewStats)
+      .catch(() => setCanViewStats(false));
+  }, []);
+
+  const visibleLinks = navLinks.filter(
+    (link) => link.key !== "stats" || canViewStats,
+  );
+
   return (
     <header className="rounded-[28px] border border-slate-200/80 bg-white px-5 py-4 shadow-[0_16px_40px_-32px_rgba(15,41,66,0.35)] sm:px-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -34,7 +56,7 @@ export function Navbar({
           </Link>
 
           <nav className="flex flex-wrap items-center gap-6 text-sm font-medium">
-            {navLinks.map((link) => {
+            {visibleLinks.map((link) => {
               const isActive = link.key === activeItem;
 
               return (

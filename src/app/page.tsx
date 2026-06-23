@@ -1,6 +1,14 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { RefreshCw } from "lucide-react";
 
 export default function Home() {
+  // This is a dev-only entry index of mock routes. In production, send users
+  // through the normal login flow instead of exposing the route list.
+  if (process.env.NODE_ENV === "production") {
+    redirect("/api/auth/session");
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-16">
       <section className="w-full max-w-3xl rounded-[36px] border border-slate-200/80 bg-white px-8 py-10 shadow-[0_30px_80px_-40px_rgba(7,31,65,0.45)] sm:px-12">
@@ -14,6 +22,16 @@ export default function Home() {
           Use these routes to review the current student and instructor
           dashboard implementations with mock data.
         </p>
+
+        {/* Re-seal the session cookie for the current DEV_UTORID (use after
+            changing DEV_UTORID in .env to switch the logged-in account). */}
+        <a
+          href="/api/auth/session?redirect=/"
+          className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-[#071f41] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh login session
+        </a>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <Link
