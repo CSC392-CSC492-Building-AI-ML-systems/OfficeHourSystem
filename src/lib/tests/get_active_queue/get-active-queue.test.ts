@@ -130,6 +130,8 @@ async function main() {
         session.id,
         session.status,
         session.endsAt,
+        "TEST101",
+        "Active Queue Test",
       );
 
       assertEqual(result.waiting.length, 0, "waiting should be empty");
@@ -161,6 +163,8 @@ async function main() {
         session.id,
         session.status,
         session.endsAt,
+        "TEST101",
+        "Active Queue Test",
       );
 
       assertEqual(result.waiting.length, 3, "should have 3 waiting students");
@@ -193,6 +197,8 @@ async function main() {
       session.id,
       session.status,
       session.endsAt,
+      "TEST101",
+      "Active Queue Test",
     );
 
     assertEqual(result.waiting.length, 0, "no one waiting");
@@ -228,6 +234,8 @@ async function main() {
         session.id,
         session.status,
         session.endsAt,
+        "TEST101",
+        "Active Queue Test",
       );
 
       assertEqual(result.waiting.length, 2, "2 students waiting");
@@ -279,6 +287,8 @@ async function main() {
         session.id,
         session.status,
         session.endsAt,
+        "TEST101",
+        "Active Queue Test",
       );
 
       // Only the WAITING student should appear — resolved student is in the record table, not here
@@ -302,6 +312,8 @@ async function main() {
       session.id,
       session.status,
       session.endsAt,
+      "TEST101",
+      "Active Queue Test",
     );
 
     assert(
