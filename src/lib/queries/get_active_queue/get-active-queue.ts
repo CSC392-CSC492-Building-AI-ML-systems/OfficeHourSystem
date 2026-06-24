@@ -11,6 +11,8 @@ export async function getActiveQueue(
   sessionId: number,
   sessionStatus: ActiveQueueDto["sessionStatus"],
   endsAt: Date,
+  courseCode: string,
+  title: string,
 ): Promise<ActiveQueueDto> {
   // Fetch WAITING and IN_HELP attendances in one query, ordered by check-in
   // time so the WAITING subset is already in rank order.
@@ -37,8 +39,14 @@ export async function getActiveQueue(
   const helpingRows = rows.filter((row) => row.status === "IN_HELP");
 
   // Build a display name from first + last name, fall back to publicId
-  function resolveName(student: { publicId: string; firstName: string | null; lastName: string | null }): string {
-    const name = [student.firstName, student.lastName].filter(Boolean).join(" ");
+  function resolveName(student: {
+    publicId: string;
+    firstName: string | null;
+    lastName: string | null;
+  }): string {
+    const name = [student.firstName, student.lastName]
+      .filter(Boolean)
+      .join(" ");
     return name || student.publicId;
   }
 
@@ -57,9 +65,16 @@ export async function getActiveQueue(
     studentName: resolveName(row.student),
   }));
 
+  // Rows are ordered by check-in time, so the last one is the most recent
+  const lastRow = rows[rows.length - 1];
+  const lastCheckInName = lastRow ? resolveName(lastRow.student) : null;
+
   return {
     sessionStatus,
     endsAt: endsAt.toISOString(),
+    courseCode,
+    title,
+    lastCheckInName,
     waiting,
     helping,
   };

@@ -1,7 +1,17 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Bell, UserCircle } from "lucide-react";
 
+const NAV_LINKS = [
+  { label: "Dashboard", href: "/student" },
+  { label: "My Queue", href: "/student/my-queue" },
+];
+
 export function Navbar() {
+  const pathname = usePathname();
+
   return (
     <header className="rounded-[28px] border border-slate-200/80 bg-white px-5 py-4 shadow-[0_16px_40px_-32px_rgba(15,41,66,0.35)] sm:px-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -14,10 +24,23 @@ export function Navbar() {
           </Link>
 
           <nav className="flex items-center gap-6 text-sm font-medium text-slate-500">
-            <span className="relative pb-3 text-[#071f41]">
-              Dashboard
-              <span className="absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-[#c8102e]" />
-            </span>
+            {NAV_LINKS.map(({ label, href }) => {
+              const active = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`relative pb-3 transition ${
+                    active ? "text-[#071f41]" : "hover:text-[#071f41]"
+                  }`}
+                >
+                  {label}
+                  {active && (
+                    <span className="absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-[#c8102e]" />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
         </div>
 

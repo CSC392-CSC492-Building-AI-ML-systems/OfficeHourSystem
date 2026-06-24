@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Clock3, MapPin } from "lucide-react";
+import { Clock3, Heart, MapPin } from "lucide-react";
 import { startSessionAction } from "@/actions/start_session/start-session";
 import type { QueueSession } from "./types";
 
@@ -60,6 +60,13 @@ export function QueueSessionCard({ session }: QueueSessionCardProps) {
           <MapPin className="h-4 w-4 text-slate-400" />
           <span>{session.location}</span>
         </p>
+        {/* Interest count — shown for upcoming/active, hidden once ended */}
+        {session.status !== "COMPLETED" && session.status !== "CANCELLED" ? (
+          <p className="flex items-center gap-2">
+            <Heart className="h-4 w-4 text-slate-400" />
+            <span>{session.interestedCount} interested</span>
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-6">
@@ -68,13 +75,16 @@ export function QueueSessionCard({ session }: QueueSessionCardProps) {
           <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-5 py-3 text-sm font-medium text-slate-400">
             Session Ended
           </span>
-
         ) : session.status === "ACTIVE" ? (
           /* ACTIVE: two buttons — check queue or open scanner */
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => router.push(`/instructor/my-queues/active?sessionId=${session.id}`)}
+              onClick={() =>
+                router.push(
+                  `/instructor/my-queues/active?sessionId=${session.id}`,
+                )
+              }
               className="inline-flex items-center gap-2 rounded-full bg-[#22c55e] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#16a34a]"
             >
               Check Session Queue →
@@ -115,7 +125,6 @@ export function QueueSessionCard({ session }: QueueSessionCardProps) {
               </button>
             )}
           </div>
-
         ) : state === "confirming" ? (
           /* UPCOMING confirming: show confirmation prompt */
           <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
@@ -139,7 +148,6 @@ export function QueueSessionCard({ session }: QueueSessionCardProps) {
               </button>
             </div>
           </div>
-
         ) : (
           /* UPCOMING idle: start session button */
           <button

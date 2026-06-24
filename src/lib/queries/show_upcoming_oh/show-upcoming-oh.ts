@@ -46,6 +46,9 @@ export async function getTodaySessionsForTeachingTeam(userId: number) {
           course: true,
         },
       },
+      _count: {
+        select: { interests: true },
+      },
     },
     orderBy: {
       startsAt: "asc",
