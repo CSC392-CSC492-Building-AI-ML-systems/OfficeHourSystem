@@ -10,6 +10,7 @@ import type { SessionData } from "@/lib/session";
 const PUBLIC_PATHS = [
   "/api/auth/session", // session bootstrap (creates the cookie)
   "/api/health", // health check
+  "/api/cron/oh-reminders", // cron trigger — self-guards with CRON_SECRET
   "/", // home page
 ];
 

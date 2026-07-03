@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 import { prisma } from "@/lib/prisma";
 
 // Get the start and end of today (midnight to 23:59:59)
@@ -11,49 +13,59 @@ function getTodayRange() {
   return { start, end };
 }
 
-// Find all office hour sessions happening today
-// for offerings where the user is an INSTRUCTOR or TA
-export async function getTodaySessionsForTeachingTeam(userId: number) {
-  // Step 1: Find all offerings this user belongs to as INSTRUCTOR or TA
-  const memberships = await prisma.offeringMember.findMany({
-    where: {
-      userId: userId,
-      role: { in: ["INSTRUCTOR", "TA"] },
-    },
-    select: {
-      offeringId: true,
-    },
-  });
-
-  // If the user is not in any offering, return empty list
-  if (memberships.length === 0) {
-    return [];
-  }
-
-  const offeringIds = memberships.map((m) => m.offeringId);
-
-  // Step 2: Find all sessions today in those offerings
+// Find office hour sessions happening today that this user may run. The rule is
+// the same in both modes — INSTRUCTOR sees every session, a TA sees only the
+// sessions they host — but `offeringId` decides the scope:
+//   - offeringId given  → one offering (per-offering page): instructor of THAT
+//                          offering sees all its sessions; otherwise only hosted.
+//   - offeringId omitted → across all the user's offerings (legacy cross-course
+//                          view): all sessions in their instructor offerings,
+//                          plus any session they host.
+export async function getTodaySessionsForTeachingTeam(
+  userId: number,
+  offeringId?: number,
+) {
   const { start, end } = getTodayRange();
 
-  const sessions = await prisma.officeHourSession.findMany({
-    where: {
-      offeringId: { in: offeringIds },
-      startsAt: { gte: start, lte: end },
-    },
-    include: {
-      offering: {
-        include: {
-          course: true,
-        },
-      },
-      _count: {
-        select: { interests: true },
-      },
-    },
-    orderBy: {
-      startsAt: "asc",
-    },
-  });
+  let where: Prisma.OfficeHourSessionWhereInput;
 
-  return sessions;
+  if (offeringId !== undefined) {
+    // Scoped to one offering. Instructor of it → no host filter (see all);
+    // otherwise → only sessions this user hosts in it.
+    const isInstructor = await prisma.offeringMember.findFirst({
+      where: { userId, offeringId, role: "INSTRUCTOR" },
+      select: { id: true },
+    });
+    where = {
+      offeringId,
+      startsAt: { gte: start, lte: end },
+      ...(isInstructor ? {} : { hosts: { some: { userId } } }),
+    };
+  } else {
+    // Cross-offering. ({ in: [] } matches nothing, so a pure TA with no hosted
+    // sessions today gets an empty list.)
+    const instructorMemberships = await prisma.offeringMember.findMany({
+      where: { userId, role: "INSTRUCTOR" },
+      select: { offeringId: true },
+    });
+    const instructorOfferingIds = instructorMemberships.map(
+      (m) => m.offeringId,
+    );
+    where = {
+      startsAt: { gte: start, lte: end },
+      OR: [
+        { offeringId: { in: instructorOfferingIds } },
+        { hosts: { some: { userId } } },
+      ],
+    };
+  }
+
+  return prisma.officeHourSession.findMany({
+    where,
+    include: {
+      offering: { include: { course: true } },
+      _count: { select: { interests: true } },
+    },
+    orderBy: { startsAt: "asc" },
+  });
 }

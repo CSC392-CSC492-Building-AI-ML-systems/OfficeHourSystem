@@ -1,4 +1,11 @@
-import { getRequestSession, parseSessionUserId } from "@/lib/auth/getRequestSession";
+import {
+  getRequestSession,
+  parseSessionUserId,
+} from "@/lib/auth/getRequestSession";
+import {
+  assertSessionOperator,
+  ensureSessionHost,
+} from "@/lib/auth/sessionOperator";
 import { prisma } from "@/lib/prisma";
 import { updateAttendanceStatus } from "@/lib/queries/update_attendance_status/update-attendance-status";
 
@@ -26,48 +33,35 @@ export async function updateAttendanceStatusService(
   });
   if (!ohSession) throw new Error("Session not found");
 
-  // Step 3: Check the user is a TA or INSTRUCTOR in this offering
-  const member = await prisma.offeringMember.findUnique({
-    where: {
-      userId_offeringId: {
-        userId,
-        offeringId: ohSession.offeringId,
-      },
-    },
-    select: { role: true },
-  });
-  if (!member || member.role === "STUDENT") {
-    throw new Error("Forbidden: only TAs and instructors can update attendance");
-  }
+  // Step 3: Only the offering's instructor or a host of this session may act
+  const { role, hostId } = await assertSessionOperator(
+    userId,
+    ohSession.id,
+    ohSession.offeringId,
+  );
 
-  // Step 3b/4: Look up the session host record (used to log who resolved the
-  // student) and the attendance record in parallel, since neither depends on
-  // the other.
-  const [sessionHost, attendance] = await Promise.all([
-    prisma.officeHourSessionHost.findUnique({
-      where: {
-        sessionId_userId: {
-          sessionId: ohSession.id,
-          userId,
-        },
-      },
-      select: { id: true },
-    }),
-    prisma.officeHourAttendance.findUnique({
-      where: { publicId: attendancePublicId },
-      select: { id: true, sessionId: true },
-    }),
-  ]);
+  // Step 4: Look up the attendance record
+  const attendance = await prisma.officeHourAttendance.findUnique({
+    where: { publicId: attendancePublicId },
+    select: { id: true, sessionId: true },
+  });
 
   if (!attendance || attendance.sessionId !== ohSession.id) {
     return { outcome: "not_found" };
   }
 
+  // Step 4b: Record who resolved the student. An instructor who isn't a
+  // scheduled host gets a host row created now, so helpedByHostId is never null
+  // (needed for academic-offence lookups). role is always set on this path.
+  const helperHostId =
+    hostId ??
+    (await ensureSessionHost(ohSession.id, userId, role ?? "INSTRUCTOR"));
+
   // Step 5: Run the update inside a transaction (insert record + delete attendance)
   const recordPublicId = await updateAttendanceStatus(
     attendance.id,
     action,
-    sessionHost?.id ?? null,
+    helperHostId,
   );
 
   if (recordPublicId === null) {

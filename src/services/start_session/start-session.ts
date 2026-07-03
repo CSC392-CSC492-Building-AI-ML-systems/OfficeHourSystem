@@ -2,6 +2,7 @@ import {
   getRequestSession,
   parseSessionUserId,
 } from "@/lib/auth/getRequestSession";
+import { assertSessionOperator } from "@/lib/auth/sessionOperator";
 import { prisma } from "@/lib/prisma";
 import { startSession } from "@/lib/queries/start_session/start-session";
 import { recomputeWaitStats } from "@/lib/waitStats";
@@ -26,19 +27,8 @@ export async function startSessionService(
   });
   if (!ohSession) throw new Error("Session not found");
 
-  // Step 3: Check the user is a TA or INSTRUCTOR in this offering
-  const member = await prisma.offeringMember.findUnique({
-    where: {
-      userId_offeringId: {
-        userId,
-        offeringId: ohSession.offeringId,
-      },
-    },
-    select: { role: true },
-  });
-  if (!member || member.role === "STUDENT") {
-    throw new Error("Forbidden: only TAs and instructors can start a session");
-  }
+  // Step 3: Only the offering's instructor or a host of this session may act
+  await assertSessionOperator(userId, ohSession.id, ohSession.offeringId);
 
   // Step 4: Transition the session status
   const result = await startSession(ohSession.id);

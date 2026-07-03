@@ -7,13 +7,14 @@
  * Prerequisite: DATABASE_URL must be set in .env
  *
  * Scenarios covered:
- *   1. TA has no offerings → returns empty array
- *   2. TA in an offering → sees today's sessions
- *   3. CANCELLED session today → returned (shown in Ended tab)
- *   4. COMPLETED session today → returned (shown in Ended tab)
- *   5. Session scheduled for tomorrow → not returned
- *   6. User is STUDENT (not TA/INSTRUCTOR) → not returned
- *   7. INSTRUCTOR role → also returned (same as TA)
+ *   1. User in no offering → returns empty array
+ *   2. TA hosting a today session → sees it
+ *   3. CANCELLED session the TA hosts → returned (shown in Ended tab)
+ *   4. COMPLETED session the TA hosts → returned (shown in Ended tab)
+ *   5. Session scheduled for tomorrow → not returned (even if hosted)
+ *   6. STUDENT → not returned
+ *   7. INSTRUCTOR → sees every session in their offering (host or not)
+ *   8. TA in the offering but NOT a host of the session → not returned
  */
 
 import "dotenv/config";
@@ -85,13 +86,24 @@ async function setupUser(
   return user;
 }
 
+// Register a user as a host of a specific session
+async function addHost(
+  sessionId: number,
+  userId: number,
+  role: "INSTRUCTOR" | "TA",
+) {
+  await prisma.officeHourSessionHost.create({
+    data: { sessionId, userId, role },
+  });
+}
+
 async function main() {
   console.log("=== show-upcoming-oh.test.ts ===\n");
 
   await cleanupAll();
 
-  // ── Test 1: TA has no offerings → returns empty array ────────────────────
-  await runTest("TA has no offerings → returns empty array", async () => {
+  // ── Test 1: User in no offering → returns empty array ────────────────────
+  await runTest("user in no offering → returns empty array", async () => {
     await cleanupAll();
 
     // Create a user but do NOT add them to any offering
@@ -108,14 +120,13 @@ async function main() {
     assertEqual(result.length, 0, "should return empty array");
   });
 
-  // ── Test 2: TA in offering → sees today's sessions ───────────────────────
-  await runTest("TA in offering → sees today's sessions", async () => {
+  // ── Test 2: TA hosting a today session → sees it ─────────────────────────
+  await runTest("TA hosting a today session → sees it", async () => {
     await cleanupAll();
 
     const { offering } = await setupOffering();
     const ta = await setupUser("ta1", offering.id, "TA");
 
-    // Create a session happening today
     const { startsAt, endsAt } = makeTodaySession();
     const session = await prisma.officeHourSession.create({
       data: {
@@ -127,23 +138,23 @@ async function main() {
         status: "SCHEDULED",
       },
     });
+    await addHost(session.id, ta.id, "TA");
 
     const result = await getTodaySessionsForTeachingTeam(ta.id);
     assertEqual(result.length, 1, "should return 1 session");
     assertEqual(result[0].id, session.id, "should return the correct session");
   });
 
-  // ── Test 3: CANCELLED session today → returned (shown in Ended tab) ──────
-  await runTest("CANCELLED session today → returned in results", async () => {
+  // ── Test 3: CANCELLED session the TA hosts → returned (Ended tab) ────────
+  await runTest("CANCELLED session the TA hosts → returned", async () => {
     await cleanupAll();
 
     const { offering } = await setupOffering();
     const ta = await setupUser("ta2", offering.id, "TA");
 
-    // Create a SCHEDULED session and a CANCELLED session, both today
     const { startsAt, endsAt } = makeTodaySession();
 
-    await prisma.officeHourSession.create({
+    const scheduled = await prisma.officeHourSession.create({
       data: {
         offeringId: offering.id,
         title: "Normal OH",
@@ -153,8 +164,7 @@ async function main() {
         status: "SCHEDULED",
       },
     });
-
-    await prisma.officeHourSession.create({
+    const cancelled = await prisma.officeHourSession.create({
       data: {
         offeringId: offering.id,
         title: "Cancelled OH",
@@ -164,10 +174,12 @@ async function main() {
         status: "CANCELLED",
       },
     });
+    await addHost(scheduled.id, ta.id, "TA");
+    await addHost(cancelled.id, ta.id, "TA");
 
     const result = await getTodaySessionsForTeachingTeam(ta.id);
 
-    // Both should appear — frontend bucket the cancelled one into the Ended tab
+    // Both should appear — frontend buckets the cancelled one into the Ended tab
     assertEqual(
       result.length,
       2,
@@ -183,8 +195,8 @@ async function main() {
     );
   });
 
-  // ── Test 4: COMPLETED session today → returned (frontend shows in Ended tab)
-  await runTest("COMPLETED session today → returned in results", async () => {
+  // ── Test 4: COMPLETED session the TA hosts → returned (Ended tab) ─────────
+  await runTest("COMPLETED session the TA hosts → returned", async () => {
     await cleanupAll();
 
     const { offering } = await setupOffering();
@@ -192,7 +204,7 @@ async function main() {
 
     const { startsAt, endsAt } = makeTodaySession();
 
-    await prisma.officeHourSession.create({
+    const scheduled = await prisma.officeHourSession.create({
       data: {
         offeringId: offering.id,
         title: "Upcoming OH",
@@ -202,7 +214,7 @@ async function main() {
         status: "SCHEDULED",
       },
     });
-    await prisma.officeHourSession.create({
+    const completed = await prisma.officeHourSession.create({
       data: {
         offeringId: offering.id,
         title: "Ended OH",
@@ -212,6 +224,8 @@ async function main() {
         status: "COMPLETED",
       },
     });
+    await addHost(scheduled.id, ta.id, "TA");
+    await addHost(completed.id, ta.id, "TA");
 
     const result = await getTodaySessionsForTeachingTeam(ta.id);
 
@@ -231,7 +245,7 @@ async function main() {
     );
   });
 
-  // ── Test 5: Session tomorrow → not returned ───────────────────────────────
+  // ── Test 5: Session tomorrow → not returned (even if hosted) ──────────────
   await runTest("Session tomorrow → not returned", async () => {
     await cleanupAll();
 
@@ -240,7 +254,7 @@ async function main() {
 
     // Only create a tomorrow session — nothing today
     const { startsAt, endsAt } = makeTomorrowSession();
-    await prisma.officeHourSession.create({
+    const session = await prisma.officeHourSession.create({
       data: {
         offeringId: offering.id,
         title: "Tomorrow OH",
@@ -250,12 +264,13 @@ async function main() {
         status: "SCHEDULED",
       },
     });
+    await addHost(session.id, ta.id, "TA");
 
     const result = await getTodaySessionsForTeachingTeam(ta.id);
     assertEqual(result.length, 0, "tomorrow session should not be returned");
   });
 
-  // ── Test 5: STUDENT role → not returned ──────────────────────────────────
+  // ── Test 6: STUDENT role → not returned ──────────────────────────────────
   await runTest(
     "STUDENT in offering → cannot see sessions via this query",
     async () => {
@@ -277,15 +292,15 @@ async function main() {
         },
       });
 
-      // Student is not TA/INSTRUCTOR, so query should return nothing
+      // Student is not an instructor and hosts nothing → returns nothing
       const result = await getTodaySessionsForTeachingTeam(student.id);
       assertEqual(result.length, 0, "student should not see sessions");
     },
   );
 
-  // ── Test 6: INSTRUCTOR role → also returned ──────────────────────────────
+  // ── Test 7: INSTRUCTOR → sees every session in their offering, host or not ─
   await runTest(
-    "INSTRUCTOR in offering → also sees today's sessions",
+    "INSTRUCTOR sees every session in their offering without a host row",
     async () => {
       await cleanupAll();
 
@@ -307,10 +322,198 @@ async function main() {
           status: "SCHEDULED",
         },
       });
+      // No host row added — instructor still sees it.
 
       const result = await getTodaySessionsForTeachingTeam(instructor.id);
       assertEqual(result.length, 1, "instructor should see today's sessions");
       assertEqual(result[0].id, session.id, "correct session returned");
+    },
+  );
+
+  // ── Test 8: TA in offering but NOT host of the session → not returned ─────
+  await runTest(
+    "TA in offering but not host of the session → not returned",
+    async () => {
+      await cleanupAll();
+
+      const { offering } = await setupOffering();
+      const ta = await setupUser("ta_nonhost", offering.id, "TA");
+
+      const { startsAt, endsAt } = makeTodaySession();
+      await prisma.officeHourSession.create({
+        data: {
+          offeringId: offering.id,
+          title: "Someone else's OH",
+          type: "REGULAR",
+          startsAt,
+          endsAt,
+          status: "SCHEDULED",
+        },
+      });
+      // TA is in the teaching team but is NOT a host of this session.
+
+      const result = await getTodaySessionsForTeachingTeam(ta.id);
+      assertEqual(result.length, 0, "non-host TA should not see the session");
+    },
+  );
+
+  // ── Test 9: scoped to offering → INSTRUCTOR sees all its sessions ──────────
+  await runTest(
+    "scoped to offering → INSTRUCTOR sees its sessions without hosting",
+    async () => {
+      await cleanupAll();
+      const { offering } = await setupOffering();
+      const instr = await setupUser("scoped_instr", offering.id, "INSTRUCTOR");
+
+      const { startsAt, endsAt } = makeTodaySession();
+      const s = await prisma.officeHourSession.create({
+        data: {
+          offeringId: offering.id,
+          title: "Scoped OH",
+          type: "REGULAR",
+          startsAt,
+          endsAt,
+          status: "SCHEDULED",
+        },
+      });
+      // No host row for the instructor.
+
+      const result = await getTodaySessionsForTeachingTeam(
+        instr.id,
+        offering.id,
+      );
+      assertEqual(result.length, 1, "instructor sees the session");
+      assertEqual(result[0].id, s.id, "correct session");
+    },
+  );
+
+  // ── Test 10: scoped to offering A → excludes offering B ───────────────────
+  await runTest("scoped to offering A → excludes offering B", async () => {
+    await cleanupAll();
+    const { offering: offeringA } = await setupOffering();
+    const courseB = await prisma.course.create({
+      data: { code: `${TEST_PREFIX}OH_B` },
+    });
+    const offeringB = await prisma.courseOffering.create({
+      data: { courseId: courseB.id, termCode: TEST_TERM },
+    });
+    const instr = await setupUser("scoped_ab", offeringA.id, "INSTRUCTOR");
+    await prisma.offeringMember.create({
+      data: { userId: instr.id, offeringId: offeringB.id, role: "INSTRUCTOR" },
+    });
+
+    const { startsAt, endsAt } = makeTodaySession();
+    await prisma.officeHourSession.create({
+      data: {
+        offeringId: offeringA.id,
+        title: "A OH",
+        type: "REGULAR",
+        startsAt,
+        endsAt,
+        status: "SCHEDULED",
+      },
+    });
+    await prisma.officeHourSession.create({
+      data: {
+        offeringId: offeringB.id,
+        title: "B OH",
+        type: "REGULAR",
+        startsAt,
+        endsAt,
+        status: "SCHEDULED",
+      },
+    });
+
+    const result = await getTodaySessionsForTeachingTeam(
+      instr.id,
+      offeringA.id,
+    );
+    assertEqual(result.length, 1, "only offering A session");
+    assert(
+      result.every((r) => r.offeringId === offeringA.id),
+      "all results belong to offering A",
+    );
+  });
+
+  // ── Test 11: scoped to offering → TA sees only sessions they host in it ────
+  await runTest(
+    "scoped to offering → TA sees only sessions they host in it",
+    async () => {
+      await cleanupAll();
+      const { offering } = await setupOffering();
+      const ta = await setupUser("scoped_ta", offering.id, "TA");
+
+      const { startsAt, endsAt } = makeTodaySession();
+      const hosted = await prisma.officeHourSession.create({
+        data: {
+          offeringId: offering.id,
+          title: "Hosted",
+          type: "REGULAR",
+          startsAt,
+          endsAt,
+          status: "SCHEDULED",
+        },
+      });
+      await prisma.officeHourSession.create({
+        data: {
+          offeringId: offering.id,
+          title: "Not hosted",
+          type: "REGULAR",
+          startsAt,
+          endsAt,
+          status: "SCHEDULED",
+        },
+      });
+      await addHost(hosted.id, ta.id, "TA");
+
+      const result = await getTodaySessionsForTeachingTeam(ta.id, offering.id);
+      assertEqual(result.length, 1, "only the hosted session");
+      assertEqual(result[0].id, hosted.id, "correct hosted session");
+    },
+  );
+
+  // ── Test 12: scoped → TA hosting only in another offering sees nothing ────
+  await runTest(
+    "scoped to offering → TA who hosts only elsewhere sees nothing",
+    async () => {
+      await cleanupAll();
+      const { offering: offeringA } = await setupOffering();
+      const courseB = await prisma.course.create({
+        data: { code: `${TEST_PREFIX}OH_B2` },
+      });
+      const offeringB = await prisma.courseOffering.create({
+        data: { courseId: courseB.id, termCode: TEST_TERM },
+      });
+      const ta = await setupUser("scoped_ta2", offeringA.id, "TA");
+      await prisma.offeringMember.create({
+        data: { userId: ta.id, offeringId: offeringB.id, role: "TA" },
+      });
+
+      const { startsAt, endsAt } = makeTodaySession();
+      const bSession = await prisma.officeHourSession.create({
+        data: {
+          offeringId: offeringB.id,
+          title: "B hosted",
+          type: "REGULAR",
+          startsAt,
+          endsAt,
+          status: "SCHEDULED",
+        },
+      });
+      await addHost(bSession.id, ta.id, "TA");
+      await prisma.officeHourSession.create({
+        data: {
+          offeringId: offeringA.id,
+          title: "A OH",
+          type: "REGULAR",
+          startsAt,
+          endsAt,
+          status: "SCHEDULED",
+        },
+      });
+
+      const result = await getTodaySessionsForTeachingTeam(ta.id, offeringA.id);
+      assertEqual(result.length, 0, "nothing in offering A");
     },
   );
 
