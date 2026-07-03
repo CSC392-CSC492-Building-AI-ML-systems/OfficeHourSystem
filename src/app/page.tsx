@@ -11,11 +11,11 @@ export default function Home() {
           Office Hour Management System
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-          Sign in to continue. Instructors open the admin portal; students open
-          their course list and select an offering.
+          Sign in to continue. Instructors open the admin portal or course
+          statistics; students open their student page.
         </p>
 
-        <div className="mt-10 grid gap-4 md:grid-cols-2">
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
           <Link
             href="/api/auth/session?redirect=/admin"
             className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
@@ -29,6 +29,18 @@ export default function Home() {
           </Link>
 
           <Link
+            href="/api/auth/session?redirect=/instructor/course-stats/overview"
+            className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
+          >
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Instructors
+            </p>
+            <p className="mt-3 text-2xl font-semibold text-[#071f41]">
+              Course stats
+            </p>
+          </Link>
+
+          <Link
             href="/api/auth/session?redirect=/student"
             className="rounded-[28px] border border-slate-200 bg-[#f8fafc] px-6 py-6 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
           >
@@ -36,7 +48,7 @@ export default function Home() {
               Students
             </p>
             <p className="mt-3 text-2xl font-semibold text-[#071f41]">
-              My courses
+              Student page
             </p>
           </Link>
         </div>

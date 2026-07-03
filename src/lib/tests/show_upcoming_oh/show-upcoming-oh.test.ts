@@ -378,10 +378,10 @@ async function main() {
       });
       // No host row for the instructor.
 
-      const result = await getTodaySessionsForTeachingTeam(
-        instr.id,
-        offering.id,
-      );
+      const result = await getTodaySessionsForTeachingTeam(instr.id, {
+        offeringId: offering.id,
+        isInstructor: true,
+      });
       assertEqual(result.length, 1, "instructor sees the session");
       assertEqual(result[0].id, s.id, "correct session");
     },
@@ -424,10 +424,10 @@ async function main() {
       },
     });
 
-    const result = await getTodaySessionsForTeachingTeam(
-      instr.id,
-      offeringA.id,
-    );
+    const result = await getTodaySessionsForTeachingTeam(instr.id, {
+      offeringId: offeringA.id,
+      isInstructor: true,
+    });
     assertEqual(result.length, 1, "only offering A session");
     assert(
       result.every((r) => r.offeringId === offeringA.id),
@@ -466,7 +466,10 @@ async function main() {
       });
       await addHost(hosted.id, ta.id, "TA");
 
-      const result = await getTodaySessionsForTeachingTeam(ta.id, offering.id);
+      const result = await getTodaySessionsForTeachingTeam(ta.id, {
+        offeringId: offering.id,
+        isInstructor: false,
+      });
       assertEqual(result.length, 1, "only the hosted session");
       assertEqual(result[0].id, hosted.id, "correct hosted session");
     },
@@ -512,7 +515,10 @@ async function main() {
         },
       });
 
-      const result = await getTodaySessionsForTeachingTeam(ta.id, offeringA.id);
+      const result = await getTodaySessionsForTeachingTeam(ta.id, {
+        offeringId: offeringA.id,
+        isInstructor: false,
+      });
       assertEqual(result.length, 0, "nothing in offering A");
     },
   );
