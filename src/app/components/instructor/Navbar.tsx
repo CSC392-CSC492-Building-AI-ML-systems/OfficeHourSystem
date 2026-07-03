@@ -1,14 +1,18 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, Search, UserCircle } from "lucide-react";
 
+import { canViewCourseStatsAction } from "@/actions/course_stats/course-stats";
 import { courseRouteHref } from "@/lib/offeringUrls";
 
-export type InstructorNavItem = "dashboard" | "queues" | "schedule";
+export type InstructorNavItem = "dashboard" | "queues" | "schedule" | "stats";
 
 interface NavbarProps {
   activeItem?: InstructorNavItem;
   showSearch?: boolean;
-  offeringPublicId: string;
+  offeringPublicId?: string;
 }
 
 const navPaths: Array<{
@@ -19,6 +23,11 @@ const navPaths: Array<{
   { key: "dashboard", label: "Dashboard", path: "/instructor" },
   { key: "queues", label: "My Queues", path: "/instructor/my-queues" },
   { key: "schedule", label: "Schedule", path: "/instructor/schedule" },
+  {
+    key: "stats",
+    label: "My Course Stats",
+    path: "/instructor/course-stats/overview",
+  },
 ];
 
 export function Navbar({
@@ -26,6 +35,18 @@ export function Navbar({
   showSearch = false,
   offeringPublicId,
 }: NavbarProps) {
+  // "My Course Stats" is INSTRUCTOR-only; hide the link for everyone else.
+  const [canViewStats, setCanViewStats] = useState(false);
+  useEffect(() => {
+    void canViewCourseStatsAction()
+      .then(setCanViewStats)
+      .catch(() => setCanViewStats(false));
+  }, []);
+
+  const visibleLinks = navPaths.filter(
+    (link) => link.key !== "stats" || canViewStats,
+  );
+
   return (
     <header className="rounded-[28px] border border-slate-200/80 bg-white px-5 py-4 shadow-[0_16px_40px_-32px_rgba(15,41,66,0.35)] sm:px-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -38,9 +59,15 @@ export function Navbar({
           </Link>
 
           <nav className="flex flex-wrap items-center gap-6 text-sm font-medium">
-            {navPaths.map((link) => {
+            {visibleLinks.map((link) => {
               const isActive = link.key === activeItem;
-              const href = courseRouteHref(link.path, offeringPublicId);
+              // Course Stats is a standalone flat feature with its own course
+              // picker; the other links are course-scoped when we have an
+              // offering in context.
+              const href =
+                link.key === "stats" || !offeringPublicId
+                  ? link.path
+                  : courseRouteHref(link.path, offeringPublicId);
 
               return (
                 <Link

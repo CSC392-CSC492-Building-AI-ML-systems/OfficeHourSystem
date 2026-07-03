@@ -23,6 +23,8 @@ export async function getActiveQueueService(
       offeringId: true,
       status: true,
       endsAt: true,
+      title: true,
+      offering: { select: { course: { select: { code: true } } } },
     },
   });
 
@@ -46,5 +48,11 @@ export async function getActiveQueueService(
   }
 
   // Step 4: Return the queue state
-  return getActiveQueue(ohSession.id, ohSession.status, ohSession.endsAt);
+  return getActiveQueue(
+    ohSession.id,
+    ohSession.status,
+    ohSession.endsAt,
+    ohSession.offering.course.code,
+    ohSession.title,
+  );
 }

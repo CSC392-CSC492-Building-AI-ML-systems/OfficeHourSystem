@@ -1,4 +1,7 @@
-import { getRequestSession, parseSessionUserId } from "@/lib/auth/getRequestSession";
+import {
+  getRequestSession,
+  parseSessionUserId,
+} from "@/lib/auth/getRequestSession";
 import { prisma } from "@/lib/prisma";
 import { getTodaySessionsForTeachingTeam } from "@/lib/queries/show_upcoming_oh/show-upcoming-oh";
 import type { UpcomingSessionDto } from "@/lib/types/queue";
@@ -39,5 +42,6 @@ export async function showUpcomingOhService(): Promise<UpcomingSessionDto[]> {
     endsAt: session.endsAt.toISOString(),
     location: session.location ?? "TBD",
     status: session.status,
+    interestedCount: session._count.interests,
   }));
 }

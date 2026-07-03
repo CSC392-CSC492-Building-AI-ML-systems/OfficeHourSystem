@@ -15,14 +15,12 @@ import {
   createRecurringBlock,
   deleteRecurringBlock,
   getInstructorSchedulePage,
-  getUpcomingSessionsForHost,
   updateRecurringBlock,
   updateSession,
 } from "@/lib/queries/officeHourScheduling";
 import type {
   CreateOneTimeSessionInput,
   CreateRecurringBlockInput,
-  QueueSessionDto,
   SchedulePageResponse,
   ScheduleSessionDto,
   UpdateRecurringBlockInput,
@@ -103,15 +101,4 @@ export async function cancelSessionAction(publicId: string): Promise<void> {
   const userId = await requireSessionUserId();
   const result = await cancelSession(userId, publicId);
   revalidateSchedulingPaths(result.offeringPublicId);
-}
-
-export async function getQueueSessionsAction(): Promise<{
-  sessions: QueueSessionDto[];
-}> {
-  const userId = await requireSessionUserId();
-  const sessions = await getUpcomingSessionsForHost(userId, {
-    types: ["DEBUGGING"],
-    daysAhead: 14,
-  });
-  return { sessions };
 }

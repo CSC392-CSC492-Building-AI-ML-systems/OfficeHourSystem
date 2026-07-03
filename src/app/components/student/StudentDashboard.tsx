@@ -1,30 +1,33 @@
 import Link from "next/link";
 import { Bug, CalendarDays, Users } from "lucide-react";
 import { Navbar } from "./Navbar";
-import {
-  DUMMY_DEBUGGING_SESSIONS,
-  DUMMY_DROP_IN_SESSIONS,
-  DUMMY_GROUP_TOPIC_SESSIONS,
-} from "./data";
 import { DropInCard } from "./cards/DropInCard";
+import { FeatureBanner } from "./cards/FeatureBanner";
 import { GroupTopicCard } from "./cards/GroupTopicCard";
 import { QueueCard } from "./cards/QueueCard";
+import type { StudentDashboardSessionDto } from "@/services/student_dashboard/student-dashboard";
 
 const columnBaseClass =
   "rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]";
 
-type StudentDashboardProps = {
-  offeringPublicId: string;
-  courseLabel: string;
+function formatTime(startsAt: string, endsAt: string) {
+  const opts: Intl.DateTimeFormatOptions = {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  };
+  return `${new Date(startsAt).toLocaleTimeString("en-US", opts)} – ${new Date(endsAt).toLocaleTimeString("en-US", opts)}`;
+}
+
+type Props = {
   firstName: string;
+  sessions: StudentDashboardSessionDto[];
 };
 
-export default function StudentDashboard({
-  offeringPublicId,
-  courseLabel,
-  firstName,
-}: StudentDashboardProps) {
-  const displayName = firstName.trim() || "Student";
+export default function StudentDashboard({ firstName, sessions }: Props) {
+  const dropIn = sessions.filter((s) => s.type === "REGULAR");
+  const debugging = sessions.filter((s) => s.type === "DEBUGGING");
+  const group = sessions.filter((s) => s.type === "GROUP");
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
@@ -41,12 +44,10 @@ export default function StudentDashboard({
         <main className="mt-6 space-y-8">
           <section className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
-              Welcome back, {displayName}!
+              Welcome back, {firstName}!
             </h1>
-            <p className="text-base text-slate-600">{courseLabel}</p>
-            <p className="text-sm text-slate-400">
-              Offering {offeringPublicId.slice(0, 8)}… · session data below is
-              placeholder UI until student queues are wired up.
+            <p className="text-base text-slate-600">
+              Today&apos;s office hours across your enrolled courses.
             </p>
           </section>
 
@@ -66,12 +67,24 @@ export default function StudentDashboard({
                   </p>
                 </div>
               </div>
-
-              <div className="space-y-4">
-                {DUMMY_DROP_IN_SESSIONS.map((session) => (
-                  <DropInCard key={session.title} {...session} />
-                ))}
-              </div>
+              {dropIn.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-400">
+                  No drop-in sessions today.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {dropIn.map((s) => (
+                    <DropInCard
+                      key={s.sessionPublicId}
+                      sessionPublicId={s.sessionPublicId}
+                      title={s.title}
+                      time={formatTime(s.startsAt, s.endsAt)}
+                      location={s.location}
+                      courseCode={s.courseCode}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className={`${columnBaseClass} border-l-4 border-l-[#c8102e]`}>
@@ -89,15 +102,27 @@ export default function StudentDashboard({
                   </p>
                 </div>
               </div>
-
-              <div className="space-y-4">
-                {DUMMY_DEBUGGING_SESSIONS.map((session) => (
-                  <QueueCard
-                    key={`${session.taName}-${session.location}`}
-                    {...session}
-                  />
-                ))}
-              </div>
+              {debugging.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-400">
+                  No debugging queues today.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {debugging.map((s) => (
+                    <QueueCard
+                      key={s.sessionPublicId}
+                      sessionPublicId={s.sessionPublicId}
+                      title={s.title}
+                      location={s.location}
+                      courseCode={s.courseCode}
+                      isOnline={
+                        s.location.toLowerCase().includes("online") ||
+                        s.location.toLowerCase().includes("zoom")
+                      }
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className={columnBaseClass}>
@@ -107,25 +132,37 @@ export default function StudentDashboard({
                 </span>
                 <div>
                   <h2 className="text-xl font-semibold text-[#071f41]">
-                    Group Topic sessions
+                    Group Topic Sessions
                   </h2>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
                     Small-group workshops focused on core programming concepts.
                   </p>
                 </div>
               </div>
-
-              <div className="space-y-4">
-                {DUMMY_GROUP_TOPIC_SESSIONS.map((session) => (
-                  <GroupTopicCard
-                    key={`${session.topic}-${session.time}`}
-                    topic={session.topic}
-                    timeString={session.time}
-                  />
-                ))}
-              </div>
+              {group.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-400">
+                  No group sessions today.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {group.map((s) => (
+                    <GroupTopicCard
+                      key={s.sessionPublicId}
+                      topic={s.title}
+                      timeString={formatTime(s.startsAt, s.endsAt)}
+                      courseCode={s.courseCode}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </section>
+
+          <FeatureBanner
+            title="Enhance Your Learning Experience"
+            description="Our Triple-Stream system ensures you get the right support at the right time. From quick questions to deep technical debugging."
+            buttonText="How it works"
+          />
         </main>
       </div>
     </div>

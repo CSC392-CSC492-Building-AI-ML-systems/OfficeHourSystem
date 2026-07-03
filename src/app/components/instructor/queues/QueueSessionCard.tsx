@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Clock3, MapPin } from "lucide-react";
+import { Clock3, Heart, MapPin } from "lucide-react";
 import { startSessionAction } from "@/actions/start_session/start-session";
 import { instructorRouteHref } from "@/lib/offeringUrls";
 import type { QueueSession } from "./types";
@@ -73,6 +73,13 @@ export function QueueSessionCard({
           <MapPin className="h-4 w-4 text-slate-400" />
           <span>{session.location}</span>
         </p>
+        {/* Interest count — shown for upcoming/active, hidden once ended */}
+        {session.status !== "COMPLETED" && session.status !== "CANCELLED" ? (
+          <p className="flex items-center gap-2">
+            <Heart className="h-4 w-4 text-slate-400" />
+            <span>{session.interestedCount} interested</span>
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-6">

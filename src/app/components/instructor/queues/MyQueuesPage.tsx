@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { CalendarDays, ChevronRight } from "lucide-react";
 import { Navbar } from "../Navbar";
 import { showUpcomingOhAction } from "@/actions/show_upcoming_oh/show-upcoming-oh";
-import { DUMMY_QUEUE_SESSIONS } from "./data";
 import { QueueSessionCard } from "./QueueSessionCard";
 import type { QueueSession } from "./types";
 
@@ -40,27 +39,41 @@ export default function MyQueuesPage({
       setError(null);
       try {
         const data = await showUpcomingOhAction();
-        setSessions(
-          data.map((session) => ({
-            id: session.sessionPublicId,
-            courseLabel: session.courseCode,
-            title: session.title,
-            time: formatSessionTime(session.startsAt, session.endsAt),
-            location: session.location,
-            isHighlighted: session.status === "ACTIVE",
-            workspaceSubtitle: `${session.courseCode}: ${session.title}`,
-            lastScanLabel: "No check-ins yet",
-            status: session.status,
-            endsAt: session.endsAt,
-          })),
-        );
+        const mapped = data.map((session) => ({
+          id: session.sessionPublicId,
+          courseLabel: session.courseCode,
+          title: session.title,
+          time: formatSessionTime(session.startsAt, session.endsAt),
+          location: session.location,
+          isHighlighted: session.status === "ACTIVE",
+          workspaceSubtitle: `${session.courseCode}: ${session.title}`,
+          lastScanLabel: "No check-ins yet",
+          status: session.status,
+          endsAt: session.endsAt,
+          interestedCount: session.interestedCount,
+        }));
+        setSessions(mapped);
+
+        // On first load, land on the first non-empty tab (Upcoming may be empty
+        // when every session is already active/ended).
+        const upcomingCount = mapped.filter(
+          (s) => s.status === "SCHEDULED" || s.status === "DELAYED",
+        ).length;
+        const activeCount = mapped.filter((s) => s.status === "ACTIVE").length;
+        const endedCount = mapped.filter(
+          (s) => s.status === "COMPLETED" || s.status === "CANCELLED",
+        ).length;
+        if (upcomingCount === 0) {
+          if (activeCount > 0) setActiveTab("active");
+          else if (endedCount > 0) setActiveTab("ended");
+        }
       } catch (loadError) {
         setError(
           loadError instanceof Error
             ? loadError.message
             : "Failed to load queue sessions.",
         );
-        setSessions(DUMMY_QUEUE_SESSIONS);
+        setSessions([]);
       } finally {
         setLoading(false);
       }

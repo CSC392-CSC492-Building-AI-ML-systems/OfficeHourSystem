@@ -1,19 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
-import { resolveHomeRedirectPath } from "@/lib/auth/resolveHomeRedirect";
-import {
-  getRequestSession,
-  parseSessionUserId,
-} from "@/lib/auth/getRequestSession";
-
-export default async function Home() {
-  const session = await getRequestSession();
-  if (session) {
-    const userId = parseSessionUserId(session);
-    redirect(await resolveHomeRedirectPath(userId, session.utorid));
-  }
-
+export default function Home() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-16">
       <section className="w-full max-w-3xl rounded-[36px] border border-slate-200/80 bg-white px-8 py-10 shadow-[0_30px_80px_-40px_rgba(7,31,65,0.45)] sm:px-12">
@@ -24,8 +11,8 @@ export default async function Home() {
           Office Hour Management System
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-          Sign in to view your courses. Instructors open the admin portal;
-          students open their course list and select an offering.
+          Sign in to continue. Instructors open the admin portal; students open
+          their course list and select an offering.
         </p>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2">

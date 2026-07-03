@@ -273,6 +273,8 @@ async function main() {
         session.id,
         session.status,
         session.endsAt,
+        "TEST101",
+        "Active Queue Test",
       );
 
       assertEqual(queue.waiting.length, 3, "all 3 students should be WAITING");
