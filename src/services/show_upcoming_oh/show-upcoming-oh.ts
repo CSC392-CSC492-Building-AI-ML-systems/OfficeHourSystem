@@ -41,7 +41,11 @@ export async function showUpcomingOhService(
       throw new Error("Forbidden: only instructors and TAs can view this page");
     }
 
-    sessions = await getTodaySessionsForTeachingTeam(userId, offering.id);
+    // Pass the already-verified role down — avoids re-querying membership.
+    sessions = await getTodaySessionsForTeachingTeam(userId, {
+      offeringId: offering.id,
+      isInstructor: membership.role === "INSTRUCTOR",
+    });
   } else {
     // Must be a TA or INSTRUCTOR in at least one offering
     const membership = await prisma.offeringMember.findFirst({

@@ -15,31 +15,28 @@ function getTodayRange() {
 
 // Find office hour sessions happening today that this user may run. The rule is
 // the same in both modes — INSTRUCTOR sees every session, a TA sees only the
-// sessions they host — but `offeringId` decides the scope:
-//   - offeringId given  → one offering (per-offering page): instructor of THAT
-//                          offering sees all its sessions; otherwise only hosted.
-//   - offeringId omitted → across all the user's offerings (legacy cross-course
-//                          view): all sessions in their instructor offerings,
-//                          plus any session they host.
+// sessions they host — but `scope` decides the range:
+//   - scope given  → one offering (per-offering page). The caller has already
+//                    checked membership, so isInstructor is passed in rather
+//                    than re-queried here (no duplicate DB lookups).
+//   - scope omitted → across all the user's offerings (legacy cross-course
+//                     view): all sessions in their instructor offerings, plus
+//                     any session they host.
 export async function getTodaySessionsForTeachingTeam(
   userId: number,
-  offeringId?: number,
+  scope?: { offeringId: number; isInstructor: boolean },
 ) {
   const { start, end } = getTodayRange();
 
   let where: Prisma.OfficeHourSessionWhereInput;
 
-  if (offeringId !== undefined) {
+  if (scope) {
     // Scoped to one offering. Instructor of it → no host filter (see all);
     // otherwise → only sessions this user hosts in it.
-    const isInstructor = await prisma.offeringMember.findFirst({
-      where: { userId, offeringId, role: "INSTRUCTOR" },
-      select: { id: true },
-    });
     where = {
-      offeringId,
+      offeringId: scope.offeringId,
       startsAt: { gte: start, lte: end },
-      ...(isInstructor ? {} : { hosts: { some: { userId } } }),
+      ...(scope.isInstructor ? {} : { hosts: { some: { userId } } }),
     };
   } else {
     // Cross-offering. ({ in: [] } matches nothing, so a pure TA with no hosted
