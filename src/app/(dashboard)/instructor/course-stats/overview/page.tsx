@@ -35,7 +35,7 @@ export default async function CourseOverviewRoute({ searchParams }: PageProps) {
       <main>
         <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
           <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-            <Navbar activeItem="stats" />
+            <Navbar />
             <main className="mt-10 space-y-8">
               <section className="space-y-2">
                 <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
