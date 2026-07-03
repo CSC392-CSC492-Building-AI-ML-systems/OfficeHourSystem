@@ -5,32 +5,35 @@ import Link from "next/link";
 import { Bell, Search, UserCircle } from "lucide-react";
 
 import { canViewCourseStatsAction } from "@/actions/course_stats/course-stats";
+import { courseRouteHref } from "@/lib/offeringUrls";
 
-type InstructorNavItem = "dashboard" | "queues" | "schedule" | "stats";
+export type InstructorNavItem = "dashboard" | "queues" | "schedule" | "stats";
 
 interface NavbarProps {
   activeItem?: InstructorNavItem;
   showSearch?: boolean;
+  offeringPublicId?: string;
 }
 
-const navLinks: Array<{
+const navPaths: Array<{
   key: InstructorNavItem;
   label: string;
-  href: string;
+  path: string;
 }> = [
-  { key: "dashboard", label: "Dashboard", href: "/instructor" },
-  { key: "queues", label: "My Queues", href: "/instructor/my-queues" },
-  { key: "schedule", label: "Schedule", href: "/instructor/schedule" },
+  { key: "dashboard", label: "Dashboard", path: "/instructor" },
+  { key: "queues", label: "My Queues", path: "/instructor/my-queues" },
+  { key: "schedule", label: "Schedule", path: "/instructor/schedule" },
   {
     key: "stats",
     label: "My Course Stats",
-    href: "/instructor/course-stats/overview",
+    path: "/instructor/course-stats/overview",
   },
 ];
 
 export function Navbar({
   activeItem = "dashboard",
   showSearch = false,
+  offeringPublicId,
 }: NavbarProps) {
   // "My Course Stats" is INSTRUCTOR-only; hide the link for everyone else.
   const [canViewStats, setCanViewStats] = useState(false);
@@ -40,7 +43,7 @@ export function Navbar({
       .catch(() => setCanViewStats(false));
   }, []);
 
-  const visibleLinks = navLinks.filter(
+  const visibleLinks = navPaths.filter(
     (link) => link.key !== "stats" || canViewStats,
   );
 
@@ -49,7 +52,7 @@ export function Navbar({
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-10">
           <Link
-            href="/"
+            href="/admin"
             className="text-2xl font-black tracking-[0.22em] text-[#071f41]"
           >
             OHMS
@@ -58,11 +61,18 @@ export function Navbar({
           <nav className="flex flex-wrap items-center gap-6 text-sm font-medium">
             {visibleLinks.map((link) => {
               const isActive = link.key === activeItem;
+              // Course Stats is a standalone flat feature with its own course
+              // picker; the other links are course-scoped when we have an
+              // offering in context.
+              const href =
+                link.key === "stats" || !offeringPublicId
+                  ? link.path
+                  : courseRouteHref(link.path, offeringPublicId);
 
               return (
                 <Link
                   key={link.key}
-                  href={link.href}
+                  href={href}
                   className={`relative pb-3 transition ${
                     isActive
                       ? "text-[#071f41]"

@@ -10,7 +10,6 @@ export interface SessionData {
   firstName: string;
   lastName: string;
   email: string;
-  role: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -39,8 +38,7 @@ export function getSessionOptions(): SessionOptions {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       sameSite: "lax",
-      // 8-hour session lifetime. Reduces the window where a revoked user's
-      // cookie stays valid after a whitelist update + server restart.
+      // 8-hour session lifetime.
       maxAge: 60 * 60 * 8,
     },
   };

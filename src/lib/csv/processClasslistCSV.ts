@@ -64,7 +64,7 @@ async function assertInstructorAccess(): Promise<void> {
 
 /**
  * Parse an uploaded classlist CSV and import it in a single DB transaction.
- * Requires an authenticated instructor session (`ohsystem_session` cookie).
+ * Requires an authenticated user with `isInstructor` set in the database.
  */
 export async function uploadClasslistFromFormData(
   formData: FormData,

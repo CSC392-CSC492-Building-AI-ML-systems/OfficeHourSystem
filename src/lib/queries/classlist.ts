@@ -24,7 +24,7 @@ export type ImportClasslistTransaction = {
     upsert(args: unknown): Promise<{ id: number }>;
   };
   courseOffering: {
-    upsert(args: unknown): Promise<{ id: number }>;
+    upsert(args: unknown): Promise<{ id: number; publicId: string }>;
   };
   offeringMember: {
     count(args: unknown): Promise<number>;
@@ -42,196 +42,218 @@ function getStudentNumber(row: ClasslistRow) {
   return row["Person ID"].trim();
 }
 
-export async function importClasslistWithClient(
+/** Remote DB classlist imports can exceed Prisma's default 5s interactive tx limit. */
+const CLASSLIST_IMPORT_TX_TIMEOUT_MS = 60_000;
+
+async function importClasslistInTransaction(
+  tx: ImportClasslistTransaction,
   input: ImportClasslistInput,
-  client: ImportClasslistClient,
 ) {
-  // Use transaction to make sure this import is all-or-nothing.
-  // If any error happens inside, Prisma will rollback all database changes.
-  return await client.$transaction(async (tx) => {
-    const { termCode, rows } = input;
+  const { termCode, rows } = input;
 
-    if (!rows || rows.length === 0) {
-      throw new Error("Cannot import an empty classlist");
-    }
+  if (!rows || rows.length === 0) {
+    throw new Error("Cannot import an empty classlist");
+  }
 
-    // Assumption: one CSV is for one course offering.
-    // So we get the course code from the first row.
-    // e.g. "CSC398H5", "STA398H5"
-    const courseCode = rows[0].Acad_act.trim();
+  // Assumption: one CSV is for one course offering.
+  // So we get the course code from the first row.
+  // e.g. "CSC398H5", "STA398H5"
+  const courseCode = rows[0].Acad_act.trim();
 
-    // 1. Find course based on course code.
-    // If this course does not exist, create a new one.
-    const course = await tx.course.upsert({
-      where: {
-        code: courseCode,
-      },
-      update: {},
-      create: {
-        code: courseCode,
-      },
-    });
+  // 1. Find course based on course code.
+  // If this course does not exist, create a new one.
+  const course = await tx.course.upsert({
+    where: {
+      code: courseCode,
+    },
+    update: {},
+    create: {
+      code: courseCode,
+    },
+  });
 
-    // 2. Find offering based on course id and term code.
-    // In current schema, one course + one term = one offering.
-    // If this offering does not exist, create a new one.
-    const offering = await tx.courseOffering.upsert({
-      where: {
-        courseId_termCode: {
-          courseId: course.id,
-          termCode: termCode,
-        },
-      },
-      update: {},
-      create: {
+  // 2. Find offering based on course id and term code.
+  // In current schema, one course + one term = one offering.
+  // If this offering does not exist, create a new one.
+  const offering = await tx.courseOffering.upsert({
+    where: {
+      courseId_termCode: {
         courseId: course.id,
         termCode: termCode,
       },
-    });
+    },
+    update: {},
+    create: {
+      courseId: course.id,
+      termCode: termCode,
+    },
+    select: {
+      id: true,
+      publicId: true,
+    },
+  });
 
-    // 3. Check whether this offering already has imported students.
-    // We only check STUDENT role here.
-    // Do not delete TA or INSTRUCTOR members, because they are not from classlist CSV.
-    const existingStudentCount = await tx.offeringMember.count({
+  // 3. Check whether this offering already has imported students.
+  // We only check STUDENT role here.
+  // Do not delete TA or INSTRUCTOR members, because they are not from classlist CSV.
+  const existingStudentCount = await tx.offeringMember.count({
+    where: {
+      offeringId: offering.id,
+      role: "STUDENT",
+    },
+  });
+
+  let cleared = 0;
+
+  // 4. If this offering already has at least one student,
+  // clear old student roster first.
+  // This means the new CSV will replace the old CSV result.
+  if (existingStudentCount > 0) {
+    const deleteResult = await tx.offeringMember.deleteMany({
       where: {
         offeringId: offering.id,
         role: "STUDENT",
       },
     });
 
-    let cleared = 0;
+    cleared = deleteResult.count;
+  }
 
-    // 4. If this offering already has at least one student,
-    // clear old student roster first.
-    // This means the new CSV will replace the old CSV result.
-    if (existingStudentCount > 0) {
-      const deleteResult = await tx.offeringMember.deleteMany({
-        where: {
-          offeringId: offering.id,
-          role: "STUDENT",
-        },
-      });
+  let imported = 0;
 
-      cleared = deleteResult.count;
+  // 5. Import students one row at a time.
+  for (const row of rows) {
+    const utorid = row.UTORid.trim();
+    const studentNumber = getStudentNumber(row);
+
+    // If a student does not have utorid,
+    // this means the CSV data is not valid enough for import.
+    // Throw error here so transaction can rollback everything.
+    if (!utorid) {
+      throw new Error("CSV contains a student row without UTORid");
     }
 
-    let imported = 0;
+    // If a student does not have student number,
+    // this means the CSV data is not valid enough for import.
+    // Throw error here so transaction can rollback everything.
+    if (!studentNumber) {
+      throw new Error("CSV contains a student row without student number");
+    }
 
-    // 5. Import students one row at a time.
-    for (const row of rows) {
-      const utorid = row.UTORid.trim();
-      const studentNumber = getStudentNumber(row);
-
-      // If a student does not have utorid,
-      // this means the CSV data is not valid enough for import.
-      // Throw error here so transaction can rollback everything.
-      if (!utorid) {
-        throw new Error("CSV contains a student row without UTORid");
-      }
-
-      // If a student does not have student number,
-      // this means the CSV data is not valid enough for import.
-      // Throw error here so transaction can rollback everything.
-      if (!studentNumber) {
-        throw new Error("CSV contains a student row without student number");
-      }
-
-      // 6. Find user based on utorid or student number.
-      // If the user does not exist, create a new user.
-      // If the user already exists, update name, email, and student number.
-      const matchingUsers = await tx.user.findMany({
-        where: {
-          OR: [
-            {
-              utorid: utorid,
-            },
-            {
-              studentNumber: studentNumber,
-            },
-          ],
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      const matchingUserIds = new Set(matchingUsers.map((user) => user.id));
-
-      if (matchingUserIds.size > 1) {
-        throw new Error(
-          "CSV row matches multiple existing users by UTORid and student number",
-        );
-      }
-
-      const profileData = {
-        ...(row.Email.trim() ? { email: row.Email.trim() } : {}),
-        ...(row["Given Name"].trim()
-          ? { firstName: row["Given Name"].trim() }
-          : {}),
-        ...(row.Surname.trim() ? { lastName: row.Surname.trim() } : {}),
-      };
-
-      const userData = {
-        utorid,
-        studentNumber,
-        ...profileData,
-      };
-
-      const user =
-        matchingUsers.length > 0
-          ? await tx.user.update({
-              where: {
-                id: matchingUsers[0].id,
-              },
-              data: {
-                studentNumber,
-                ...profileData,
-              },
-            })
-          : await tx.user.create({
-              data: userData,
-            });
-
-      // 7. Add this user to this offering as a student.
-      // Since we may have cleared old student members above,
-      // this usually creates a new OfferingMember.
-      // But we still use upsert to avoid duplicate error if the CSV has repeated rows.
-      await tx.offeringMember.upsert({
-        where: {
-          userId_offeringId: {
-            userId: user.id,
-            offeringId: offering.id,
+    // 6. Find user based on utorid or student number.
+    // If the user does not exist, create a new user.
+    // If the user already exists, update name, email, and student number.
+    const matchingUsers = await tx.user.findMany({
+      where: {
+        OR: [
+          {
+            utorid: utorid,
           },
-        },
-        update: {
-          role: "STUDENT",
-        },
-        create: {
+          {
+            studentNumber: studentNumber,
+          },
+        ],
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const matchingUserIds = new Set(matchingUsers.map((user) => user.id));
+
+    if (matchingUserIds.size > 1) {
+      throw new Error(
+        "CSV row matches multiple existing users by UTORid and student number",
+      );
+    }
+
+    const profileData = {
+      ...(row.Email.trim() ? { email: row.Email.trim() } : {}),
+      ...(row["Given Name"].trim()
+        ? { firstName: row["Given Name"].trim() }
+        : {}),
+      ...(row.Surname.trim() ? { lastName: row.Surname.trim() } : {}),
+    };
+
+    const userData = {
+      utorid,
+      studentNumber,
+      ...profileData,
+    };
+
+    const user =
+      matchingUsers.length > 0
+        ? await tx.user.update({
+            where: {
+              id: matchingUsers[0].id,
+            },
+            data: {
+              studentNumber,
+              ...profileData,
+            },
+          })
+        : await tx.user.create({
+            data: userData,
+          });
+
+    // 7. Add this user to this offering as a student.
+    // Since we may have cleared old student members above,
+    // this usually creates a new OfferingMember.
+    // But we still use upsert to avoid duplicate error if the CSV has repeated rows.
+    await tx.offeringMember.upsert({
+      where: {
+        userId_offeringId: {
           userId: user.id,
           offeringId: offering.id,
-          role: "STUDENT",
         },
-      });
+      },
+      update: {
+        role: "STUDENT",
+      },
+      create: {
+        userId: user.id,
+        offeringId: offering.id,
+        role: "STUDENT",
+      },
+    });
 
-      imported++;
-    }
+    imported++;
+  }
 
-    // Return the import result to the caller.
-    // This is useful for showing a success message on frontend.
-    return {
-      courseId: course.id,
-      offeringId: offering.id,
-      cleared,
-      imported,
-    };
-  });
+  // Return the import result to the caller.
+  // This is useful for showing a success message on frontend.
+  return {
+    courseId: course.id,
+    offeringId: offering.id,
+    offeringPublicId: offering.publicId,
+    cleared,
+    imported,
+  };
+}
+
+export async function importClasslistWithClient(
+  input: ImportClasslistInput,
+  client: ImportClasslistClient,
+) {
+  // Use transaction to make sure this import is all-or-nothing.
+  // If any error happens inside, Prisma will rollback all database changes.
+  return await client.$transaction((tx) =>
+    importClasslistInTransaction(tx, input),
+  );
 }
 
 export async function importClasslist(input: ImportClasslistInput) {
   const { prisma } = await import("../prisma");
 
-  return await importClasslistWithClient(
-    input,
-    prisma as unknown as ImportClasslistClient,
+  return prisma.$transaction(
+    (tx) =>
+      importClasslistInTransaction(
+        tx as unknown as ImportClasslistTransaction,
+        input,
+      ),
+    {
+      timeout: CLASSLIST_IMPORT_TX_TIMEOUT_MS,
+      maxWait: 10_000,
+    },
   );
 }

@@ -578,7 +578,7 @@ export async function updateRecurringBlock(
     }
   });
 
-  return { ok: true };
+  return { ok: true, offeringPublicId: anchor.offering.publicId };
 }
 
 export async function deleteRecurringBlock(
@@ -610,7 +610,11 @@ export async function deleteRecurringBlock(
     });
   });
 
-  return { ok: true, schedulesDeactivated: scheduleIds.length };
+  return {
+    ok: true,
+    schedulesDeactivated: scheduleIds.length,
+    offeringPublicId: anchor.offering.publicId,
+  };
 }
 
 export async function updateSession(
@@ -671,6 +675,7 @@ export async function updateSession(
 
   return {
     session: mapSessionToDto(updated, existing.offering.course.code),
+    offeringPublicId: existing.offering.publicId,
   };
 }
 
@@ -691,7 +696,7 @@ export async function cancelSession(userId: number, sessionPublicId: string) {
     data: { status: "CANCELLED" },
   });
 
-  return { ok: true };
+  return { ok: true, offeringPublicId: existing.offering.publicId };
 }
 
 export async function getInstructorSchedulePage(
