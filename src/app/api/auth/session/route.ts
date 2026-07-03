@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionOptions, type SessionData } from "@/lib/session";
-import { getRoleFromWhitelist } from "@/lib/whitelist";
 
 // ---------------------------------------------------------------------------
 // GET /api/auth/session
@@ -107,22 +106,8 @@ export async function GET(request: NextRequest) {
   }
 
   // ------------------------------------------------------------------
-  // 2. Resolve role from the instructor whitelist.
-  //    INSTRUCTOR → listed in whitelist.txt
-  //    TA         → assigned per course via the UI
-  //    STUDENT    → everyone else (default)
-  //    In dev mode DEV_ROLE overrides the whitelist (for testing instructor UI).
-  // ------------------------------------------------------------------
-  const whitelistRole = getRoleFromWhitelist(utorid);
-  const role =
-    !isProd && process.env.DEV_ROLE
-      ? (process.env.DEV_ROLE as "STUDENT" | "TA" | "INSTRUCTOR")
-      : whitelistRole;
-
-  // ------------------------------------------------------------------
-  // 3. Upsert user in Postgres.
-  //    Role is re-evaluated on every login so whitelist changes take
-  //    effect immediately on the user's next sign-in.
+  // 2. Upsert user in Postgres (profile fields only; isInstructor is managed
+  //    separately via /admin or other instructor-management flows).
   // ------------------------------------------------------------------
   const profile = { firstName, lastName, email };
 
@@ -144,7 +129,6 @@ export async function GET(request: NextRequest) {
   session.email = user.email ?? "";
   session.firstName = user.firstName ?? "";
   session.lastName = user.lastName ?? "";
-  session.role = role;
   await session.save();
 
   // ------------------------------------------------------------------

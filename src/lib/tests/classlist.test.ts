@@ -102,6 +102,11 @@ async function main() {
         where: { courseId: course!.id, termCode: TEST_TERM },
       });
       assert(offering !== null, "offering should have been created");
+      assertEqual(
+        result.offeringPublicId,
+        offering!.publicId,
+        "offeringPublicId in import result",
+      );
 
       // Verify all 3 users exist
       const userCount = await prisma.user.count({

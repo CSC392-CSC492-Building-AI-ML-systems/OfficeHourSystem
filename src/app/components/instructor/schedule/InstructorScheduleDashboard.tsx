@@ -33,6 +33,8 @@ type ActiveScheduleModal = "one-time" | "recurring" | null;
 
 type InstructorScheduleDashboardProps = {
   initialData: SchedulePageResponse;
+  offeringPublicId: string;
+  courseLabel: string;
 };
 
 function pickInitialSessionId(
@@ -43,9 +45,11 @@ function pickInitialSessionId(
 
 export default function InstructorScheduleDashboard({
   initialData,
+  offeringPublicId: offeringPublicIdProp,
+  courseLabel,
 }: InstructorScheduleDashboardProps) {
   const [offeringPublicId, setOfferingPublicId] = useState<string | null>(
-    initialData.offering?.offeringPublicId ?? null,
+    initialData.offering?.offeringPublicId ?? offeringPublicIdProp ?? null,
   );
   const [termCode, setTermCode] = useState(
     initialData.offering?.termCode ?? "",
@@ -210,7 +214,11 @@ export default function InstructorScheduleDashboard({
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <Navbar activeItem="schedule" showSearch />
+        <Navbar
+          activeItem="schedule"
+          showSearch
+          offeringPublicId={offeringPublicIdProp}
+        />
 
         <main className="mt-10 space-y-8">
           <section className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">

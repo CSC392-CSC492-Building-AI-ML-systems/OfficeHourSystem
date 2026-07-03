@@ -21,7 +21,13 @@ function formatSessionTime(startsAt: string, endsAt: string): string {
   return `${start} - ${end}`;
 }
 
-export default function MyQueuesPage() {
+export default function MyQueuesPage({
+  offeringPublicId,
+  courseLabel,
+}: {
+  offeringPublicId: string;
+  courseLabel: string;
+}) {
   const [sessions, setSessions] = useState<QueueSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,16 +110,14 @@ export default function MyQueuesPage() {
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <Navbar activeItem="queues" />
+        <Navbar activeItem="queues" offeringPublicId={offeringPublicId} />
 
         <main className="mt-10 space-y-8">
           <section className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
               My Queues
             </h1>
-            <p className="text-base text-slate-600">
-              Launch your assigned queue sessions and keep live support moving.
-            </p>
+            <p className="text-base text-slate-600">{courseLabel}</p>
           </section>
 
           {error ? (
@@ -174,7 +178,11 @@ export default function MyQueuesPage() {
             ) : (
               <div className="mt-8 grid gap-5 xl:grid-cols-2">
                 {tabSessions[activeTab].map((session) => (
-                  <QueueSessionCard key={session.id} session={session} />
+                  <QueueSessionCard
+                    key={session.id}
+                    session={session}
+                    offeringPublicId={offeringPublicId}
+                  />
                 ))}
               </div>
             )}

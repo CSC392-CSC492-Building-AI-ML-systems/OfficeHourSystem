@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 
 import { requireSessionUserId } from "@/lib/auth/getRequestSession";
 import {
+  courseInstructorActiveQueuePath,
+  courseInstructorQueuesPath,
+  courseInstructorSchedulePath,
+  instructorDashboardHref,
+} from "@/lib/offeringUrls";
+import {
   cancelSession,
   createOneTimeSession,
   createRecurringBlock,
@@ -21,9 +27,11 @@ import type {
   UpdateSessionInput,
 } from "@/lib/scheduling/types";
 
-function revalidateSchedulingPaths() {
-  revalidatePath("/instructor/schedule");
-  revalidatePath("/instructor/my-queues");
+function revalidateSchedulingPaths(offeringPublicId: string) {
+  revalidatePath(instructorDashboardHref(offeringPublicId));
+  revalidatePath(courseInstructorSchedulePath(offeringPublicId));
+  revalidatePath(courseInstructorQueuesPath(offeringPublicId));
+  revalidatePath(courseInstructorActiveQueuePath(offeringPublicId));
 }
 
 export async function getSchedulePageAction(params: {
@@ -46,7 +54,7 @@ export async function createRecurringBlockAction(
     ...input,
     title: input.title?.trim() ? input.title.trim() : "Office Hours",
   });
-  revalidateSchedulingPaths();
+  revalidateSchedulingPaths(input.offeringPublicId);
   return result;
 }
 
@@ -55,16 +63,16 @@ export async function updateRecurringBlockAction(
   patch: UpdateRecurringBlockInput,
 ): Promise<void> {
   const userId = await requireSessionUserId();
-  await updateRecurringBlock(userId, publicId, patch);
-  revalidateSchedulingPaths();
+  const result = await updateRecurringBlock(userId, publicId, patch);
+  revalidateSchedulingPaths(result.offeringPublicId);
 }
 
 export async function deleteRecurringBlockAction(
   publicId: string,
 ): Promise<void> {
   const userId = await requireSessionUserId();
-  await deleteRecurringBlock(userId, publicId);
-  revalidateSchedulingPaths();
+  const result = await deleteRecurringBlock(userId, publicId);
+  revalidateSchedulingPaths(result.offeringPublicId);
 }
 
 export async function createOneTimeSessionAction(
@@ -76,7 +84,7 @@ export async function createOneTimeSessionAction(
 
   const userId = await requireSessionUserId();
   await createOneTimeSession(userId, input);
-  revalidateSchedulingPaths();
+  revalidateSchedulingPaths(input.offeringPublicId);
 }
 
 export async function updateSessionAction(
@@ -85,12 +93,12 @@ export async function updateSessionAction(
 ): Promise<ScheduleSessionDto> {
   const userId = await requireSessionUserId();
   const result = await updateSession(userId, publicId, patch);
-  revalidateSchedulingPaths();
+  revalidateSchedulingPaths(result.offeringPublicId);
   return result.session;
 }
 
 export async function cancelSessionAction(publicId: string): Promise<void> {
   const userId = await requireSessionUserId();
-  await cancelSession(userId, publicId);
-  revalidateSchedulingPaths();
+  const result = await cancelSession(userId, publicId);
+  revalidateSchedulingPaths(result.offeringPublicId);
 }

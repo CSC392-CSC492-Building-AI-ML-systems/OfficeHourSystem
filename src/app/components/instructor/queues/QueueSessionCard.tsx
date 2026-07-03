@@ -4,13 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Clock3, Heart, MapPin } from "lucide-react";
 import { startSessionAction } from "@/actions/start_session/start-session";
+import { instructorRouteHref } from "@/lib/offeringUrls";
 import type { QueueSession } from "./types";
 
 interface QueueSessionCardProps {
   session: QueueSession;
+  offeringPublicId: string;
 }
 
-export function QueueSessionCard({ session }: QueueSessionCardProps) {
+export function QueueSessionCard({
+  session,
+  offeringPublicId,
+}: QueueSessionCardProps) {
   const router = useRouter();
 
   // State for START SESSION confirmation
@@ -27,7 +32,15 @@ export function QueueSessionCard({ session }: QueueSessionCardProps) {
       const result = await startSessionAction(session.id);
       if (result.outcome === "started" || result.outcome === "already_active") {
         // Use replace so the browser back button doesn't return here mid-session
-        router.replace(`/instructor/my-queues/active?sessionId=${session.id}`);
+        router.replace(
+          instructorRouteHref(
+            "/instructor/my-queues/active",
+            offeringPublicId,
+            {
+              sessionId: session.id,
+            },
+          ),
+        );
       }
     } catch {
       setState("idle");
@@ -82,7 +95,11 @@ export function QueueSessionCard({ session }: QueueSessionCardProps) {
               type="button"
               onClick={() =>
                 router.push(
-                  `/instructor/my-queues/active?sessionId=${session.id}`,
+                  instructorRouteHref(
+                    "/instructor/my-queues/active",
+                    offeringPublicId,
+                    { sessionId: session.id },
+                  ),
                 )
               }
               className="inline-flex items-center gap-2 rounded-full bg-[#22c55e] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#16a34a]"
@@ -100,7 +117,15 @@ export function QueueSessionCard({ session }: QueueSessionCardProps) {
                   <button
                     type="button"
                     onClick={() =>
-                      router.replace(`/instructor/scan?sessionId=${session.id}`)
+                      router.replace(
+                        instructorRouteHref(
+                          "/instructor/scan",
+                          offeringPublicId,
+                          {
+                            sessionId: session.id,
+                          },
+                        ),
+                      )
                     }
                     className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
                   >

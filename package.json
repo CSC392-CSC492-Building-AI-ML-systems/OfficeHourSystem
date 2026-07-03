@@ -12,7 +12,10 @@
     "prepare": "husky",
     "postinstall": "prisma generate",
     "db:setup": "docker compose up -d postgres --wait && prisma migrate deploy",
-    "db:migrate": "prisma migrate deploy"
+    "db:migrate": "prisma migrate deploy",
+    "test": "pnpm dlx tsx src/lib/tests/offeringUrls.test.ts && pnpm dlx tsx src/lib/tests/legacyOfferingRedirect.test.ts && pnpm dlx tsx src/lib/tests/resolveHomeRedirect.test.ts && pnpm dlx tsx src/lib/tests/studentOfferings.test.ts && pnpm dlx tsx src/lib/tests/adminAccess.test.ts && pnpm dlx tsx src/lib/tests/requireOfferingAccess.test.ts && pnpm dlx tsx src/lib/tests/adminOfferings.test.ts && pnpm dlx tsx src/lib/tests/adminProvisioning.test.ts && pnpm dlx tsx src/lib/tests/classlist.test.ts && pnpm dlx tsx src/lib/tests/offeringMember.test.ts",
+    "test:unit": "pnpm dlx tsx src/lib/tests/offeringUrls.test.ts && pnpm dlx tsx src/lib/tests/legacyOfferingRedirect.test.ts && pnpm dlx tsx src/lib/tests/resolveHomeRedirect.test.ts",
+    "test:integration": "pnpm dlx tsx src/lib/tests/studentOfferings.test.ts && pnpm dlx tsx src/lib/tests/adminAccess.test.ts && pnpm dlx tsx src/lib/tests/requireOfferingAccess.test.ts && pnpm dlx tsx src/lib/tests/adminOfferings.test.ts && pnpm dlx tsx src/lib/tests/adminProvisioning.test.ts && pnpm dlx tsx src/lib/tests/classlist.test.ts && pnpm dlx tsx src/lib/tests/offeringMember.test.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
