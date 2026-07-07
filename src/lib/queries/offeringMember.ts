@@ -271,3 +271,133 @@ export async function addOrUpdateStaffMember(
     created: existing === null,
   };
 }
+
+export type OfferingStaffMember = {
+  id: string;
+  utorid: string;
+  name: string;
+  email: string;
+  role: "TA" | "Instructor";
+};
+
+function formatStaffName(user: {
+  utorid: string;
+  firstName: string | null;
+  lastName: string | null;
+}) {
+  const name = [user.firstName, user.lastName].filter(Boolean).join(" ");
+  return name || user.utorid;
+}
+
+/** List teaching staff (TAs and instructors) for an offering. */
+export async function getOfferingStaffMembers(
+  offeringPublicId: string,
+): Promise<OfferingStaffMember[]> {
+  const offering = await prisma.courseOffering.findUnique({
+    where: { publicId: offeringPublicId },
+    select: { id: true },
+  });
+
+  if (!offering) {
+    return [];
+  }
+
+  const members = await prisma.offeringMember.findMany({
+    where: {
+      offeringId: offering.id,
+      role: { in: ["TA", "INSTRUCTOR"] },
+    },
+    include: {
+      user: {
+        select: {
+          publicId: true,
+          utorid: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
+    },
+    orderBy: [{ role: "asc" }, { user: { lastName: "asc" } }],
+  });
+
+  return members.map((member) => ({
+    id: member.user.publicId,
+    utorid: member.user.utorid,
+    name: formatStaffName(member.user),
+    email: member.user.email ?? "",
+    role: member.role === "INSTRUCTOR" ? "Instructor" : "TA",
+  }));
+}
+
+/** Count active recurring office-hour blocks for an offering. */
+export async function getActiveWeeklySlotCount(
+  offeringPublicId: string,
+): Promise<number> {
+  const offering = await prisma.courseOffering.findUnique({
+    where: { publicId: offeringPublicId },
+    select: { id: true },
+  });
+
+  if (!offering) {
+    return 0;
+  }
+
+  return prisma.officeHourSchedule.count({
+    where: {
+      offeringId: offering.id,
+      isActive: true,
+    },
+  });
+}
+
+/** Remove a TA from an offering. Instructors cannot be removed here. */
+export async function removeOfferingStaffMember(
+  offeringPublicId: string,
+  userPublicId: string,
+): Promise<void> {
+  const offering = await prisma.courseOffering.findUnique({
+    where: { publicId: offeringPublicId },
+    select: { id: true },
+  });
+
+  if (!offering) {
+    throw new Error("Course offering not found");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { publicId: userPublicId },
+    select: { id: true },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const member = await prisma.offeringMember.findUnique({
+    where: {
+      userId_offeringId: {
+        userId: user.id,
+        offeringId: offering.id,
+      },
+    },
+    select: { role: true },
+  });
+
+  if (!member) {
+    throw new Error("Staff member not found");
+  }
+
+  if (member.role !== "TA") {
+    throw new Error("Only teaching assistants can be removed from this page.");
+  }
+
+  await prisma.offeringMember.delete({
+    where: {
+      userId_offeringId: {
+        userId: user.id,
+        offeringId: offering.id,
+      },
+    },
+  });
+}

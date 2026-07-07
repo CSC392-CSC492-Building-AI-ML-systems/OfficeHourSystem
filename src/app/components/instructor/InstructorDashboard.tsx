@@ -2,35 +2,97 @@
 
 import { useMemo, useState } from "react";
 import { UserPlus } from "lucide-react";
+import {
+  addOfferingTaAction,
+  removeOfferingTaAction,
+} from "@/actions/instructor/staff";
 import { Navbar } from "./Navbar";
 import { AddTaModal } from "./cards/AddTaModal";
-import { DUMMY_STAFF, type StaffMember } from "./cards/data";
+import type { OfferingStaffMember } from "@/lib/queries/offeringMember";
 import { StatCard } from "./cards/StatCard";
 import { StaffTable } from "./cards/StaffTable";
 
 type InstructorDashboardProps = {
   offeringPublicId: string;
   courseLabel: string;
+  canEdit: boolean;
+  initialStaff: OfferingStaffMember[];
+  weeklySlotCount: number;
 };
 
 export default function InstructorDashboard({
   offeringPublicId,
   courseLabel,
+  canEdit,
+  initialStaff,
+  weeklySlotCount,
 }: InstructorDashboardProps) {
-  const [staff, setStaff] = useState<StaffMember[]>(DUMMY_STAFF);
+  const [staff, setStaff] = useState<OfferingStaffMember[]>(initialStaff);
   const [isAddTaModalOpen, setIsAddTaModalOpen] = useState(false);
+  const [isAddingStaff, setIsAddingStaff] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [removingStaffMemberId, setRemovingStaffMemberId] = useState<
+    string | null
+  >(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const leadCount = useMemo(
-    () => staff.filter((member) => member.role === "Lead TA").length,
+  const instructorCount = useMemo(
+    () => staff.filter((member) => member.role === "Instructor").length,
     [staff],
   );
 
-  const handleAddStaffMember = (staffMember: StaffMember) => {
-    setStaff((currentStaff) => [staffMember, ...currentStaff]);
+  const handleAddStaffMember = async (input: {
+    utorid: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  }) => {
+    setIsAddingStaff(true);
+    setAddError(null);
+
+    const result = await addOfferingTaAction({
+      offeringPublicId,
+      ...input,
+    });
+
+    setIsAddingStaff(false);
+
+    if (!result.ok) {
+      setAddError(result.error);
+      return;
+    }
+
+    if (result.staffMember) {
+      setStaff((currentStaff) => [
+        result.staffMember!,
+        ...currentStaff.filter(
+          (member) =>
+            member.utorid.toLowerCase() !==
+            result.staffMember!.utorid.toLowerCase(),
+        ),
+      ]);
+    }
+
     setIsAddTaModalOpen(false);
+    setAddError(null);
   };
 
-  const handleRemoveStaffMember = (staffMemberId: string) => {
+  const handleRemoveStaffMember = async (staffMemberId: string) => {
+    setRemovingStaffMemberId(staffMemberId);
+    setActionError(null);
+
+    const result = await removeOfferingTaAction({
+      offeringPublicId,
+      userPublicId: staffMemberId,
+    });
+
+    setRemovingStaffMemberId(null);
+
+    if (!result.ok) {
+      setActionError(result.error);
+      return;
+    }
+
     setStaff((currentStaff) =>
       currentStaff.filter((member) => member.id !== staffMemberId),
     );
@@ -50,41 +112,61 @@ export default function InstructorDashboard({
               <p className="text-base text-slate-600">{courseLabel}</p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsAddTaModalOpen(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(7,31,65,0.7)] transition hover:bg-[#0f2942]"
-            >
-              <UserPlus className="h-4 w-4" />
-              Add TA
-            </button>
+            {canEdit ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setAddError(null);
+                  setIsAddTaModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(7,31,65,0.7)] transition hover:bg-[#0f2942]"
+              >
+                <UserPlus className="h-4 w-4" />
+                Add TA
+              </button>
+            ) : null}
           </section>
+
+          {actionError ? (
+            <p className="rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm text-[#9f1239]">
+              {actionError}
+            </p>
+          ) : null}
 
           <section className="grid gap-4 md:grid-cols-3">
             <StatCard label="TOTAL STAFF" value={staff.length.toString()} />
             <StatCard
-              label="ACTIVE LEADS"
-              value={leadCount.toString().padStart(2, "0")}
+              label="INSTRUCTORS"
+              value={instructorCount.toString().padStart(2, "0")}
               valueClassName="text-[#c8102e]"
             />
             <StatCard
               label="WEEKLY SLOTS"
-              value="42"
+              value={weeklySlotCount.toString()}
               valueClassName="text-[#8a5a17]"
             />
           </section>
 
           <StaffTable
             staff={staff}
+            canEdit={canEdit}
             onRemoveStaffMember={handleRemoveStaffMember}
+            removingStaffMemberId={removingStaffMemberId}
           />
         </main>
       </div>
 
       <AddTaModal
         isOpen={isAddTaModalOpen}
-        onClose={() => setIsAddTaModalOpen(false)}
+        onClose={() => {
+          if (!isAddingStaff) {
+            setIsAddTaModalOpen(false);
+            setAddError(null);
+          }
+        }}
         onAddStaffMember={handleAddStaffMember}
+        isSubmitting={isAddingStaff}
+        error={addError}
       />
     </div>
   );
