@@ -29,6 +29,7 @@ export default function InstructorDashboard({
 }: InstructorDashboardProps) {
   const [staff, setStaff] = useState<OfferingStaffMember[]>(initialStaff);
   const [isAddTaModalOpen, setIsAddTaModalOpen] = useState(false);
+  const [addTaModalKey, setAddTaModalKey] = useState(0);
   const [isAddingStaff, setIsAddingStaff] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [removingStaffMemberId, setRemovingStaffMemberId] = useState<
@@ -59,7 +60,7 @@ export default function InstructorDashboard({
 
     if (!result.ok) {
       setAddError(result.error);
-      return;
+      return false;
     }
 
     if (result.staffMember) {
@@ -73,8 +74,8 @@ export default function InstructorDashboard({
       ]);
     }
 
-    setIsAddTaModalOpen(false);
     setAddError(null);
+    return true;
   };
 
   const handleRemoveStaffMember = async (staffMemberId: string) => {
@@ -117,6 +118,7 @@ export default function InstructorDashboard({
                 type="button"
                 onClick={() => {
                   setAddError(null);
+                  setAddTaModalKey((key) => key + 1);
                   setIsAddTaModalOpen(true);
                 }}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(7,31,65,0.7)] transition hover:bg-[#0f2942]"
@@ -157,6 +159,7 @@ export default function InstructorDashboard({
       </div>
 
       <AddTaModal
+        key={addTaModalKey}
         isOpen={isAddTaModalOpen}
         onClose={() => {
           if (!isAddingStaff) {

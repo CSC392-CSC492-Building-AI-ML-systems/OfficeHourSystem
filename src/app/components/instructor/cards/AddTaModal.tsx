@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { UserPlus, X } from "lucide-react";
 interface AddTaModalProps {
   isOpen: boolean;
@@ -10,7 +10,7 @@ interface AddTaModalProps {
     firstName?: string;
     lastName?: string;
     email?: string;
-  }) => Promise<void>;
+  }) => Promise<boolean>;
   isSubmitting: boolean;
   error: string | null;
 }
@@ -26,11 +26,25 @@ export function AddTaModal({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const utoridRef = useRef<HTMLInputElement>(null);
+
+  const resetForm = () => {
+    setUtorid("");
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+  };
+
+  const focusUtorid = () => {
+    requestAnimationFrame(() => utoridRef.current?.focus());
+  };
 
   useEffect(() => {
     if (!isOpen) {
       return undefined;
     }
+
+    focusUtorid();
 
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -53,13 +67,6 @@ export function AddTaModal({
     return null;
   }
 
-  const resetForm = () => {
-    setUtorid("");
-    setFirstName("");
-    setLastName("");
-    setEmail("");
-  };
-
   const isFormValid = utorid.trim().length > 0;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -69,13 +76,17 @@ export function AddTaModal({
       return;
     }
 
-    await onAddStaffMember({
+    const success = await onAddStaffMember({
       utorid: utorid.trim(),
       firstName: firstName.trim() || undefined,
       lastName: lastName.trim() || undefined,
       email: email.trim() || undefined,
     });
-    resetForm();
+
+    if (success) {
+      resetForm();
+      focusUtorid();
+    }
   };
 
   return (
@@ -119,6 +130,7 @@ export function AddTaModal({
           <label className="block space-y-2 text-sm font-medium text-[#071f41]">
             <span>UTORid</span>
             <input
+              ref={utoridRef}
               required
               value={utorid}
               onChange={(event) => setUtorid(event.target.value)}
