@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen } from "lucide-react";
+import { ArrowRight, BookOpen, ListOrdered } from "lucide-react";
 
 import type { StudentOfferingListItem } from "@/lib/queries/student/offerings";
 import { FeatureBanner } from "./cards/FeatureBanner";
@@ -27,7 +27,7 @@ export function StudentPortal({
             OHMS Student
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#071f41] sm:text-4xl">
-            My courses
+            Student page
           </h1>
           <p className="mt-3 text-base text-slate-600">
             Signed in as{" "}
@@ -43,6 +43,26 @@ export function StudentPortal({
             </Link>
           ) : null}
         </header>
+
+        {/* Global queue status — lives here (not inside a course): one place
+            to see live positions across ALL courses. */}
+        <Link
+          href="/student/my-queue"
+          className="flex items-center justify-between rounded-[30px] border border-slate-200/80 bg-white px-6 py-5 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)] transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
+        >
+          <div className="flex min-w-0 items-center gap-4">
+            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eef5ff] text-[#071f41]">
+              <ListOrdered className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-[#071f41]">My Queue</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Check your live queue positions across all courses.
+              </p>
+            </div>
+          </div>
+          <ArrowRight className="h-5 w-5 shrink-0 text-slate-400" />
+        </Link>
 
         <section className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
           <div className="border-b border-slate-200 px-6 py-5">

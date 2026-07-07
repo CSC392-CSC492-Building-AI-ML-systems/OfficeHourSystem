@@ -42,16 +42,3 @@ export async function getOfferingSessionStatsService(
     sessions,
   };
 }
-
-// Lightweight check for the navbar: is the current user an INSTRUCTOR anywhere?
-// Used to decide whether to show the "My Course Stats" link.
-export async function canViewCourseStats(): Promise<boolean> {
-  const session = await getRequestSession();
-  if (!session) return false;
-  const userId = parseSessionUserId(session);
-  const membership = await prisma.offeringMember.findFirst({
-    where: { userId, role: "INSTRUCTOR" },
-    select: { id: true },
-  });
-  return membership !== null;
-}

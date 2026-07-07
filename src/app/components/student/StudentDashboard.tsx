@@ -32,7 +32,8 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <Navbar />
+        {/* Inside a course: queue status is reached from the student page, not here */}
+        <Navbar showQueueLink={false} />
 
         <Link
           href="/student"

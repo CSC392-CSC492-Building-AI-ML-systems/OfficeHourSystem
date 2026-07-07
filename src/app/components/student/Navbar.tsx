@@ -9,8 +9,17 @@ const NAV_LINKS = [
   { label: "My Queue", href: "/student/my-queue" },
 ];
 
-export function Navbar() {
+type NavbarProps = {
+  // Queue status is a global (cross-course) view; hide its link when this
+  // navbar is rendered inside a specific course dashboard.
+  showQueueLink?: boolean;
+};
+
+export function Navbar({ showQueueLink = true }: NavbarProps) {
   const pathname = usePathname();
+  const links = showQueueLink
+    ? NAV_LINKS
+    : NAV_LINKS.filter((l) => l.href !== "/student/my-queue");
 
   return (
     <header className="rounded-[28px] border border-slate-200/80 bg-white px-5 py-4 shadow-[0_16px_40px_-32px_rgba(15,41,66,0.35)] sm:px-6">
@@ -24,7 +33,7 @@ export function Navbar() {
           </Link>
 
           <nav className="flex items-center gap-6 text-sm font-medium text-slate-500">
-            {NAV_LINKS.map(({ label, href }) => {
+            {links.map(({ label, href }) => {
               const active = pathname === href;
               return (
                 <Link

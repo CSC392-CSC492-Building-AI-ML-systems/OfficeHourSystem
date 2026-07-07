@@ -1,4 +1,8 @@
-import { getRequestSession, parseSessionUserId } from "@/lib/auth/getRequestSession";
+import {
+  getRequestSession,
+  parseSessionUserId,
+} from "@/lib/auth/getRequestSession";
+import { assertSessionOperator } from "@/lib/auth/sessionOperator";
 import { prisma } from "@/lib/prisma";
 import { revertToWaiting } from "@/lib/queries/revert_to_waiting/revert-to-waiting";
 
@@ -23,19 +27,8 @@ export async function revertToWaitingService(
   });
   if (!ohSession) throw new Error("Session not found");
 
-  // Step 3: Check the user is a TA or INSTRUCTOR in this offering
-  const member = await prisma.offeringMember.findUnique({
-    where: {
-      userId_offeringId: {
-        userId,
-        offeringId: ohSession.offeringId,
-      },
-    },
-    select: { role: true },
-  });
-  if (!member || member.role === "STUDENT") {
-    throw new Error("Forbidden: only TAs and instructors can revert a student");
-  }
+  // Step 3: Only the offering's instructor or a host of this session may act
+  await assertSessionOperator(userId, ohSession.id, ohSession.offeringId);
 
   // Step 4: Look up the attendance and verify it belongs to this session
   const attendance = await prisma.officeHourAttendance.findUnique({

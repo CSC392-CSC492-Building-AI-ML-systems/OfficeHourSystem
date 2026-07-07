@@ -7,6 +7,17 @@ export const TEST_TERM = "__TEST_TERM__";
 
 export async function cleanupAll(): Promise<void> {
   // 1. Delete leaf tables first (they have FKs pointing to session / user / offering)
+  await prisma.officeHourReminder.deleteMany({
+    where: {
+      interest: {
+        OR: [
+          { user: { utorid: { startsWith: TEST_PREFIX } } },
+          { session: { offering: { termCode: TEST_TERM } } },
+        ],
+      },
+    },
+  });
+
   await prisma.officeHourInterest.deleteMany({
     where: {
       OR: [

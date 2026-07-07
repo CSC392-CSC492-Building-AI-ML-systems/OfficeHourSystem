@@ -122,7 +122,7 @@ export default function SessionStatsListPage({
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <Navbar activeItem="stats" />
+        <Navbar />
 
         <main className="mt-10 space-y-8">
           <Link

@@ -139,15 +139,30 @@ model OfficeHourSessionHost {
 }
 
 model OfficeHourInterest {
-  id        Int               @id @default(autoincrement())
+  id        Int                   @id @default(autoincrement())
   userId    Int
   sessionId Int
-  createdAt DateTime          @default(now())
-  session   OfficeHourSession @relation(fields: [sessionId], references: [id])
-  user      User              @relation(fields: [userId], references: [id])
+  createdAt DateTime              @default(now())
+  session   OfficeHourSession     @relation(fields: [sessionId], references: [id])
+  user      User                  @relation(fields: [userId], references: [id])
+  reminders OfficeHourReminder[]
 
   @@unique([userId, sessionId])
   @@index([sessionId])
+}
+
+// One row per reminder actually sent for an interest, at a given lead time
+// (minutesBefore, e.g. 60 or 1440). The unique constraint makes sending
+// idempotent — a tier is emailed at most once per interest, so the cron can
+// run as often as it likes without duplicating reminders.
+model OfficeHourReminder {
+  id            Int                @id @default(autoincrement())
+  interestId    Int
+  minutesBefore Int
+  sentAt        DateTime           @default(now())
+  interest      OfficeHourInterest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+
+  @@unique([interestId, minutesBefore])
 }
 
 // Active queue state only — a student is here while WAITING or IN_HELP.

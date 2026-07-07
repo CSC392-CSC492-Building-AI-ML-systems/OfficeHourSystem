@@ -38,7 +38,7 @@ export default function MyQueuesPage({
       setLoading(true);
       setError(null);
       try {
-        const data = await showUpcomingOhAction();
+        const data = await showUpcomingOhAction(offeringPublicId);
         const mapped = data.map((session) => ({
           id: session.sessionPublicId,
           courseLabel: session.courseCode,
@@ -78,7 +78,7 @@ export default function MyQueuesPage({
         setLoading(false);
       }
     })();
-  }, []);
+  }, [offeringPublicId]);
 
   // Split sessions into three buckets
   const upcomingSessions = sessions.filter(
