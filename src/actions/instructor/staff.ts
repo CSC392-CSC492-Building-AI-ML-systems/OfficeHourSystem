@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { parseAdminList } from "@/lib/adminList";
 import { requireSessionUserId } from "@/lib/auth/getRequestSession";
 import { instructorDashboardHref } from "@/lib/offeringUrls";
 import {
@@ -20,6 +21,10 @@ export type InstructorStaffPageData = {
 
 export type StaffActionResult =
   | { ok: true; staffMember?: OfferingStaffMember }
+  | { ok: false; error: string };
+
+export type BulkStaffActionResult =
+  | { ok: true; added: number; staff: OfferingStaffMember[] }
   | { ok: false; error: string };
 
 export async function getInstructorStaffPageData(
@@ -75,6 +80,43 @@ export async function addOfferingTaAction(input: {
         error instanceof Error
           ? error.message
           : "Failed to add teaching assistant",
+    };
+  }
+}
+
+export async function bulkAddOfferingTasAction(input: {
+  offeringPublicId: string;
+  text: string;
+}): Promise<BulkStaffActionResult> {
+  try {
+    const userId = await requireSessionUserId();
+    await requireScheduleMutate(userId, input.offeringPublicId);
+
+    const utorids = parseAdminList(input.text);
+    if (utorids.length === 0) {
+      throw new Error("No UTORids provided");
+    }
+
+    for (const utorid of utorids) {
+      await addOrUpdateStaffMember(
+        { utorid },
+        { publicId: input.offeringPublicId },
+        "TA",
+      );
+    }
+
+    revalidatePath(instructorDashboardHref(input.offeringPublicId));
+
+    const staff = await getOfferingStaffMembers(input.offeringPublicId);
+
+    return { ok: true, added: utorids.length, staff };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to bulk add teaching assistants",
     };
   }
 }

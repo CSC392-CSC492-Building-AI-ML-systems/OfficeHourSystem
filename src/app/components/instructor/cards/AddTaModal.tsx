@@ -2,6 +2,9 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { UserPlus, X } from "lucide-react";
+
+type AddMode = "single" | "bulk";
+
 interface AddTaModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -11,32 +14,49 @@ interface AddTaModalProps {
     lastName?: string;
     email?: string;
   }) => Promise<boolean>;
+  onBulkAddStaffMembers: (text: string) => Promise<boolean>;
   isSubmitting: boolean;
   error: string | null;
 }
+
+const BULK_PLACEHOLDER = `# One UTORid per line
+jlee1234
+smithj
+# commented lines are ignored`;
 
 export function AddTaModal({
   isOpen,
   onClose,
   onAddStaffMember,
+  onBulkAddStaffMembers,
   isSubmitting,
   error,
 }: AddTaModalProps) {
+  const [mode, setMode] = useState<AddMode>("single");
   const [utorid, setUtorid] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [bulkText, setBulkText] = useState("");
   const utoridRef = useRef<HTMLInputElement>(null);
+  const bulkTextRef = useRef<HTMLTextAreaElement>(null);
 
   const resetForm = () => {
     setUtorid("");
     setFirstName("");
     setLastName("");
     setEmail("");
+    setBulkText("");
   };
 
-  const focusUtorid = () => {
-    requestAnimationFrame(() => utoridRef.current?.focus());
+  const focusActiveInput = () => {
+    requestAnimationFrame(() => {
+      if (mode === "bulk") {
+        bulkTextRef.current?.focus();
+        return;
+      }
+      utoridRef.current?.focus();
+    });
   };
 
   useEffect(() => {
@@ -44,7 +64,7 @@ export function AddTaModal({
       return undefined;
     }
 
-    focusUtorid();
+    focusActiveInput();
 
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -61,13 +81,15 @@ export function AddTaModal({
       document.body.style.overflow = originalOverflow;
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, mode]);
 
   if (!isOpen) {
     return null;
   }
 
-  const isFormValid = utorid.trim().length > 0;
+  const isSingleFormValid = utorid.trim().length > 0;
+  const isBulkFormValid = bulkText.trim().length > 0;
+  const isFormValid = mode === "single" ? isSingleFormValid : isBulkFormValid;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -76,16 +98,19 @@ export function AddTaModal({
       return;
     }
 
-    const success = await onAddStaffMember({
-      utorid: utorid.trim(),
-      firstName: firstName.trim() || undefined,
-      lastName: lastName.trim() || undefined,
-      email: email.trim() || undefined,
-    });
+    const success =
+      mode === "single"
+        ? await onAddStaffMember({
+            utorid: utorid.trim(),
+            firstName: firstName.trim() || undefined,
+            lastName: lastName.trim() || undefined,
+            email: email.trim() || undefined,
+          })
+        : await onBulkAddStaffMembers(bulkText);
 
     if (success) {
       resetForm();
-      focusUtorid();
+      focusActiveInput();
     }
   };
 
@@ -104,10 +129,12 @@ export function AddTaModal({
               STAFF MANAGEMENT
             </p>
             <h2 className="mt-2 text-xl font-semibold text-[#071f41]">
-              Add teaching assistant
+              Add teaching assistant{mode === "bulk" ? "s" : ""}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              UTORid is required. Name and email can be added later.
+              {mode === "single"
+                ? "UTORid is required. Name and email can be added later."
+                : "Enter UTORids one per line. Name and email can be added later."}
             </p>
           </div>
           <button
@@ -121,56 +148,91 @@ export function AddTaModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
+          <div className="flex gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1">
+            {(["single", "bulk"] as AddMode[]).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setMode(option)}
+                disabled={isSubmitting}
+                className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  mode === option
+                    ? "bg-white text-[#071f41] shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                {option === "single" ? "Single" : "Bulk"}
+              </button>
+            ))}
+          </div>
+
           {error ? (
             <p className="rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm text-[#9f1239]">
               {error}
             </p>
           ) : null}
 
-          <label className="block space-y-2 text-sm font-medium text-[#071f41]">
-            <span>UTORid</span>
-            <input
-              ref={utoridRef}
-              required
-              value={utorid}
-              onChange={(event) => setUtorid(event.target.value)}
-              placeholder="jlee1234"
-              className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
-            />
-          </label>
+          {mode === "single" ? (
+            <>
+              <label className="block space-y-2 text-sm font-medium text-[#071f41]">
+                <span>UTORid</span>
+                <input
+                  ref={utoridRef}
+                  required
+                  value={utorid}
+                  onChange={(event) => setUtorid(event.target.value)}
+                  placeholder="jlee1234"
+                  className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
+                />
+              </label>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="space-y-2 text-sm font-medium text-[#071f41]">
-              <span>First name (optional)</span>
-              <input
-                value={firstName}
-                onChange={(event) => setFirstName(event.target.value)}
-                placeholder="Jordan"
-                className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm font-medium text-[#071f41]">
+                  <span>First name (optional)</span>
+                  <input
+                    value={firstName}
+                    onChange={(event) => setFirstName(event.target.value)}
+                    placeholder="Jordan"
+                    className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
+                  />
+                </label>
+
+                <label className="space-y-2 text-sm font-medium text-[#071f41]">
+                  <span>Last name (optional)</span>
+                  <input
+                    value={lastName}
+                    onChange={(event) => setLastName(event.target.value)}
+                    placeholder="Lee"
+                    className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
+                  />
+                </label>
+              </div>
+
+              <label className="block space-y-2 text-sm font-medium text-[#071f41]">
+                <span>Email (optional)</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="j.lee@mail.utoronto.ca"
+                  className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
+                />
+              </label>
+            </>
+          ) : (
+            <label className="block space-y-2 text-sm font-medium text-[#071f41]">
+              <span>UTORids</span>
+              <textarea
+                ref={bulkTextRef}
+                value={bulkText}
+                onChange={(event) => setBulkText(event.target.value)}
+                placeholder={BULK_PLACEHOLDER}
+                rows={10}
+                disabled={isSubmitting}
+                className="w-full resize-y rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 font-mono text-sm text-slate-700 outline-none transition placeholder:font-sans placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
               />
             </label>
-
-            <label className="space-y-2 text-sm font-medium text-[#071f41]">
-              <span>Last name (optional)</span>
-              <input
-                value={lastName}
-                onChange={(event) => setLastName(event.target.value)}
-                placeholder="Lee"
-                className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
-              />
-            </label>
-          </div>
-
-          <label className="block space-y-2 text-sm font-medium text-[#071f41]">
-            <span>Email (optional)</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="j.lee@mail.utoronto.ca"
-              className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
-            />
-          </label>
+          )}
 
           <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
             <button
@@ -187,7 +249,11 @@ export function AddTaModal({
               className="inline-flex items-center justify-center gap-2 rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(7,31,65,0.7)] transition hover:bg-[#0f2942] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
             >
               <UserPlus className="h-4 w-4" />
-              {isSubmitting ? "Adding..." : "Add TA"}
+              {isSubmitting
+                ? "Adding..."
+                : mode === "single"
+                  ? "Add TA"
+                  : "Add TAs"}
             </button>
           </div>
         </form>

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { UserPlus } from "lucide-react";
 import {
   addOfferingTaAction,
+  bulkAddOfferingTasAction,
   removeOfferingTaAction,
 } from "@/actions/instructor/staff";
 import { Navbar } from "./Navbar";
@@ -74,6 +75,27 @@ export default function InstructorDashboard({
       ]);
     }
 
+    setAddError(null);
+    return true;
+  };
+
+  const handleBulkAddStaffMembers = async (text: string) => {
+    setIsAddingStaff(true);
+    setAddError(null);
+
+    const result = await bulkAddOfferingTasAction({
+      offeringPublicId,
+      text,
+    });
+
+    setIsAddingStaff(false);
+
+    if (!result.ok) {
+      setAddError(result.error);
+      return false;
+    }
+
+    setStaff(result.staff);
     setAddError(null);
     return true;
   };
@@ -168,6 +190,7 @@ export default function InstructorDashboard({
           }
         }}
         onAddStaffMember={handleAddStaffMember}
+        onBulkAddStaffMembers={handleBulkAddStaffMembers}
         isSubmitting={isAddingStaff}
         error={addError}
       />
