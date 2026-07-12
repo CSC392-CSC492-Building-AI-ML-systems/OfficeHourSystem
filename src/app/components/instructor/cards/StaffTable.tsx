@@ -1,20 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Mail,
-  MapPin,
-  Search,
-  Trash2,
-  Video,
-} from "lucide-react";
-import type { StaffMember } from "./data";
+import { ChevronLeft, ChevronRight, Mail, Search, Trash2 } from "lucide-react";
+import type { OfferingStaffMember } from "@/lib/queries/offeringMember";
 
 interface StaffTableProps {
-  staff: StaffMember[];
+  staff: OfferingStaffMember[];
+  canEdit: boolean;
   onRemoveStaffMember: (staffMemberId: string) => void;
+  removingStaffMemberId: string | null;
 }
 
 function getInitials(name: string) {
@@ -26,7 +20,12 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export function StaffTable({ staff, onRemoveStaffMember }: StaffTableProps) {
+export function StaffTable({
+  staff,
+  canEdit,
+  onRemoveStaffMember,
+  removingStaffMemberId,
+}: StaffTableProps) {
   const [query, setQuery] = useState("");
 
   const filteredStaff = useMemo(() => {
@@ -37,7 +36,7 @@ export function StaffTable({ staff, onRemoveStaffMember }: StaffTableProps) {
     }
 
     return staff.filter((member) =>
-      [member.name, member.program, member.role, member.email, member.location]
+      [member.name, member.role, member.email, member.utorid]
         .join(" ")
         .toLowerCase()
         .includes(normalizedQuery),
@@ -75,8 +74,9 @@ export function StaffTable({ staff, onRemoveStaffMember }: StaffTableProps) {
               <th className="px-6 py-4">STAFF MEMBER</th>
               <th className="px-6 py-4">ROLE</th>
               <th className="px-6 py-4">CONTACT INFO</th>
-              <th className="px-6 py-4">OFFICE LOCATION</th>
-              <th className="px-6 py-4 text-right">ACTIONS</th>
+              {canEdit ? (
+                <th className="px-6 py-4 text-right">ACTIONS</th>
+              ) : null}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -94,14 +94,14 @@ export function StaffTable({ staff, onRemoveStaffMember }: StaffTableProps) {
                       <p className="font-semibold text-[#071f41]">
                         {member.name}
                       </p>
-                      <p className="text-sm text-slate-500">{member.program}</p>
+                      <p className="text-sm text-slate-500">{member.utorid}</p>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
                   <span
                     className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                      member.role === "Lead TA"
+                      member.role === "Instructor"
                         ? "bg-[#071f41] text-white"
                         : "bg-[#e8eef5] text-[#5b6b80]"
                     }`}
@@ -112,39 +112,40 @@ export function StaffTable({ staff, onRemoveStaffMember }: StaffTableProps) {
                 <td className="px-6 py-4 text-slate-600">
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-slate-400" />
-                    <span>{member.email || member.utorid || "—"}</span>
+                    <span>{member.email || "—"}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-slate-600">
-                  <div className="flex items-center gap-2">
-                    {member.isRemote ? (
-                      <Video className="h-4 w-4 text-slate-400" />
+                {canEdit ? (
+                  <td className="px-6 py-4 text-right">
+                    {member.role === "TA" ? (
+                      <button
+                        type="button"
+                        aria-label={`Remove ${member.name}`}
+                        onClick={() => onRemoveStaffMember(member.id)}
+                        disabled={removingStaffMemberId === member.id}
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-[#9f1239] transition hover:border-[#fecdd3] hover:bg-[#fff1f2] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {removingStaffMemberId === member.id
+                          ? "Removing..."
+                          : "Remove"}
+                      </button>
                     ) : (
-                      <MapPin className="h-4 w-4 text-slate-400" />
+                      <span className="text-sm text-slate-400">—</span>
                     )}
-                    <span>{member.location}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button
-                    type="button"
-                    aria-label={`Remove ${member.name}`}
-                    onClick={() => onRemoveStaffMember(member.id)}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-[#9f1239] transition hover:border-[#fecdd3] hover:bg-[#fff1f2]"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Remove
-                  </button>
-                </td>
+                  </td>
+                ) : null}
               </tr>
             ))}
             {filteredStaff.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={canEdit ? 4 : 3}
                   className="px-6 py-10 text-center text-sm text-slate-500"
                 >
-                  No staff members match your search.
+                  {staff.length === 0
+                    ? "No teaching staff have been added yet."
+                    : "No staff members match your search."}
                 </td>
               </tr>
             ) : null}

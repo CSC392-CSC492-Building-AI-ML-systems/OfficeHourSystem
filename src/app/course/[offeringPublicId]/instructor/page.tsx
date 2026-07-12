@@ -3,6 +3,7 @@ import {
   offeringAccessFromUnknown,
 } from "@/app/components/instructor/OfferingAccessMessage";
 import InstructorDashboard from "@/app/components/instructor/InstructorDashboard";
+import { getInstructorStaffPageData } from "@/actions/instructor/staff";
 import { resolveInstructorOfferingPage } from "@/lib/auth/instructorPage";
 
 type PageProps = {
@@ -22,11 +23,18 @@ export default async function InstructorPage({ params }: PageProps) {
     return <OfferingAccessMessage error={offeringAccessFromUnknown(error)} />;
   }
 
+  const { staff, weeklySlotCount } = await getInstructorStaffPageData(
+    pageContext.offeringPublicId,
+  );
+
   return (
     <main>
       <InstructorDashboard
         offeringPublicId={pageContext.offeringPublicId}
         courseLabel={pageContext.courseLabel}
+        canEdit={pageContext.canEdit}
+        initialStaff={staff}
+        weeklySlotCount={weeklySlotCount}
       />
     </main>
   );
