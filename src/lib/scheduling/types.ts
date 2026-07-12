@@ -155,4 +155,5 @@ export type SchedulePageResponse = {
   rules: RecurringRuleDto[];
   staff: ScheduleStaffDto[];
   canEdit: boolean;
+  currentUserPublicId: string | null;
 };

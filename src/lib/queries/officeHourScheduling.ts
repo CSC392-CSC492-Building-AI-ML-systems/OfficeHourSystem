@@ -858,6 +858,12 @@ export async function getInstructorSchedulePage(
   offeringPublicId?: string,
   weekStart?: string,
 ) {
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { publicId: true },
+  });
+  const currentUserPublicId = currentUser?.publicId ?? null;
+
   const offerings = await listViewableOfferings(userId);
 
   if (offerings.length === 0) {
@@ -870,6 +876,7 @@ export async function getInstructorSchedulePage(
       rules: [],
       staff: [],
       canEdit: false,
+      currentUserPublicId,
     };
   }
 
@@ -898,6 +905,7 @@ export async function getInstructorSchedulePage(
     rules: week.rules,
     staff: week.staff,
     canEdit: selected.canEdit,
+    currentUserPublicId,
   };
 }
 

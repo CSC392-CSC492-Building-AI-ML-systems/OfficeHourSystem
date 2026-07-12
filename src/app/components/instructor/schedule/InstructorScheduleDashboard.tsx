@@ -69,6 +69,9 @@ export default function InstructorScheduleDashboard({
   const [rules, setRules] = useState<RecurringRule[]>(initialData.rules);
   const [staff, setStaff] = useState<ScheduleStaffMember[]>(initialData.staff);
   const [canEdit, setCanEdit] = useState(initialData.canEdit);
+  const [currentUserPublicId, setCurrentUserPublicId] = useState(
+    initialData.currentUserPublicId,
+  );
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
     () => pickInitialSessionId(initialData.sessions),
   );
@@ -102,6 +105,7 @@ export default function InstructorScheduleDashboard({
         setSessions(data.sessions);
         setRules(data.rules);
         setStaff(data.staff);
+        setCurrentUserPublicId(data.currentUserPublicId);
 
         setSelectedSessionId((current) => {
           if (current && data.sessions.some((s) => s.id === current)) {
@@ -308,6 +312,7 @@ export default function InstructorScheduleDashboard({
                 timeSlots={TIME_SLOTS}
                 sessions={sessions}
                 selectedSessionId={selectedSession?.id ?? ""}
+                currentUserPublicId={currentUserPublicId}
                 onSelectSession={setSelectedSessionId}
                 weekLabel={weekLabel}
                 weekStart={weekStart}

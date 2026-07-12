@@ -22,6 +22,7 @@ interface WeeklyCalendarProps {
   timeSlots: TimeSlot[];
   sessions: ScheduleSession[];
   selectedSessionId: string;
+  currentUserPublicId?: string | null;
   onSelectSession: (sessionId: string) => void;
   weekLabel?: string;
   weekStart?: string | null;
@@ -45,6 +46,7 @@ export function WeeklyCalendar({
   timeSlots,
   sessions,
   selectedSessionId,
+  currentUserPublicId = null,
   onSelectSession,
   weekLabel = "Week View",
   weekStart = null,
@@ -200,11 +202,16 @@ export function WeeklyCalendar({
                   SESSION_CARD_VERTICAL_MARGIN * 2;
                 const compact = durationHalfHours <= 2;
 
+                const isHostedByCurrentUser =
+                  currentUserPublicId != null &&
+                  session.hostPublicIds.includes(currentUserPublicId);
+
                 return (
                   <ScheduleSessionCard
                     key={session.id}
                     session={session}
                     isSelected={session.id === selectedSessionId}
+                    isHostedByCurrentUser={isHostedByCurrentUser}
                     compact={compact}
                     onSelect={onSelectSession}
                     style={{
