@@ -8,15 +8,27 @@ export interface ScheduleSession {
   topic: string;
   day: string;
   dateLabel: string;
+  date: string;
   startTime: string;
   endTime: string;
+  startTimeInput: string;
+  endTimeInput: string;
   startHour: number;
   endHour: number;
   location: string;
   mode: "in-person" | "online" | "hybrid";
   accent: "navy-yellow" | "navy-red" | "yellow";
+  isRecurringOccurrence?: boolean;
+  hostPublicIds: string[];
+  hostLabel: string;
   hasOverride?: boolean;
   overrideLocation?: string;
+}
+
+export interface ScheduleStaffMember {
+  publicId: string;
+  name: string;
+  role: string;
 }
 
 export interface RecurringRule {
