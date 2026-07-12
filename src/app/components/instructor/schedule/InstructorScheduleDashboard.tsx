@@ -20,7 +20,11 @@ import {
 } from "@/actions/scheduling";
 import type { SchedulePageResponse } from "@/lib/scheduling/types";
 import { WeeklyCalendar } from "./WeeklyCalendar";
-import type { RecurringRule, ScheduleSession } from "./types";
+import type {
+  RecurringRule,
+  ScheduleSession,
+  ScheduleStaffMember,
+} from "./types";
 import type { CreateOneTimeSessionInput } from "@/lib/scheduling/types";
 import type { CreateRecurringBlockInput } from "@/lib/scheduling/types";
 import {
@@ -63,7 +67,11 @@ export default function InstructorScheduleDashboard({
     initialData.sessions,
   );
   const [rules, setRules] = useState<RecurringRule[]>(initialData.rules);
+  const [staff, setStaff] = useState<ScheduleStaffMember[]>(initialData.staff);
   const [canEdit, setCanEdit] = useState(initialData.canEdit);
+  const [currentUserPublicId, setCurrentUserPublicId] = useState(
+    initialData.currentUserPublicId,
+  );
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
     () => pickInitialSessionId(initialData.sessions),
   );
@@ -96,6 +104,8 @@ export default function InstructorScheduleDashboard({
         setCalendarDays(data.calendarDays);
         setSessions(data.sessions);
         setRules(data.rules);
+        setStaff(data.staff);
+        setCurrentUserPublicId(data.currentUserPublicId);
 
         setSelectedSessionId((current) => {
           if (current && data.sessions.some((s) => s.id === current)) {
@@ -143,6 +153,7 @@ export default function InstructorScheduleDashboard({
     validFrom: string;
     validUntil: string;
     location?: string;
+    hostUserPublicIds?: string[];
   }) => {
     if (!offeringPublicId) return;
     setActionError(null);
@@ -156,6 +167,7 @@ export default function InstructorScheduleDashboard({
       validFrom: input.validFrom,
       validUntil: input.validUntil,
       location: input.location,
+      hostUserPublicIds: input.hostUserPublicIds,
     });
     setActiveModal(null);
     await loadSchedule();
@@ -171,6 +183,10 @@ export default function InstructorScheduleDashboard({
   const handleSaveSession = async (patch: {
     title?: string;
     location?: string | null;
+    date?: string;
+    startTime?: string;
+    endTime?: string;
+    hostUserPublicIds?: string[];
   }) => {
     if (!selectedSession) return;
     setActionError(null);
@@ -296,6 +312,7 @@ export default function InstructorScheduleDashboard({
                 timeSlots={TIME_SLOTS}
                 sessions={sessions}
                 selectedSessionId={selectedSession?.id ?? ""}
+                currentUserPublicId={currentUserPublicId}
                 onSelectSession={setSelectedSessionId}
                 weekLabel={weekLabel}
                 weekStart={weekStart}
@@ -312,6 +329,7 @@ export default function InstructorScheduleDashboard({
                   <EditSessionPanel
                     key={selectedSession.id}
                     selectedSession={selectedSession}
+                    staff={staff}
                     canEdit={canEdit}
                     onSave={handleSaveSession}
                     onCancelSession={handleCancelSession}
@@ -343,6 +361,7 @@ export default function InstructorScheduleDashboard({
             isOpen={activeModal === "one-time"}
             onClose={() => setActiveModal(null)}
             offeringPublicId={offeringPublicId}
+            staff={staff}
             onSubmit={handleCreateOneTime}
             onError={setActionError}
           />
@@ -350,6 +369,7 @@ export default function InstructorScheduleDashboard({
             isOpen={activeModal === "recurring"}
             onClose={() => setActiveModal(null)}
             termCode={termCode}
+            staff={staff}
             onSubmit={handleCreateRecurring}
             onError={setActionError}
           />

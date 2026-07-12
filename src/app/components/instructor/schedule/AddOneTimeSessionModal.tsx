@@ -19,17 +19,20 @@ import {
   validateOfficeHourTimes,
 } from "@/lib/scheduling/time";
 import { FieldCharLimitHint } from "./FieldCharLimitHint";
+import { OfficeHourHostSelect } from "./OfficeHourHostSelect";
 import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
 import {
   LOCATION_MAX_LENGTH,
   SESSION_TOPIC_MAX_LENGTH,
 } from "./scheduleFieldLimits";
 import { useModalOverlay } from "./useModalOverlay";
+import type { ScheduleStaffMember } from "./types";
 
 interface AddOneTimeSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
   offeringPublicId: string;
+  staff: ScheduleStaffMember[];
   onSubmit: (input: CreateOneTimeSessionInput) => Promise<void>;
   onError?: (message: string | null) => void;
 }
@@ -64,6 +67,7 @@ export function AddOneTimeSessionModal({
   isOpen,
   onClose,
   offeringPublicId,
+  staff,
   onSubmit,
   onError,
 }: AddOneTimeSessionModalProps) {
@@ -76,6 +80,7 @@ export function AddOneTimeSessionModal({
   return (
     <AddOneTimeSessionForm
       offeringPublicId={offeringPublicId}
+      staff={staff}
       onClose={onClose}
       onSubmit={onSubmit}
       onError={onError}
@@ -85,6 +90,7 @@ export function AddOneTimeSessionModal({
 
 function AddOneTimeSessionForm({
   offeringPublicId,
+  staff,
   onClose,
   onSubmit,
   onError,
@@ -96,7 +102,7 @@ function AddOneTimeSessionForm({
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("16:00");
   const [locationDetail, setLocationDetail] = useState("Room 402");
-  const [assignedTa, setAssignedTa] = useState("");
+  const [hostPublicIds, setHostPublicIds] = useState<string[]>([]);
 
   const showError = (message: string) => {
     onError?.(message);
@@ -128,6 +134,7 @@ function AddOneTimeSessionForm({
         startTime,
         endTime,
         location: locationDetail.trim() || undefined,
+        hostUserPublicIds: hostPublicIds,
       });
     } catch (submitError) {
       showError(
@@ -294,18 +301,13 @@ function AddOneTimeSessionForm({
           </section>
 
           <section>
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[#071f41]">
-                Assigned TA
-              </span>
-              <input
-                type="text"
-                value={assignedTa}
-                onChange={(event) => setAssignedTa(event.target.value)}
-                placeholder="Select TA"
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
-              />
-            </label>
+            <OfficeHourHostSelect
+              id="one-time-session-hosts"
+              staff={staff}
+              value={hostPublicIds}
+              onChange={setHostPublicIds}
+              hint="Select one or more hosts. Leave empty if unassigned."
+            />
           </section>
 
           <section className="rounded-[26px] border border-[#d7e7ff] bg-[#eef5ff] px-5 py-4">

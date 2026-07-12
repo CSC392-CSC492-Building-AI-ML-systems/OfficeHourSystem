@@ -3,19 +3,27 @@
 import { useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { FieldCharLimitHint } from "./FieldCharLimitHint";
+import { OfficeHourHostSelect } from "./OfficeHourHostSelect";
+import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
 import {
   clampToMaxLength,
   LOCATION_MAX_LENGTH,
   SESSION_TOPIC_MAX_LENGTH,
 } from "./scheduleFieldLimits";
-import type { ScheduleSession } from "./types";
+import type { ScheduleSession, ScheduleStaffMember } from "./types";
+import { validateOfficeHourTimes } from "@/lib/scheduling/time";
 
 interface EditSessionPanelProps {
   selectedSession: ScheduleSession;
+  staff: ScheduleStaffMember[];
   canEdit: boolean;
   onSave: (patch: {
     title?: string;
     location?: string | null;
+    date?: string;
+    startTime?: string;
+    endTime?: string;
+    hostUserPublicIds?: string[];
   }) => Promise<void>;
   onCancelSession: () => Promise<void>;
   onError?: (message: string | null) => void;
@@ -23,6 +31,7 @@ interface EditSessionPanelProps {
 
 export function EditSessionPanel({
   selectedSession,
+  staff,
   canEdit,
   onSave,
   onCancelSession,
@@ -34,17 +43,34 @@ export function EditSessionPanel({
   const [location, setLocation] = useState(() =>
     clampToMaxLength(selectedSession.location, LOCATION_MAX_LENGTH),
   );
+  const [date, setDate] = useState(selectedSession.date);
+  const [startTime, setStartTime] = useState(selectedSession.startTimeInput);
+  const [endTime, setEndTime] = useState(selectedSession.endTimeInput);
+  const [hostPublicIds, setHostPublicIds] = useState(
+    () => selectedSession.hostPublicIds,
+  );
   const [savedMessage, setSavedMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSaveOverride = async () => {
     if (!canEdit) return;
     onError?.(null);
+
+    const timeError = validateOfficeHourTimes(startTime, endTime);
+    if (timeError) {
+      onError?.(timeError);
+      return;
+    }
+
     setSubmitting(true);
     try {
       await onSave({
         title: topic.trim() || selectedSession.title,
         location: location.trim() || null,
+        startTime,
+        endTime,
+        ...(selectedSession.isRecurringOccurrence ? {} : { date }),
+        hostUserPublicIds: hostPublicIds,
       });
       setSavedMessage("Session override saved.");
     } catch (saveError) {
@@ -96,6 +122,11 @@ export function EditSessionPanel({
           {selectedSession.dateLabel}, {selectedSession.startTime} -{" "}
           {selectedSession.endTime}
         </p>
+        {selectedSession.hostLabel !== "Unassigned" ? (
+          <p className="mt-1 text-sm text-slate-600">
+            Hosts: {selectedSession.hostLabel}
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-6 space-y-5">
@@ -121,6 +152,33 @@ export function EditSessionPanel({
           )}
         </div>
 
+        {!selectedSession.isRecurringOccurrence && canEdit ? (
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-[#071f41]">
+              Date
+            </span>
+            <input
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
+            />
+          </label>
+        ) : null}
+
+        {canEdit ? (
+          <OfficeHourTimeFields
+            startTime={startTime}
+            endTime={endTime}
+            onStartTimeChange={setStartTime}
+            onEndTimeChange={setEndTime}
+          />
+        ) : (
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+            {selectedSession.startTime} - {selectedSession.endTime}
+          </div>
+        )}
+
         <div>
           <label className="mb-2 block text-sm font-medium text-[#071f41]">
             Location
@@ -142,13 +200,33 @@ export function EditSessionPanel({
             </div>
           )}
         </div>
+
+        <div>
+          {canEdit ? (
+            <OfficeHourHostSelect
+              id="edit-session-hosts"
+              staff={staff}
+              value={hostPublicIds}
+              onChange={setHostPublicIds}
+              hint="Select one or more hosts for this session."
+            />
+          ) : (
+            <>
+              <label className="mb-2 block text-sm font-medium text-[#071f41]">
+                Session Hosts
+              </label>
+              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                {selectedSession.hostLabel}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <p className="mt-6 text-xs italic leading-5 text-slate-500">
-        Updating this only affects the {selectedSession.startTime} session{" "}
-        {selectedSession.dateLabel.toLowerCase() === "today"
-          ? "today."
-          : `on ${selectedSession.dateLabel}.`}
+        {selectedSession.isRecurringOccurrence
+          ? `Updating this only affects the ${selectedSession.dateLabel} session.`
+          : "Updating this only affects this one-time session."}
       </p>
 
       {canEdit ? (

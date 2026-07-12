@@ -60,6 +60,13 @@ export type UpdateSessionInput = {
   date?: string;
   startTime?: string;
   endTime?: string;
+  hostUserPublicIds?: string[];
+};
+
+export type ScheduleStaffDto = {
+  publicId: string;
+  name: string;
+  role: string;
 };
 
 export type ScheduleSessionDto = {
@@ -74,11 +81,19 @@ export type ScheduleSessionDto = {
   dateLabel: string;
   startTime: string;
   endTime: string;
+  /** `YYYY-MM-DD` for editing session time. */
+  date: string;
+  /** 24h `HH:mm` for time pickers. */
+  startTimeInput: string;
+  endTimeInput: string;
   startHour: number;
   endHour: number;
   location: string;
   mode: "in-person" | "online" | "hybrid";
   accent: "navy-yellow" | "navy-red" | "yellow";
+  isRecurringOccurrence?: boolean;
+  hostPublicIds: string[];
+  hostLabel: string;
   hasOverride?: boolean;
   overrideLocation?: string;
 };
@@ -138,5 +153,7 @@ export type SchedulePageResponse = {
   calendarDays: CalendarDayDto[];
   sessions: ScheduleSessionDto[];
   rules: RecurringRuleDto[];
+  staff: ScheduleStaffDto[];
   canEdit: boolean;
+  currentUserPublicId: string | null;
 };

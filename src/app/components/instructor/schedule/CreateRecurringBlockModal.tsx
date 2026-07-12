@@ -17,12 +17,14 @@ import {
   type WeekdayKey,
 } from "@/lib/scheduling/time";
 import { FieldCharLimitHint } from "./FieldCharLimitHint";
+import { OfficeHourHostSelect } from "./OfficeHourHostSelect";
 import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
 import {
   BLOCK_NAME_MAX_LENGTH,
   LOCATION_MAX_LENGTH,
 } from "./scheduleFieldLimits";
 import { useModalOverlay } from "./useModalOverlay";
+import type { ScheduleStaffMember } from "./types";
 
 type SessionType = "drop-in" | "debugging-queue" | "topic-group";
 type ScheduleDay = "mon" | "tue" | "wed" | "thu" | "fri";
@@ -31,6 +33,7 @@ interface CreateRecurringBlockModalProps {
   isOpen: boolean;
   onClose: () => void;
   termCode: string;
+  staff: ScheduleStaffMember[];
   onSubmit: (input: {
     title: string;
     uiType: CreateRecurringBlockInput["uiType"];
@@ -40,6 +43,7 @@ interface CreateRecurringBlockModalProps {
     validFrom: string;
     validUntil: string;
     location?: string;
+    hostUserPublicIds?: string[];
   }) => Promise<void>;
   onError?: (message: string | null) => void;
 }
@@ -82,6 +86,7 @@ export function CreateRecurringBlockModal({
   isOpen,
   onClose,
   termCode,
+  staff,
   onSubmit,
   onError,
 }: CreateRecurringBlockModalProps) {
@@ -95,6 +100,7 @@ export function CreateRecurringBlockModal({
     <CreateRecurringBlockForm
       key={termCode}
       termCode={termCode}
+      staff={staff}
       onClose={onClose}
       onSubmit={onSubmit}
       onError={onError}
@@ -104,6 +110,7 @@ export function CreateRecurringBlockModal({
 
 function CreateRecurringBlockForm({
   termCode,
+  staff,
   onClose,
   onSubmit,
   onError,
@@ -126,6 +133,7 @@ function CreateRecurringBlockForm({
   const [endTime, setEndTime] = useState("16:00");
   const [locationDetail, setLocationDetail] = useState("Room 402");
   const [blockName, setBlockName] = useState("");
+  const [hostPublicIds, setHostPublicIds] = useState<string[]>([]);
 
   const toggleDay = (day: ScheduleDay) => {
     setSelectedDays((currentDays) =>
@@ -174,6 +182,7 @@ function CreateRecurringBlockForm({
         validFrom: validFromDate,
         validUntil: validUntilDate,
         location: locationDetail.trim() || undefined,
+        hostUserPublicIds: hostPublicIds,
       });
     } catch (submitError) {
       showError(
@@ -379,6 +388,17 @@ function CreateRecurringBlockForm({
               />
               <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />
             </label>
+          </section>
+
+          <section>
+            <OfficeHourHostSelect
+              id="recurring-block-hosts"
+              staff={staff}
+              value={hostPublicIds}
+              onChange={setHostPublicIds}
+              label="Default Hosts"
+              hint="Leave empty (TBD) to assign hosts per session later. You can override hosts on individual sessions from the calendar."
+            />
           </section>
 
           <section className="rounded-[26px] border border-[#d7e7ff] bg-[#eef5ff] px-5 py-4">

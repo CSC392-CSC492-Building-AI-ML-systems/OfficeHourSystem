@@ -21,6 +21,7 @@ import type {
   QueueSessionDto,
   RecurringRuleDto,
   ScheduleSessionDto,
+  ScheduleStaffDto,
   UpdateRecurringBlockInput,
   UpdateSessionInput,
 } from "@/lib/scheduling/types";
@@ -37,6 +38,7 @@ import {
   dayOfWeekToKey,
   decimalHourFromDate,
   formatCalendarDateLabel,
+  formatDateOnlyLocal,
   formatDateTimeLabel,
   formatMinutesAsLabel,
   formatSessionDateLabel,
@@ -182,9 +184,67 @@ function ruleAccentForType(type: OfficeHourType): RecurringRuleDto["accent"] {
 type SessionWithRelations = Prisma.OfficeHourSessionGetPayload<{
   include: {
     offering: { include: { course: true } };
-    schedule: true;
+    schedule: {
+      include: {
+        hosts: { select: { userId: true } };
+      };
+    };
+    hosts: {
+      include: {
+        user: {
+          select: {
+            publicId: true;
+            firstName: true;
+            lastName: true;
+            utorid: true;
+          };
+        };
+      };
+    };
   };
 }>;
+
+const sessionInclude = {
+  offering: { include: { course: true } },
+  schedule: {
+    include: {
+      hosts: { select: { userId: true } },
+    },
+  },
+  hosts: {
+    include: {
+      user: {
+        select: {
+          publicId: true,
+          firstName: true,
+          lastName: true,
+          utorid: true,
+        },
+      },
+    },
+  },
+} as const;
+
+function userDisplayName(user: {
+  firstName: string | null;
+  lastName: string | null;
+  utorid: string;
+}): string {
+  return (
+    [user.firstName, user.lastName].filter(Boolean).join(" ") || user.utorid
+  );
+}
+
+function sortedNumericIds(ids: number[]): number[] {
+  return [...ids].sort((a, b) => a - b);
+}
+
+function sameNumericIds(a: number[], b: number[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return a.every((value, index) => value === b[index]);
+}
 
 function mapSessionToDto(
   session: SessionWithRelations,
@@ -201,9 +261,32 @@ function mapSessionToDto(
     isRecurringOccurrence &&
     session.location != null &&
     session.location !== schedule.location;
-  const hasOverride = hasTitleOverride || hasLocationOverride;
+  const sessionStartMinute =
+    session.startsAt.getHours() * 60 + session.startsAt.getMinutes();
+  const sessionEndMinute =
+    session.endsAt.getHours() * 60 + session.endsAt.getMinutes();
+  const hasTimeOverride =
+    isRecurringOccurrence &&
+    (sessionStartMinute !== schedule.startMinute ||
+      sessionEndMinute !== schedule.endMinute);
+  const sessionHostIds = sortedNumericIds(
+    session.hosts.map((host) => host.userId),
+  );
+  const scheduleHostIds = sortedNumericIds(
+    schedule?.hosts.map((host) => host.userId) ?? [],
+  );
+  const hasHostOverride =
+    isRecurringOccurrence && !sameNumericIds(sessionHostIds, scheduleHostIds);
+  const hasOverride =
+    hasTitleOverride ||
+    hasLocationOverride ||
+    hasTimeOverride ||
+    hasHostOverride;
 
   const sessionTypeLabel = officeHourTypeLabel(session.type);
+  const hostLabel =
+    session.hosts.map((host) => userDisplayName(host.user)).join(", ") ||
+    "Unassigned";
 
   return {
     id: session.publicId,
@@ -215,13 +298,19 @@ function mapSessionToDto(
     topic: session.title,
     day: dayOfWeekToKey(session.startsAt.getDay()),
     dateLabel: formatSessionDateLabel(session.startsAt, now),
+    date: formatDateOnlyLocal(session.startsAt),
     startTime: formatDateTimeLabel(session.startsAt),
     endTime: formatDateTimeLabel(session.endsAt),
+    startTimeInput: minutesToTimeInput(sessionStartMinute),
+    endTimeInput: minutesToTimeInput(sessionEndMinute),
     startHour: decimalHourFromDate(session.startsAt),
     endHour: decimalHourFromDate(session.endsAt),
     location: sessionLocation,
     mode: inferLocationMode(sessionLocation),
     accent: accentForType(session.type),
+    isRecurringOccurrence,
+    hostPublicIds: session.hosts.map((host) => host.user.publicId),
+    hostLabel,
     hasOverride,
     overrideLocation: hasLocationOverride ? sessionLocation : undefined,
   };
@@ -255,6 +344,34 @@ async function resolveHostRows(
   }
 
   return hosts;
+}
+
+async function listOfferingStaff(
+  offeringId: number,
+): Promise<ScheduleStaffDto[]> {
+  const members = await prisma.offeringMember.findMany({
+    where: {
+      offeringId,
+      role: { in: ["INSTRUCTOR", "TA"] },
+    },
+    include: {
+      user: {
+        select: {
+          publicId: true,
+          firstName: true,
+          lastName: true,
+          utorid: true,
+        },
+      },
+    },
+    orderBy: [{ role: "asc" }, { user: { lastName: "asc" } }],
+  });
+
+  return members.map((member) => ({
+    publicId: member.user.publicId,
+    name: userDisplayName(member.user),
+    role: member.role,
+  }));
 }
 
 export async function createRecurringBlock(
@@ -378,10 +495,7 @@ export async function createOneTimeSession(
         location: input.location ?? null,
         status: "SCHEDULED",
       },
-      include: {
-        offering: { include: { course: true } },
-        schedule: true,
-      },
+      include: sessionInclude,
     });
 
     if (hosts.length > 0) {
@@ -391,6 +505,11 @@ export async function createOneTimeSession(
           userId: host.userId,
           role: host.role,
         })),
+      });
+
+      return tx.officeHourSession.findUniqueOrThrow({
+        where: { id: created.id },
+        include: sessionInclude,
       });
     }
 
@@ -419,14 +538,12 @@ export async function listScheduleWeek(
       startsAt: { gte: weekStart, lt: weekEnd },
       status: { not: "CANCELLED" },
     },
-    include: {
-      offering: { include: { course: true } },
-      schedule: true,
-    },
+    include: sessionInclude,
     orderBy: { startsAt: "asc" },
   });
 
   const rules = await listRecurringRules(userId, offeringPublicId);
+  const staff = await listOfferingStaff(access.offeringId);
 
   return {
     access,
@@ -435,6 +552,7 @@ export async function listScheduleWeek(
     calendarDays: buildWeekCalendarDays(weekStart),
     sessions: sessions.map((s) => mapSessionToDto(s, access.courseCode)),
     rules,
+    staff,
   };
 }
 
@@ -624,10 +742,7 @@ export async function updateSession(
 ) {
   const existing = await prisma.officeHourSession.findUnique({
     where: { publicId: sessionPublicId },
-    include: {
-      offering: { include: { course: true } },
-      schedule: true,
-    },
+    include: sessionInclude,
   });
 
   if (!existing) {
@@ -636,41 +751,80 @@ export async function updateSession(
 
   await requireScheduleMutate(userId, existing.offering.publicId);
 
+  const timeChanged =
+    patch.date !== undefined ||
+    patch.startTime !== undefined ||
+    patch.endTime !== undefined;
+
   let startsAt = existing.startsAt;
   let endsAt = existing.endsAt;
 
-  if (patch.date || patch.startTime) {
-    const day = patch.date
-      ? parseIsoDateOnly(patch.date)
-      : new Date(existing.startsAt);
-    assertOfficeHourWeekday(day);
-    const startMinute = patch.startTime
-      ? parseTimeToMinutes(patch.startTime)
-      : existing.startsAt.getHours() * 60 + existing.startsAt.getMinutes();
-    startsAt = combineDateAndMinutes(day, startMinute);
+  if (timeChanged) {
+    if (patch.date || patch.startTime) {
+      const day = patch.date
+        ? parseIsoDateOnly(patch.date)
+        : new Date(existing.startsAt);
+      assertOfficeHourWeekday(day);
+      const startMinute = patch.startTime
+        ? parseTimeToMinutes(patch.startTime)
+        : existing.startsAt.getHours() * 60 + existing.startsAt.getMinutes();
+      startsAt = combineDateAndMinutes(day, startMinute);
+    }
+
+    if (patch.endTime) {
+      const day = patch.date
+        ? parseIsoDateOnly(patch.date)
+        : new Date(startsAt);
+      endsAt = combineDateAndMinutes(day, parseTimeToMinutes(patch.endTime));
+    }
+
+    const startMinute = startsAt.getHours() * 60 + startsAt.getMinutes();
+    const endMinute = endsAt.getHours() * 60 + endsAt.getMinutes();
+    assertOfficeHourWindow(startMinute, endMinute);
+
+    await assertNoOverlappingSession(existing.offeringId, startsAt, endsAt, {
+      excludeSessionId: existing.id,
+    });
   }
 
-  if (patch.endTime) {
-    const day = patch.date ? parseIsoDateOnly(patch.date) : new Date(startsAt);
-    endsAt = combineDateAndMinutes(day, parseTimeToMinutes(patch.endTime));
-  }
+  const updated = await prisma.$transaction(async (tx) => {
+    const session = await tx.officeHourSession.update({
+      where: { id: existing.id },
+      data: {
+        ...(patch.title !== undefined ? { title: patch.title } : {}),
+        ...(patch.location !== undefined ? { location: patch.location } : {}),
+        ...(timeChanged ? { startsAt, endsAt } : {}),
+      },
+      include: sessionInclude,
+    });
 
-  const startMinute = startsAt.getHours() * 60 + startsAt.getMinutes();
-  const endMinute = endsAt.getHours() * 60 + endsAt.getMinutes();
-  assertOfficeHourWindow(startMinute, endMinute);
+    if (patch.hostUserPublicIds !== undefined) {
+      const hosts = await resolveHostRows(
+        existing.offeringId,
+        patch.hostUserPublicIds,
+      );
 
-  const updated = await prisma.officeHourSession.update({
-    where: { id: existing.id },
-    data: {
-      ...(patch.title !== undefined ? { title: patch.title } : {}),
-      ...(patch.location !== undefined ? { location: patch.location } : {}),
-      startsAt,
-      endsAt,
-    },
-    include: {
-      offering: { include: { course: true } },
-      schedule: true,
-    },
+      await tx.officeHourSessionHost.deleteMany({
+        where: { sessionId: existing.id },
+      });
+
+      if (hosts.length > 0) {
+        await tx.officeHourSessionHost.createMany({
+          data: hosts.map((host) => ({
+            sessionId: existing.id,
+            userId: host.userId,
+            role: host.role,
+          })),
+        });
+      }
+
+      return tx.officeHourSession.findUniqueOrThrow({
+        where: { id: existing.id },
+        include: sessionInclude,
+      });
+    }
+
+    return session;
   });
 
   return {
@@ -704,6 +858,12 @@ export async function getInstructorSchedulePage(
   offeringPublicId?: string,
   weekStart?: string,
 ) {
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { publicId: true },
+  });
+  const currentUserPublicId = currentUser?.publicId ?? null;
+
   const offerings = await listViewableOfferings(userId);
 
   if (offerings.length === 0) {
@@ -714,7 +874,9 @@ export async function getInstructorSchedulePage(
       calendarDays: [],
       sessions: [],
       rules: [],
+      staff: [],
       canEdit: false,
+      currentUserPublicId,
     };
   }
 
@@ -741,7 +903,9 @@ export async function getInstructorSchedulePage(
     calendarDays: week.calendarDays,
     sessions: week.sessions,
     rules: week.rules,
+    staff: week.staff,
     canEdit: selected.canEdit,
+    currentUserPublicId,
   };
 }
 

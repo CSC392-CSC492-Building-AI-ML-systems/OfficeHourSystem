@@ -13,6 +13,7 @@ import {
   createRecurringBlock,
   deleteRecurringBlock,
   updateRecurringBlock,
+  updateSession,
 } from "@/lib/queries/officeHourScheduling";
 import { expandOfficeHourSchedule } from "@/lib/scheduling/expandSchedule";
 import { ScheduleAuthError } from "@/lib/scheduling/auth";
@@ -718,6 +719,68 @@ async function main() {
       assert(
         sessions.every((session) => session.status === "CANCELLED"),
         "all sessions cancelled",
+      );
+    },
+  );
+
+  await runTest("updateSession changes time and host", async () => {
+    await cleanupAll();
+    const { offering, instructor, ta } = await setupOffering();
+    const date = futureWeekdayDate(5);
+
+    const { session } = await createOneTimeSession(instructor.id, {
+      offeringPublicId: offering.publicId,
+      title: "Editable session",
+      uiType: "drop-in",
+      date,
+      startTime: "14:00",
+      endTime: "15:00",
+      hostUserPublicIds: [instructor.publicId],
+    });
+
+    const updated = await updateSession(instructor.id, session.id, {
+      startTime: "15:00",
+      endTime: "16:00",
+      hostUserPublicIds: [ta.publicId],
+    });
+
+    assertEqual(updated.session.startTimeInput, "15:00", "start time updated");
+    assertEqual(updated.session.endTimeInput, "16:00", "end time updated");
+    assertEqual(updated.session.hostPublicIds, [ta.publicId], "host updated");
+    assert(updated.session.hasOverride !== true, "one-time is not an override");
+  });
+
+  await runTest(
+    "updateSession time override detected on recurring session",
+    async () => {
+      await cleanupAll();
+      const { offering, instructor } = await setupOffering();
+
+      await createRecurringBlock(instructor.id, {
+        offeringPublicId: offering.publicId,
+        title: "Weekly OH",
+        uiType: "drop-in",
+        weekdayKeys: ["wed"],
+        startTime: "14:00",
+        endTime: "15:00",
+        validFrom: "2026-06-10",
+        validUntil: "2026-06-10",
+      });
+
+      const session = await prisma.officeHourSession.findFirstOrThrow({
+        where: { offeringId: offering.id },
+      });
+
+      const updated = await updateSession(instructor.id, session.publicId, {
+        startTime: "15:00",
+        endTime: "16:00",
+      });
+
+      assertEqual(updated.session.hasOverride, true, "time override flagged");
+      assertEqual(
+        updated.session.startTimeInput,
+        "15:00",
+        "start time updated",
       );
     },
   );
