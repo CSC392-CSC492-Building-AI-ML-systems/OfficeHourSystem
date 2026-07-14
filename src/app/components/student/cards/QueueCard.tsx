@@ -2,18 +2,22 @@ import { Globe, MapPin, UserRound } from "lucide-react";
 import { InterestedButton } from "./InterestedButton";
 
 interface QueueCardProps {
+  sessionId: number;
   sessionPublicId: string;
   title: string;
   location: string;
   courseCode: string;
   isOnline?: boolean;
+  isInterested?: boolean;
 }
 
 export function QueueCard({
+  sessionId,
   title,
   location,
   courseCode,
   isOnline = false,
+  isInterested = false,
 }: QueueCardProps) {
   return (
     <div className="rounded-2xl border border-[#d8e5f2] bg-[#f5faff] p-4">
@@ -40,7 +44,10 @@ export function QueueCard({
           </p>
         </div>
 
-        <InterestedButton />
+        <InterestedButton
+          sessionId={sessionId}
+          initiallyInterested={isInterested}
+        />
       </div>
     </div>
   );

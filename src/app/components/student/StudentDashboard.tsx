@@ -77,11 +77,13 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
                   {dropIn.map((s) => (
                     <DropInCard
                       key={s.sessionPublicId}
+                      sessionId={s.sessionId}
                       sessionPublicId={s.sessionPublicId}
                       title={s.title}
                       time={formatTime(s.startsAt, s.endsAt)}
                       location={s.location}
                       courseCode={s.courseCode}
+                      isInterested={s.isInterested}
                     />
                   ))}
                 </div>
@@ -112,6 +114,7 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
                   {debugging.map((s) => (
                     <QueueCard
                       key={s.sessionPublicId}
+                      sessionId={s.sessionId}
                       sessionPublicId={s.sessionPublicId}
                       title={s.title}
                       location={s.location}
@@ -120,6 +123,7 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
                         s.location.toLowerCase().includes("online") ||
                         s.location.toLowerCase().includes("zoom")
                       }
+                      isInterested={s.isInterested}
                     />
                   ))}
                 </div>
@@ -149,9 +153,11 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
                   {group.map((s) => (
                     <GroupTopicCard
                       key={s.sessionPublicId}
+                      sessionId={s.sessionId}
                       topic={s.title}
                       timeString={formatTime(s.startsAt, s.endsAt)}
                       courseCode={s.courseCode}
+                      isInterested={s.isInterested}
                     />
                   ))}
                 </div>

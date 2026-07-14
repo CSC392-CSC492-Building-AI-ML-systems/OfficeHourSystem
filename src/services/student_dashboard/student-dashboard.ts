@@ -5,6 +5,7 @@ import {
 import { getTodaySessionsForStudent } from "@/lib/queries/student_dashboard/student-dashboard";
 
 export type StudentDashboardSessionDto = {
+  sessionId: number;
   sessionPublicId: string;
   type: "REGULAR" | "DEBUGGING" | "GROUP";
   title: string;
@@ -13,6 +14,7 @@ export type StudentDashboardSessionDto = {
   endsAt: string;
   status: string;
   courseCode: string;
+  isInterested: boolean;
 };
 
 export async function getStudentDashboardService(): Promise<
@@ -25,6 +27,7 @@ export async function getStudentDashboardService(): Promise<
   const sessions = await getTodaySessionsForStudent(userId);
 
   return sessions.map((s) => ({
+    sessionId: s.id,
     sessionPublicId: s.publicId,
     type: s.type as "REGULAR" | "DEBUGGING" | "GROUP",
     title: s.title,
@@ -33,5 +36,6 @@ export async function getStudentDashboardService(): Promise<
     endsAt: s.endsAt.toISOString(),
     status: s.status,
     courseCode: s.offering.course.code,
+    isInterested: s.interests.length > 0,
   }));
 }

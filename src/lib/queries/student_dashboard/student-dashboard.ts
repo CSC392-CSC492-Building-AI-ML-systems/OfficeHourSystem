@@ -22,6 +22,7 @@ export async function getTodaySessionsForStudent(userId: number) {
       status: { in: ["SCHEDULED", "ACTIVE", "DELAYED"] },
     },
     select: {
+      id: true,
       publicId: true,
       title: true,
       type: true,
@@ -30,6 +31,10 @@ export async function getTodaySessionsForStudent(userId: number) {
       endsAt: true,
       status: true,
       offering: { select: { course: { select: { code: true } } } },
+      interests: {
+        where: { userId },
+        select: { id: true },
+      },
     },
     orderBy: { startsAt: "asc" },
   });

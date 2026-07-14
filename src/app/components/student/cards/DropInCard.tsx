@@ -2,18 +2,22 @@ import { Clock3, MapPin, UserRound } from "lucide-react";
 import { InterestedButton } from "./InterestedButton";
 
 interface DropInCardProps {
+  sessionId: number;
   sessionPublicId: string;
   title: string;
   time: string;
   location?: string;
   courseCode: string;
+  isInterested?: boolean;
 }
 
 export function DropInCard({
+  sessionId,
   title,
   time,
   location,
   courseCode,
+  isInterested = false,
 }: DropInCardProps) {
   return (
     <div className="rounded-2xl border border-[#d8e5f2] bg-[#f5faff] p-4">
@@ -41,7 +45,10 @@ export function DropInCard({
           </div>
         </div>
 
-        <InterestedButton />
+        <InterestedButton
+          sessionId={sessionId}
+          initiallyInterested={isInterested}
+        />
       </div>
     </div>
   );
