@@ -1,16 +1,33 @@
 import Link from "next/link";
-import { Bug, CalendarDays, Users } from "lucide-react";
 import { Navbar } from "./Navbar";
-import { DropInCard } from "./cards/DropInCard";
 import { FeatureBanner } from "./cards/FeatureBanner";
-import { GroupTopicCard } from "./cards/GroupTopicCard";
-import { QueueCard } from "./cards/QueueCard";
+import { SessionRow } from "./cards/SessionRow";
 import type { StudentDashboardSessionDto } from "@/services/student_dashboard/student-dashboard";
 
-const columnBaseClass =
-  "rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]";
+function dayKey(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
 
-function formatTime(startsAt: string, endsAt: string) {
+function formatDayHeader(iso: string) {
+  const date = new Date(iso);
+  const today = new Date();
+  const isToday =
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate();
+
+  const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
+  const monthDay = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+
+  if (isToday) return `Today · ${weekday} ${monthDay}`;
+  return `${weekday} · ${monthDay}`;
+}
+
+function formatTimeRange(startsAt: string, endsAt: string) {
   const opts: Intl.DateTimeFormatOptions = {
     hour: "numeric",
     minute: "2-digit",
@@ -19,19 +36,43 @@ function formatTime(startsAt: string, endsAt: string) {
   return `${new Date(startsAt).toLocaleTimeString("en-US", opts)} – ${new Date(endsAt).toLocaleTimeString("en-US", opts)}`;
 }
 
+function groupSessionsByDay(sessions: StudentDashboardSessionDto[]) {
+  const groups: {
+    key: string;
+    label: string;
+    sessions: StudentDashboardSessionDto[];
+  }[] = [];
+  const indexByKey = new Map<string, number>();
+
+  for (const session of sessions) {
+    const key = dayKey(session.startsAt);
+    const existing = indexByKey.get(key);
+    if (existing === undefined) {
+      indexByKey.set(key, groups.length);
+      groups.push({
+        key,
+        label: formatDayHeader(session.startsAt),
+        sessions: [session],
+      });
+    } else {
+      groups[existing].sessions.push(session);
+    }
+  }
+
+  return groups;
+}
+
 type Props = {
   firstName: string;
   sessions: StudentDashboardSessionDto[];
 };
 
 export default function StudentDashboard({ firstName, sessions }: Props) {
-  const dropIn = sessions.filter((s) => s.type === "REGULAR");
-  const debugging = sessions.filter((s) => s.type === "DEBUGGING");
-  const group = sessions.filter((s) => s.type === "GROUP");
+  const days = groupSessionsByDay(sessions);
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
-      <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         {/* Inside a course: queue status is reached from the student page, not here */}
         <Navbar showQueueLink={false} />
 
@@ -48,115 +89,45 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
               Welcome back, {firstName}!
             </h1>
             <p className="text-base text-slate-600">
-              Today&apos;s office hours across your enrolled courses.
+              Upcoming office hours for the next week across your enrolled
+              courses.
             </p>
           </section>
 
-          <section className="grid gap-6 lg:grid-cols-3">
-            <div className={columnBaseClass}>
-              <div className="mb-5 flex items-center gap-3">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#1e4fa1]">
-                  <CalendarDays className="h-5 w-5" />
-                </span>
-                <div>
-                  <h2 className="text-xl font-semibold text-[#071f41]">
-                    Drop-In Office Hours
-                  </h2>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Open-door sessions for quick questions and conceptual
-                    clarification.
-                  </p>
-                </div>
+          <section>
+            {days.length === 0 ? (
+              <p className="rounded-3xl border border-slate-200/80 bg-white px-6 py-10 text-center text-sm text-slate-400 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
+                No office hours scheduled for the next week.
+              </p>
+            ) : (
+              <div className="max-h-[min(40rem,70vh)] overflow-y-auto overscroll-contain rounded-3xl border border-slate-200/80 bg-white shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
+                {days.map((day, dayIndex) => (
+                  <div key={day.key}>
+                    <h2 className="sticky top-0 z-10 bg-white px-4 pb-3 pt-4 text-sm font-semibold uppercase tracking-widest text-[#071f41] sm:px-5 sm:pt-5">
+                      {day.label}
+                    </h2>
+                    <div
+                      className={`space-y-3 px-4 sm:px-5 ${
+                        dayIndex === days.length - 1 ? "pb-4 sm:pb-5" : "pb-6"
+                      }`}
+                    >
+                      {day.sessions.map((s) => (
+                        <SessionRow
+                          key={s.sessionPublicId}
+                          sessionId={s.sessionId}
+                          type={s.type}
+                          courseCode={s.courseCode}
+                          title={s.title}
+                          time={formatTimeRange(s.startsAt, s.endsAt)}
+                          location={s.location}
+                          isInterested={s.isInterested}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-              {dropIn.length === 0 ? (
-                <p className="mt-2 text-sm text-slate-400">
-                  No drop-in sessions today.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {dropIn.map((s) => (
-                    <DropInCard
-                      key={s.sessionPublicId}
-                      sessionPublicId={s.sessionPublicId}
-                      title={s.title}
-                      time={formatTime(s.startsAt, s.endsAt)}
-                      location={s.location}
-                      courseCode={s.courseCode}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className={`${columnBaseClass} border-l-4 border-l-[#c8102e]`}>
-              <div className="mb-5 flex items-center gap-3">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fdecef] text-[#c8102e]">
-                  <Bug className="h-5 w-5" />
-                </span>
-                <div>
-                  <h2 className="text-xl font-semibold text-[#071f41]">
-                    Debugging Queue
-                  </h2>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Join a TA queue for deeper 1:1 support on blockers and code
-                    issues.
-                  </p>
-                </div>
-              </div>
-              {debugging.length === 0 ? (
-                <p className="mt-2 text-sm text-slate-400">
-                  No debugging queues today.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {debugging.map((s) => (
-                    <QueueCard
-                      key={s.sessionPublicId}
-                      sessionPublicId={s.sessionPublicId}
-                      title={s.title}
-                      location={s.location}
-                      courseCode={s.courseCode}
-                      isOnline={
-                        s.location.toLowerCase().includes("online") ||
-                        s.location.toLowerCase().includes("zoom")
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className={columnBaseClass}>
-              <div className="mb-5 flex items-center gap-3">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#edf7ff] text-[#0f5f8f]">
-                  <Users className="h-5 w-5" />
-                </span>
-                <div>
-                  <h2 className="text-xl font-semibold text-[#071f41]">
-                    Group Topic Sessions
-                  </h2>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Small-group workshops focused on core programming concepts.
-                  </p>
-                </div>
-              </div>
-              {group.length === 0 ? (
-                <p className="mt-2 text-sm text-slate-400">
-                  No group sessions today.
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {group.map((s) => (
-                    <GroupTopicCard
-                      key={s.sessionPublicId}
-                      topic={s.title}
-                      timeString={formatTime(s.startsAt, s.endsAt)}
-                      courseCode={s.courseCode}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </section>
 
           <FeatureBanner

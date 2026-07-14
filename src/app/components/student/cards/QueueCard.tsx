@@ -1,19 +1,25 @@
-import { Globe, MapPin, UserRound } from "lucide-react";
+import { Clock3, Globe, MapPin, UserRound } from "lucide-react";
 import { InterestedButton } from "./InterestedButton";
 
 interface QueueCardProps {
+  sessionId: number;
   sessionPublicId: string;
   title: string;
+  time: string;
   location: string;
   courseCode: string;
   isOnline?: boolean;
+  isInterested?: boolean;
 }
 
 export function QueueCard({
+  sessionId,
   title,
+  time,
   location,
   courseCode,
   isOnline = false,
+  isInterested = false,
 }: QueueCardProps) {
   return (
     <div className="rounded-2xl border border-[#d8e5f2] bg-[#f5faff] p-4">
@@ -26,6 +32,10 @@ export function QueueCard({
             <UserRound className="h-4 w-4 text-slate-400" />
             <span>{title}</span>
           </h3>
+          <p className="flex items-center gap-2 text-sm text-slate-600">
+            <Clock3 className="h-4 w-4 text-slate-400" />
+            <span>{time}</span>
+          </p>
           <p
             className={`flex items-center gap-2 text-sm font-medium ${
               isOnline ? "text-[#2563eb]" : "text-[#c8102e]"
@@ -40,7 +50,10 @@ export function QueueCard({
           </p>
         </div>
 
-        <InterestedButton />
+        <InterestedButton
+          sessionId={sessionId}
+          initiallyInterested={isInterested}
+        />
       </div>
     </div>
   );

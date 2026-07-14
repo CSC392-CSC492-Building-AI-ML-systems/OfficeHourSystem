@@ -2,15 +2,19 @@ import { Clock3, Users } from "lucide-react";
 import { InterestedButton } from "./InterestedButton";
 
 interface GroupTopicCardProps {
+  sessionId: number;
   topic: string;
   timeString: string;
   courseCode: string;
+  isInterested?: boolean;
 }
 
 export function GroupTopicCard({
+  sessionId,
   topic,
   timeString,
   courseCode,
+  isInterested = false,
 }: GroupTopicCardProps) {
   return (
     <div className="flex items-start justify-between gap-3 rounded-2xl border border-[#d8e5f2] bg-[#f5faff] p-4">
@@ -28,7 +32,10 @@ export function GroupTopicCard({
         </p>
       </div>
 
-      <InterestedButton />
+      <InterestedButton
+        sessionId={sessionId}
+        initiallyInterested={isInterested}
+      />
     </div>
   );
 }
