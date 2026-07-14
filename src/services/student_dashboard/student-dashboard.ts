@@ -2,7 +2,7 @@ import {
   getRequestSession,
   parseSessionUserId,
 } from "@/lib/auth/getRequestSession";
-import { getTodaySessionsForStudent } from "@/lib/queries/student_dashboard/student-dashboard";
+import { getUpcomingSessionsForStudent } from "@/lib/queries/student_dashboard/student-dashboard";
 
 export type StudentDashboardSessionDto = {
   sessionId: number;
@@ -24,7 +24,7 @@ export async function getStudentDashboardService(): Promise<
   if (!session) throw new Error("Unauthorized");
   const userId = parseSessionUserId(session);
 
-  const sessions = await getTodaySessionsForStudent(userId);
+  const sessions = await getUpcomingSessionsForStudent(userId);
 
   return sessions.map((s) => ({
     sessionId: s.id,

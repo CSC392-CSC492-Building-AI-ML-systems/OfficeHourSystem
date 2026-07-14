@@ -10,13 +10,16 @@ import type { StudentDashboardSessionDto } from "@/services/student_dashboard/st
 const columnBaseClass =
   "rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]";
 
-function formatTime(startsAt: string, endsAt: string) {
-  const opts: Intl.DateTimeFormatOptions = {
+function formatSessionWhen(startsAt: string, endsAt: string) {
+  const start = new Date(startsAt);
+  const end = new Date(endsAt);
+  const weekday = start.toLocaleDateString("en-US", { weekday: "short" });
+  const timeOpts: Intl.DateTimeFormatOptions = {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
   };
-  return `${new Date(startsAt).toLocaleTimeString("en-US", opts)} – ${new Date(endsAt).toLocaleTimeString("en-US", opts)}`;
+  return `${weekday} · ${start.toLocaleTimeString("en-US", timeOpts)} – ${end.toLocaleTimeString("en-US", timeOpts)}`;
 }
 
 type Props = {
@@ -48,7 +51,8 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
               Welcome back, {firstName}!
             </h1>
             <p className="text-base text-slate-600">
-              Today&apos;s office hours across your enrolled courses.
+              Upcoming office hours for the next week across your enrolled
+              courses.
             </p>
           </section>
 
@@ -70,7 +74,7 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
               </div>
               {dropIn.length === 0 ? (
                 <p className="mt-2 text-sm text-slate-400">
-                  No drop-in sessions today.
+                  No drop-in sessions this week.
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -80,7 +84,7 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
                       sessionId={s.sessionId}
                       sessionPublicId={s.sessionPublicId}
                       title={s.title}
-                      time={formatTime(s.startsAt, s.endsAt)}
+                      time={formatSessionWhen(s.startsAt, s.endsAt)}
                       location={s.location}
                       courseCode={s.courseCode}
                       isInterested={s.isInterested}
@@ -107,7 +111,7 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
               </div>
               {debugging.length === 0 ? (
                 <p className="mt-2 text-sm text-slate-400">
-                  No debugging queues today.
+                  No debugging queues this week.
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -117,6 +121,7 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
                       sessionId={s.sessionId}
                       sessionPublicId={s.sessionPublicId}
                       title={s.title}
+                      time={formatSessionWhen(s.startsAt, s.endsAt)}
                       location={s.location}
                       courseCode={s.courseCode}
                       isOnline={
@@ -146,7 +151,7 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
               </div>
               {group.length === 0 ? (
                 <p className="mt-2 text-sm text-slate-400">
-                  No group sessions today.
+                  No group sessions this week.
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -155,7 +160,7 @@ export default function StudentDashboard({ firstName, sessions }: Props) {
                       key={s.sessionPublicId}
                       sessionId={s.sessionId}
                       topic={s.title}
-                      timeString={formatTime(s.startsAt, s.endsAt)}
+                      timeString={formatSessionWhen(s.startsAt, s.endsAt)}
                       courseCode={s.courseCode}
                       isInterested={s.isInterested}
                     />
