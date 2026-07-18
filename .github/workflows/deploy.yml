@@ -1,0 +1,12 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Deploy
+        run: bash "$HOME/OfficeHourSystem/scripts/deploy.sh"
