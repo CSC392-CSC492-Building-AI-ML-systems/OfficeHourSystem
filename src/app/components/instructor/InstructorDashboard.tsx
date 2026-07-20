@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { UserPlus } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, UserPlus } from "lucide-react";
 import {
   addOfferingTaAction,
   bulkAddOfferingTasAction,
@@ -124,9 +125,21 @@ export default function InstructorDashboard({
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <Navbar activeItem="dashboard" offeringPublicId={offeringPublicId} />
+        <Navbar
+          activeItem="dashboard"
+          offeringPublicId={offeringPublicId}
+          courseLabel={courseLabel}
+        />
 
-        <main className="mt-10 space-y-8">
+        <Link
+          href="/admin"
+          className="mt-6 inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Admin
+        </Link>
+
+        <main className="mt-6 space-y-8">
           <section className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">

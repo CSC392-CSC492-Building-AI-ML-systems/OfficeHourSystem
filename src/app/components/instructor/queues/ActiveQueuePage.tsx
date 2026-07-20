@@ -244,7 +244,11 @@ export default function ActiveQueuePage({
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <Navbar activeItem="queues" offeringPublicId={offeringPublicId} />
+        <Navbar
+          activeItem="queues"
+          offeringPublicId={offeringPublicId}
+          courseLabel={courseLabel}
+        />
 
         <main className="mt-10 space-y-8">
           {!sessionId ? (

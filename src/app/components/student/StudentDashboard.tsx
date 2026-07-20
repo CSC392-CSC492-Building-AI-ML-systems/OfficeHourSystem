@@ -65,16 +65,21 @@ function groupSessionsByDay(sessions: StudentDashboardSessionDto[]) {
 type Props = {
   firstName: string;
   sessions: StudentDashboardSessionDto[];
+  courseLabel?: string;
 };
 
-export default function StudentDashboard({ firstName, sessions }: Props) {
+export default function StudentDashboard({
+  firstName,
+  sessions,
+  courseLabel,
+}: Props) {
   const days = groupSessionsByDay(sessions);
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         {/* Inside a course: queue status is reached from the student page, not here */}
-        <Navbar showQueueLink={false} />
+        <Navbar showQueueLink={false} courseLabel={courseLabel} />
 
         <Link
           href="/student"

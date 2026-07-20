@@ -35,7 +35,11 @@ export default async function StudentPage({ params }: PageProps) {
 
   return (
     <main>
-      <StudentDashboard firstName={pageContext.firstName} sessions={sessions} />
+      <StudentDashboard
+        firstName={pageContext.firstName}
+        sessions={sessions}
+        courseLabel={pageContext.courseLabel}
+      />
     </main>
   );
 }

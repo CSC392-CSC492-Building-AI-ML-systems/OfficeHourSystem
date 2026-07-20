@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 
 import { StudentPortal } from "@/app/components/student/StudentPortal";
-import { userCanAccessAdmin } from "@/lib/auth/canAccessAdmin";
 import {
   getRequestSession,
   parseSessionUserId,
@@ -27,7 +26,6 @@ export default async function StudentPortalPage({ searchParams }: PageProps) {
 
   const userId = parseSessionUserId(session);
   const offerings = await listStudentOfferings(userId);
-  const canAccessAdmin = await userCanAccessAdmin(userId, session.utorid);
 
   return (
     <StudentPortal
@@ -35,7 +33,6 @@ export default async function StudentPortalPage({ searchParams }: PageProps) {
       firstName={session.firstName}
       lastName={session.lastName}
       offerings={offerings}
-      canAccessAdmin={canAccessAdmin}
     />
   );
 }

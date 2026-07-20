@@ -1,15 +1,13 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, ListOrdered } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, ListOrdered } from "lucide-react";
 
 import type { StudentOfferingListItem } from "@/lib/queries/student/offerings";
-import { FeatureBanner } from "./cards/FeatureBanner";
 
 type StudentPortalProps = {
   utorid: string;
   firstName: string;
   lastName: string;
   offerings: StudentOfferingListItem[];
-  canAccessAdmin: boolean;
 };
 
 export function StudentPortal({
@@ -17,11 +15,18 @@ export function StudentPortal({
   firstName,
   lastName,
   offerings,
-  canAccessAdmin,
 }: StudentPortalProps) {
   return (
     <main className="min-h-screen bg-[#f4f7fb]">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-8 sm:px-6">
+        <Link
+          href="/login"
+          className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Login
+        </Link>
+
         <header className="rounded-[36px] border border-slate-200/80 bg-white px-8 py-8 shadow-[0_30px_80px_-40px_rgba(7,31,65,0.45)]">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#c8102e]">
             OHMS Student
@@ -34,14 +39,6 @@ export function StudentPortal({
             <span className="font-mono text-[#071f41]">{utorid}</span> (
             {firstName} {lastName})
           </p>
-          {canAccessAdmin ? (
-            <Link
-              href="/admin"
-              className="mt-4 inline-block text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
-            >
-              Go to course administration
-            </Link>
-          ) : null}
         </header>
 
         {/* Global queue status — lives here (not inside a course): one place
@@ -112,12 +109,6 @@ export function StudentPortal({
             </ul>
           )}
         </section>
-
-        <FeatureBanner
-          title="Enhance Your Learning Experience"
-          description="Our Triple-Stream system ensures you get the right support at the right time. From quick questions to deep technical debugging."
-          buttonText="How it works"
-        />
       </div>
     </main>
   );
