@@ -1,18 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Search, UserCircle } from "lucide-react";
+import { Search } from "lucide-react";
 
+import { ProfileMenu } from "@/app/components/shared/ProfileMenu";
 import { courseRouteHref } from "@/lib/offeringUrls";
 
-// Course Stats is intentionally NOT here: it is a standalone flat feature
-// (own course picker) entered from the landing page, not from a course.
+// Course Stats is intentionally NOT here: it is entered from the admin page,
+// not from a course workspace navbar.
 export type InstructorNavItem = "dashboard" | "queues" | "schedule";
 
 interface NavbarProps {
   activeItem?: InstructorNavItem;
   showSearch?: boolean;
   offeringPublicId?: string;
+  /** Course-scoped label for the profile menu, e.g. "CSC108 · Term 20265". */
+  courseLabel?: string;
 }
 
 const navPaths: Array<{
@@ -31,6 +34,7 @@ export function Navbar({
   activeItem,
   showSearch = false,
   offeringPublicId,
+  courseLabel,
 }: NavbarProps) {
   const visibleLinks = navPaths;
 
@@ -86,20 +90,7 @@ export function Navbar({
           ) : null}
 
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:text-[#071f41]"
-            >
-              <Bell className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              aria-label="Profile"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#071f41] text-white transition hover:bg-[#0f2942]"
-            >
-              <UserCircle className="h-6 w-6" />
-            </button>
+            <ProfileMenu courseLabel={courseLabel} />
           </div>
         </div>
       </div>

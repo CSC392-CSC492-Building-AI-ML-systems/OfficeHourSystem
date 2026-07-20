@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, UserCircle } from "lucide-react";
+
+import { ProfileMenu } from "@/app/components/shared/ProfileMenu";
 
 const NAV_LINKS = [
   { label: "Dashboard", href: "/student" },
@@ -13,9 +14,11 @@ type NavbarProps = {
   // Queue status is a global (cross-course) view; hide its link when this
   // navbar is rendered inside a specific course dashboard.
   showQueueLink?: boolean;
+  /** Course-scoped label for the profile menu, e.g. "CSC108 · Term 20265". */
+  courseLabel?: string;
 };
 
-export function Navbar({ showQueueLink = true }: NavbarProps) {
+export function Navbar({ showQueueLink = true, courseLabel }: NavbarProps) {
   const pathname = usePathname();
   const links = showQueueLink
     ? NAV_LINKS
@@ -54,20 +57,7 @@ export function Navbar({ showQueueLink = true }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-3 self-end md:self-auto">
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:text-[#071f41]"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            aria-label="Profile"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#071f41] text-white shadow-sm transition hover:bg-[#0f2942]"
-          >
-            <UserCircle className="h-6 w-6" />
-          </button>
+          <ProfileMenu courseLabel={courseLabel} />
         </div>
       </div>
     </header>

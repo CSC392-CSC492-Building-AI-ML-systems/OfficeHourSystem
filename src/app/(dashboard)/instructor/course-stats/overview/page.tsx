@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { BarChart3, ChevronRight } from "lucide-react";
+import { ArrowLeft, BarChart3, ChevronRight } from "lucide-react";
 
 import CourseOverviewPage from "@/app/components/instructor/stats/CourseOverviewPage";
 import { Navbar } from "@/app/components/instructor/Navbar";
@@ -37,6 +37,13 @@ export default async function CourseOverviewRoute({ searchParams }: PageProps) {
           <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-6 sm:px-6 lg:px-8">
             <Navbar />
             <main className="mt-10 space-y-8">
+              <Link
+                href="/admin"
+                className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Admin
+              </Link>
               <section className="space-y-2">
                 <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
                   Course-level Overview

@@ -122,16 +122,24 @@ export default function SessionStatsListPage({
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <Navbar />
+        <Navbar courseLabel={`${courseCode} · Term ${termCode}`} />
 
         <main className="mt-10 space-y-8">
-          <Link
-            href="/instructor/course-stats/overview"
-            className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-[#071f41]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Choose another course
-          </Link>
+          <div className="flex flex-wrap items-center gap-4">
+            <Link
+              href="/admin"
+              className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Admin
+            </Link>
+            <Link
+              href="/instructor/course-stats/overview"
+              className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-[#071f41]"
+            >
+              Choose another course
+            </Link>
+          </div>
 
           <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
