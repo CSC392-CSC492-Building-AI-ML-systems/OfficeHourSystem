@@ -65,7 +65,7 @@ export function AdminDashboard({
             {firstName} {lastName})
           </p>
           <Link
-            href="/instructor/course-stats/overview"
+            href="/course/stats"
             className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#071f41] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
           >
             <BarChart3 className="h-4 w-4" />

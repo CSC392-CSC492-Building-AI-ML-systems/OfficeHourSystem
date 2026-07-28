@@ -12,13 +12,13 @@ interface PageProps {
 export default async function SessionStatsRoute({ searchParams }: PageProps) {
   const session = await getRequestSession();
   if (!session) {
-    redirect("/api/auth/session?redirect=/instructor/course-stats/overview");
+    redirect("/api/auth/session?redirect=/course/stats");
   }
 
   // A course must be chosen first; otherwise go pick one.
   const { offering } = await searchParams;
   if (!offering) {
-    redirect("/instructor/course-stats/overview");
+    redirect("/course/stats");
   }
 
   // Service enforces INSTRUCTOR-of-this-offering; any failure → back to picker.
@@ -26,7 +26,7 @@ export default async function SessionStatsRoute({ searchParams }: PageProps) {
   try {
     data = await getOfferingSessionStatsService(offering);
   } catch {
-    redirect("/instructor/course-stats/overview");
+    redirect("/course/stats");
   }
 
   return (

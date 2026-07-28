@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 
 import { CoursePicker } from "@/app/components/course/CoursePicker";
+import {
+  COURSE_NAV_END_ITEMS,
+  COURSE_NAV_ITEMS,
+} from "@/app/components/course/courseNav";
 import { Navbar } from "@/app/components/shared/Navbar";
 import {
   getRequestSession,
@@ -30,10 +34,8 @@ export default async function CoursePage() {
         <Navbar
           brandHref="/course"
           activeKey="courses"
-          items={[
-            { key: "courses", label: "Courses", href: "/course" },
-            { key: "queue", label: "My Queue", href: "/course/my-queue" },
-          ]}
+          items={COURSE_NAV_ITEMS}
+          endItems={COURSE_NAV_END_ITEMS}
         />
 
         <header className="mb-8 mt-10">

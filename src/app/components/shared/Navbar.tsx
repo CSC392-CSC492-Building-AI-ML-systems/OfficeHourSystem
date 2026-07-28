@@ -13,8 +13,10 @@ export type AppNavItem = {
 };
 
 type NavbarProps = {
-  /** Nav links; omit or pass [] for brand + profile only. */
+  /** Nav links on the left (next to the brand); omit or pass [] for none. */
   items?: AppNavItem[];
+  /** Nav links on the right (before profile); omit or pass [] for none. */
+  endItems?: AppNavItem[];
   /** Highlight matching item.key; omit to highlight none. */
   activeKey?: string;
   brandHref?: string;
@@ -25,8 +27,43 @@ type NavbarProps = {
   trailing?: ReactNode;
 };
 
+function NavLinks({
+  items,
+  activeKey,
+}: {
+  items: AppNavItem[];
+  activeKey?: string;
+}) {
+  if (items.length === 0) return null;
+
+  return (
+    <nav className="flex flex-wrap items-center gap-6 text-sm font-medium">
+      {items.map((link) => {
+        const isActive = link.key === activeKey;
+        return (
+          <Link
+            key={link.key}
+            href={link.href}
+            className={`relative pb-3 transition ${
+              isActive
+                ? "text-[#071f41]"
+                : "text-slate-500 hover:text-[#071f41]"
+            }`}
+          >
+            {link.label}
+            {isActive ? (
+              <span className="absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-[#c8102e]" />
+            ) : null}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function Navbar({
   items = [],
+  endItems = [],
   activeKey,
   brandHref = "/",
   courseLabel,
@@ -44,29 +81,7 @@ export function Navbar({
             HourSpace
           </Link>
 
-          {items.length > 0 ? (
-            <nav className="flex flex-wrap items-center gap-6 text-sm font-medium">
-              {items.map((link) => {
-                const isActive = link.key === activeKey;
-                return (
-                  <Link
-                    key={link.key}
-                    href={link.href}
-                    className={`relative pb-3 transition ${
-                      isActive
-                        ? "text-[#071f41]"
-                        : "text-slate-500 hover:text-[#071f41]"
-                    }`}
-                  >
-                    {link.label}
-                    {isActive ? (
-                      <span className="absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-[#c8102e]" />
-                    ) : null}
-                  </Link>
-                );
-              })}
-            </nav>
-          ) : null}
+          <NavLinks items={items} activeKey={activeKey} />
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:self-end xl:self-auto">
@@ -81,7 +96,8 @@ export function Navbar({
             </label>
           ) : null}
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-6">
+            <NavLinks items={endItems} activeKey={activeKey} />
             {trailing ?? <ProfileMenu courseLabel={courseLabel} />}
           </div>
         </div>

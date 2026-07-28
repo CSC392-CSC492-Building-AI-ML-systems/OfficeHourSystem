@@ -134,7 +134,7 @@ export default function SessionStatsListPage({
               Back to Admin
             </Link>
             <Link
-              href="/instructor/course-stats/overview"
+              href="/course/stats"
               className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-[#071f41]"
             >
               Choose another course
@@ -156,7 +156,7 @@ export default function SessionStatsListPage({
 
             <div className="flex flex-wrap items-center gap-3">
               <Link
-                href={`/instructor/course-stats/overview?offering=${offeringPublicId}`}
+                href={`/course/stats?offering=${offeringPublicId}`}
                 className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-[#071f41] transition hover:border-slate-300"
               >
                 <LayoutGrid className="h-4 w-4" />
