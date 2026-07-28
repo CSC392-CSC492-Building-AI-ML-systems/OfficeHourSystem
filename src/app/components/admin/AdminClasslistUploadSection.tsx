@@ -14,7 +14,7 @@ import { CLASSLIST_CSV_HEADERS } from "@/lib/csv/parseCSV";
 import { instructorDashboardHref } from "@/lib/offeringUrls";
 
 type AdminClasslistUploadSectionProps = {
-  onSuccess: () => void;
+  onSuccess?: () => void;
 };
 
 export function AdminClasslistUploadSection({
@@ -90,7 +90,7 @@ export function AdminClasslistUploadSection({
       );
       setCreatedOfferingHref(instructorDashboardHref(result.offeringPublicId));
       resetSelection();
-      onSuccess();
+      onSuccess?.();
     });
   };
 
