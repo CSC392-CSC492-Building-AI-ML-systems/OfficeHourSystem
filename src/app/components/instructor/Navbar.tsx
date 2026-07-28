@@ -6,8 +6,6 @@ import {
 } from "@/app/components/shared/Navbar";
 import { courseRouteHref } from "@/lib/offeringUrls";
 
-// Course Stats is intentionally NOT here: it is entered from the admin page,
-// not from a course workspace navbar.
 export type InstructorNavItem = "dashboard" | "queues" | "schedule";
 
 const INSTRUCTOR_NAV: Array<{
@@ -41,9 +39,20 @@ export function Navbar({
     href: offeringPublicId ? courseRouteHref(path, offeringPublicId) : path,
   }));
 
+  const endItems: AppNavItem[] = offeringPublicId
+    ? [
+        {
+          key: "stats",
+          label: "Course Stats",
+          href: `/course/stats?offering=${encodeURIComponent(offeringPublicId)}`,
+        },
+      ]
+    : [];
+
   return (
     <AppNavbar
       items={items}
+      endItems={endItems}
       activeKey={activeItem}
       brandHref="/admin"
       courseLabel={courseLabel}
