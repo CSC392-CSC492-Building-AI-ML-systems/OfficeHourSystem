@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Navbar } from "./Navbar";
 import { FeatureBanner } from "./cards/FeatureBanner";
 import { SessionRow } from "./cards/SessionRow";
@@ -78,24 +77,15 @@ export default function StudentDashboard({
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        {/* Inside a course: queue status is reached from the student page, not here */}
-        <Navbar showQueueLink={false} courseLabel={courseLabel} />
-
-        <Link
-          href="/student"
-          className="mt-6 inline-block text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
-        >
-          Back to my courses
-        </Link>
+        <Navbar courseLabel={courseLabel} />
 
         <main className="mt-6 space-y-8">
           <section className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
-              Welcome back, {firstName}!
+              {courseLabel ?? "Course"}
             </h1>
             <p className="text-base text-slate-600">
-              Upcoming office hours for the next week across your enrolled
-              courses.
+              Welcome back, {firstName}!
             </p>
           </section>
 

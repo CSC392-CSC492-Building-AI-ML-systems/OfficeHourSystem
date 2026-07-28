@@ -29,9 +29,7 @@ export default async function StudentPage({ params }: PageProps) {
     );
   }
 
-  // NOTE: the dashboard currently shows today's sessions across every course
-  // the student is enrolled in; scoping it to this offering is a follow-up.
-  const sessions = await getStudentDashboardService();
+  const sessions = await getStudentDashboardService(offeringPublicId);
 
   return (
     <main>
