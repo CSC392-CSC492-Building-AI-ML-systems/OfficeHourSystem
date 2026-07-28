@@ -54,7 +54,7 @@ export function Navbar({
       items={items}
       endItems={endItems}
       activeKey={activeItem}
-      brandHref="/admin"
+      brandHref={"/course"}
       courseLabel={courseLabel}
       showSearch={showSearch}
     />
