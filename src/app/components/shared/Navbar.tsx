@@ -34,7 +34,7 @@ export function Navbar({
   trailing,
 }: NavbarProps) {
   return (
-    <header className="rounded-[28px] border border-slate-200/80 bg-white px-5 py-4 shadow-[0_16px_40px_-32px_rgba(15,41,66,0.35)] sm:px-6">
+    <header className="rounded-[28px] border-2 border-[#c8102e] bg-white px-5 py-4 shadow-[0_16px_40px_-32px_rgba(15,41,66,0.35)] sm:px-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-10">
           <Link
