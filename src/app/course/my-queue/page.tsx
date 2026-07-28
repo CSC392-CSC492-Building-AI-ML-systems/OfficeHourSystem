@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 
 import {
-  COURSE_NAV_END_ITEMS,
   COURSE_NAV_ITEMS,
+  courseNavEndItems,
 } from "@/app/components/course/courseNav";
 import { StudentMyQueuePage } from "@/app/components/student/StudentMyQueuePage";
 import { Navbar } from "@/app/components/shared/Navbar";
+import { isAdmin } from "@/lib/adminList";
 import { getRequestSession } from "@/lib/auth/getRequestSession";
 import { getStudentQueueService } from "@/services/student_queue/student-queue";
 
@@ -23,7 +24,7 @@ export default async function CourseMyQueueRoute() {
         <Navbar
           brandHref="/course"
           items={COURSE_NAV_ITEMS}
-          endItems={COURSE_NAV_END_ITEMS}
+          endItems={courseNavEndItems(isAdmin(session.utorid))}
           activeKey="queue"
         />
         <main className="mt-10">

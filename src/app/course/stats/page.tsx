@@ -3,11 +3,12 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import {
-  COURSE_NAV_END_ITEMS,
   COURSE_NAV_ITEMS,
+  courseNavEndItems,
 } from "@/app/components/course/courseNav";
 import CourseOverviewPage from "@/app/components/instructor/stats/CourseOverviewPage";
 import { Navbar } from "@/app/components/shared/Navbar";
+import { isAdmin } from "@/lib/adminList";
 import { getRequestSession } from "@/lib/auth/getRequestSession";
 import {
   getCourseOverviewService,
@@ -25,9 +26,11 @@ type PageProps = {
 function StatsShell({
   children,
   courseLabel,
+  showAdmin,
 }: {
   children: ReactNode;
   courseLabel?: string;
+  showAdmin: boolean;
 }) {
   return (
     <main className="min-h-screen bg-[#f4f7fb] text-slate-900">
@@ -36,7 +39,7 @@ function StatsShell({
           brandHref="/course"
           activeKey="stats"
           items={COURSE_NAV_ITEMS}
-          endItems={COURSE_NAV_END_ITEMS}
+          endItems={courseNavEndItems(showAdmin)}
           courseLabel={courseLabel}
         />
         {children}
@@ -81,12 +84,13 @@ export default async function CourseStatsPage({ searchParams }: PageProps) {
     redirect("/api/auth/session?redirect=/course/stats");
   }
 
+  const showAdmin = isAdmin(session.utorid);
   const offerings = await listInstructorOfferingsService();
   const { offering: selected } = await searchParams;
 
   if (!selected) {
     return (
-      <StatsShell>
+      <StatsShell showAdmin={showAdmin}>
         <header className="mb-8 mt-10">
           <h1 className="text-3xl font-bold tracking-tight text-[#071f41]">
             Course Stats
@@ -126,6 +130,7 @@ export default async function CourseStatsPage({ searchParams }: PageProps) {
 
   return (
     <StatsShell
+      showAdmin={showAdmin}
       courseLabel={`${overview.courseCode} · Term ${overview.termCode}`}
     >
       <div className="mt-10">

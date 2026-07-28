@@ -2,10 +2,11 @@ import { redirect } from "next/navigation";
 
 import { CoursePicker } from "@/app/components/course/CoursePicker";
 import {
-  COURSE_NAV_END_ITEMS,
   COURSE_NAV_ITEMS,
+  courseNavEndItems,
 } from "@/app/components/course/courseNav";
 import { Navbar } from "@/app/components/shared/Navbar";
+import { isAdmin } from "@/lib/adminList";
 import {
   getRequestSession,
   parseSessionUserId,
@@ -35,7 +36,7 @@ export default async function CoursePage() {
           brandHref="/course"
           activeKey="courses"
           items={COURSE_NAV_ITEMS}
-          endItems={COURSE_NAV_END_ITEMS}
+          endItems={courseNavEndItems(isAdmin(session.utorid))}
         />
 
         <header className="mb-8 mt-10">
