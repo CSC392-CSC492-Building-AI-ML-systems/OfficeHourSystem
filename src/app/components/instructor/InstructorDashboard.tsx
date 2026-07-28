@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import {
   addOfferingTaAction,
   bulkAddOfferingTasAction,
@@ -130,14 +129,6 @@ export default function InstructorDashboard({
           offeringPublicId={offeringPublicId}
           courseLabel={courseLabel}
         />
-
-        <Link
-          href="/admin"
-          className="mt-6 inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Admin
-        </Link>
 
         <main className="mt-6 space-y-8">
           <section className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">

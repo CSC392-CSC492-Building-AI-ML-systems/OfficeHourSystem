@@ -15,8 +15,8 @@ const INSTRUCTOR_NAV: Array<{
   label: string;
   path: string;
 }> = [
-  { key: "dashboard", label: "Dashboard", path: "/instructor" },
-  { key: "queues", label: "My Queues", path: "/instructor/my-queues" },
+  { key: "dashboard", label: "Staff Management", path: "/instructor" },
+  { key: "queues", label: "Today's Sessions", path: "/instructor/my-queues" },
   { key: "schedule", label: "Schedule", path: "/instructor/schedule" },
 ];
 

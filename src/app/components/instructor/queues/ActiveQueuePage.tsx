@@ -253,7 +253,7 @@ export default function ActiveQueuePage({
         <main className="mt-10 space-y-8">
           {!sessionId ? (
             <p className="text-sm text-slate-500">
-              Missing session ID. Start a session from My Queues.
+              Missing session ID. Start a session from Today&apos;s Sessions.
             </p>
           ) : null}
 
@@ -266,7 +266,7 @@ export default function ActiveQueuePage({
               <section className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 <div className="space-y-2">
                   <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
-                    My Queue
+                    Active Session
                   </h1>
                   <p className="text-base text-slate-600">
                     {subtitle || courseLabel}
