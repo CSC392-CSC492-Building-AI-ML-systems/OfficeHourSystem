@@ -54,7 +54,7 @@ export function AdminDashboard({
 
         <header className="rounded-[36px] border border-slate-200/80 bg-white px-8 py-8 shadow-[0_30px_80px_-40px_rgba(7,31,65,0.45)]">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#c8102e]">
-            OHMS Admin
+            HourSpace Admin
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#071f41] sm:text-4xl">
             Administration

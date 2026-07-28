@@ -46,7 +46,7 @@ export function Navbar({
             href="/admin"
             className="text-2xl font-black tracking-[0.22em] text-[#071f41]"
           >
-            OHMS
+            HourSpace
           </Link>
 
           <nav className="flex flex-wrap items-center gap-6 text-sm font-medium">
