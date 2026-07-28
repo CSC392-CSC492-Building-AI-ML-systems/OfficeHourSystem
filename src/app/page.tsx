@@ -142,7 +142,7 @@ export default function Home() {
           ))}
         </div>
         <Link
-          href="/login"
+          href="/course"
           className="shrink-0 rounded-full bg-[#c8102e] px-3.5 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-[#a50d25] sm:px-4 sm:text-sm"
         >
           Login
@@ -178,7 +178,7 @@ export default function Home() {
               in one campus tool.
             </p>
             <Link
-              href="/login"
+              href="/course"
               className="mt-10 inline-flex w-fit items-center gap-3 bg-white px-7 py-4 text-sm font-bold uppercase tracking-wider text-[#071f41] transition hover:bg-[#eaf1ff]"
             >
               Login
@@ -457,7 +457,7 @@ export default function Home() {
 
         <div className="mt-16 flex justify-center">
           <Link
-            href="/login"
+            href="/course"
             className="inline-flex items-center gap-3 rounded-full bg-[#c8102e] px-10 py-4 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-[#a50d25]"
           >
             Login to HourSpace
