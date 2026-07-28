@@ -50,7 +50,14 @@ export default async function CoursePage() {
   return (
     <main className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-6 sm:px-6">
-        <Navbar brandHref="/course" />
+        <Navbar
+          brandHref="/course"
+          activeKey="courses"
+          items={[
+            { key: "courses", label: "Courses", href: "/course" },
+            { key: "queue", label: "My Queue", href: "/course/my-queue" },
+          ]}
+        />
 
         <header className="mb-8 mt-10">
           <h1 className="text-3xl font-bold tracking-tight text-[#071f41]">
