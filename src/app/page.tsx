@@ -9,6 +9,14 @@ import {
   Users,
 } from "lucide-react";
 
+const NAV_LINKS = [
+  { label: "How it works", href: "#how-it-works" },
+  // { label: "Interest", href: "#mark-interest" },
+  // { label: "Sessions", href: "#session-types" },
+  { label: "Queue", href: "#debugging-queue" },
+  { label: "Students", href: "#for-students" },
+];
+
 const HOW_IT_WORKS = [
   {
     step: "01",
@@ -108,7 +116,43 @@ const STUDENT_FEATURES = [
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#f0ebe3] text-slate-900">
-      <section className="relative overflow-hidden bg-[#071f41] text-white">
+      <nav
+        aria-label="Page sections"
+        className="fixed top-4 left-1/2 z-50 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-1 rounded-full border-2 border-[#c8102e] bg-white px-2 py-2 shadow-[0_12px_40px_-12px_rgba(7,31,65,0.35)] backdrop-blur-md sm:gap-2 sm:px-3"
+      >
+        <a
+          href="#top"
+          className="shrink-0 rounded-full px-3 py-2 text-sm font-black tracking-[0.08em] text-[#071f41] transition hover:bg-slate-100"
+        >
+          HourSpace
+        </a>
+        <div
+          className="mx-0.5 hidden h-5 w-px bg-[#071f41]/15 sm:block"
+          aria-hidden
+        />
+        <div className="flex items-center gap-0.5 overflow-x-auto sm:gap-1">
+          {NAV_LINKS.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="shrink-0 rounded-full px-2.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-[#071f41] sm:px-3 sm:text-sm"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+        <Link
+          href="/login"
+          className="shrink-0 rounded-full bg-[#c8102e] px-3.5 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-[#a50d25] sm:px-4 sm:text-sm"
+        >
+          Login
+        </Link>
+      </nav>
+
+      <section
+        id="top"
+        className="relative overflow-hidden bg-[#071f41] text-white"
+      >
         <div
           aria-hidden
           className="absolute inset-0 opacity-30"
@@ -117,17 +161,7 @@ export default function Home() {
               "repeating-linear-gradient(-12deg, transparent, transparent 48px, rgba(255,255,255,0.03) 48px, rgba(255,255,255,0.03) 49px)",
           }}
         />
-        <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-6 py-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-10 lg:py-16">
-          <header className="flex items-center justify-between lg:col-span-2">
-            <p className="text-xl font-black tracking-[0.12em]">HourSpace</p>
-            <Link
-              href="/login"
-              className="rounded-full border border-white/25 px-5 py-2 text-sm font-semibold transition hover:bg-white/10"
-            >
-              Login
-            </Link>
-          </header>
-
+        <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-6 pb-8 pt-24 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-10 lg:pb-16 lg:pt-28">
           <div className="flex flex-col justify-center pb-12 lg:pb-20">
             <p className="inline-flex w-fit items-center gap-2 rounded-full bg-[#c8102e] px-4 py-1.5 text-xs font-bold uppercase tracking-widest">
               University of Toronto
@@ -176,7 +210,7 @@ export default function Home() {
 
       <section
         id="how-it-works"
-        className="mx-auto w-full max-w-6xl px-6 py-20 lg:px-10"
+        className="mx-auto w-full max-w-6xl scroll-mt-24 px-6 py-20 lg:px-10"
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <h2 className="text-4xl font-black tracking-tight text-[#071f41] sm:text-5xl">
@@ -207,7 +241,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="mark-interest" className="bg-[#c8102e] py-20 text-white">
+      <section
+        id="mark-interest"
+        className="scroll-mt-24 bg-[#c8102e] py-20 text-white"
+      >
         <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 lg:grid-cols-2 lg:px-10">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/70">
@@ -270,7 +307,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-6 py-20 lg:px-10">
+      <section
+        id="session-types"
+        className="mx-auto w-full max-w-6xl scroll-mt-24 px-6 py-20 lg:px-10"
+      >
         <h2 className="text-4xl font-black tracking-tight text-[#071f41]">
           Session types
         </h2>
@@ -313,7 +353,7 @@ export default function Home() {
 
       <section
         id="debugging-queue"
-        className="border-y border-[#071f41]/10 bg-white py-20"
+        className="scroll-mt-24 border-y border-[#071f41]/10 bg-white py-20"
       >
         <div className="mx-auto w-full max-w-6xl px-6 lg:px-10">
           <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
@@ -386,7 +426,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-6 py-20 lg:px-10">
+      <section
+        id="for-students"
+        className="mx-auto w-full max-w-6xl scroll-mt-24 px-6 py-20 lg:px-10"
+      >
         <h2 className="text-4xl font-black text-[#071f41]">For students</h2>
         <div className="mt-12 grid gap-4 sm:grid-cols-2">
           {STUDENT_FEATURES.map((feature, i) => (
