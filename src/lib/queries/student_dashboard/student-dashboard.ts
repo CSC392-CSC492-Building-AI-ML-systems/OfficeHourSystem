@@ -1,24 +1,25 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getUpcomingSessionsForStudent(userId: number) {
+export async function getUpcomingSessionsForStudent(
+  userId: number,
+  offeringPublicId: string,
+) {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setDate(end.getDate() + 7);
   end.setHours(23, 59, 59, 999);
 
-  const memberships = await prisma.offeringMember.findMany({
-    where: { userId },
+  const membership = await prisma.offeringMember.findFirst({
+    where: { userId, offering: { publicId: offeringPublicId } },
     select: { offeringId: true },
   });
 
-  if (memberships.length === 0) return [];
-
-  const offeringIds = memberships.map((m) => m.offeringId);
+  if (!membership) return [];
 
   return prisma.officeHourSession.findMany({
     where: {
-      offeringId: { in: offeringIds },
+      offeringId: membership.offeringId,
       startsAt: { gte: start, lte: end },
       status: { in: ["SCHEDULED", "ACTIVE", "DELAYED"] },
     },

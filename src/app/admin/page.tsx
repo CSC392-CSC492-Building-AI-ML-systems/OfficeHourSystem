@@ -2,6 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminDashboard } from "@/app/components/admin/AdminDashboard";
+import {
+  COURSE_NAV_ITEMS,
+  courseNavEndItems,
+} from "@/app/components/course/courseNav";
+import { Navbar } from "@/app/components/shared/Navbar";
 import { isAdmin } from "@/lib/adminList";
 import { userCanAccessAdmin } from "@/lib/auth/canAccessAdmin";
 import {
@@ -35,7 +40,7 @@ export default async function AdminPage() {
           </p>
           <div className="mt-8 flex flex-col items-center gap-3">
             <Link
-              href="/student"
+              href="/course"
               className="inline-block rounded-full border border-slate-200 px-6 py-3 text-sm font-semibold text-[#071f41] transition hover:bg-slate-50"
             >
               Go to my courses
@@ -52,21 +57,30 @@ export default async function AdminPage() {
     );
   }
 
+  const viewerIsSuperAdmin = isAdmin(session.utorid);
   const offerings = await listAllOfferings({
     viewerUserId: userId,
-    viewerIsSuperAdmin: isAdmin(session.utorid),
+    viewerIsSuperAdmin,
   });
 
   return (
-    <main className="min-h-screen bg-[#f4f7fb]">
-      <AdminDashboard
-        utorid={session.utorid}
-        firstName={session.firstName}
-        lastName={session.lastName}
-        canBulkAddInstructors={isAdmin(session.utorid)}
-        canUploadClasslist={isAdmin(session.utorid)}
-        offerings={offerings}
-      />
+    <main className="min-h-screen bg-[#f4f7fb] text-slate-900">
+      <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+        <Navbar
+          brandHref="/course"
+          activeKey="admin"
+          items={COURSE_NAV_ITEMS}
+          endItems={courseNavEndItems(true)}
+        />
+        <AdminDashboard
+          utorid={session.utorid}
+          firstName={session.firstName}
+          lastName={session.lastName}
+          canBulkAddInstructors={viewerIsSuperAdmin}
+          canUploadClasslist={viewerIsSuperAdmin}
+          offerings={offerings}
+        />
+      </div>
     </main>
   );
 }

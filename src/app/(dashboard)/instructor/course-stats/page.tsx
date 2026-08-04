@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// Course stats now always start from the course picker.
+// Keep both entry points: new UI at /course/stats, legacy at overview.
 export default function InstructorCourseStatsRoute() {
   redirect("/instructor/course-stats/overview");
 }

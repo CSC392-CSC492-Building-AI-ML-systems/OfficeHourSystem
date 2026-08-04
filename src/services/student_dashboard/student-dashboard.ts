@@ -17,14 +17,17 @@ export type StudentDashboardSessionDto = {
   isInterested: boolean;
 };
 
-export async function getStudentDashboardService(): Promise<
-  StudentDashboardSessionDto[]
-> {
+export async function getStudentDashboardService(
+  offeringPublicId: string,
+): Promise<StudentDashboardSessionDto[]> {
   const session = await getRequestSession();
   if (!session) throw new Error("Unauthorized");
   const userId = parseSessionUserId(session);
 
-  const sessions = await getUpcomingSessionsForStudent(userId);
+  const sessions = await getUpcomingSessionsForStudent(
+    userId,
+    offeringPublicId,
+  );
 
   return sessions.map((s) => ({
     sessionId: s.id,

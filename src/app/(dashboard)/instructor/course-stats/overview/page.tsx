@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, BarChart3, ChevronRight } from "lucide-react";
 
-import CourseOverviewPage from "@/app/components/instructor/stats/CourseOverviewPage";
+import LegacyCourseOverviewPage from "@/app/components/instructor/stats/LegacyCourseOverviewPage";
 import { Navbar } from "@/app/components/instructor/Navbar";
 import { getRequestSession } from "@/lib/auth/getRequestSession";
 import {
@@ -21,13 +21,40 @@ export default async function CourseOverviewRoute({ searchParams }: PageProps) {
     redirect("/api/auth/session?redirect=/instructor/course-stats/overview");
   }
 
-  // Must be INSTRUCTOR of at least one offering; otherwise back to dashboard.
+  // Must be INSTRUCTOR of at least one offering.
   const offerings = await listInstructorOfferingsService();
-  if (offerings.length === 0) {
-    redirect("/instructor");
-  }
-
   const { offering: selected } = await searchParams;
+
+  if (offerings.length === 0) {
+    return (
+      <main>
+        <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
+          <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+            <Navbar />
+            <main className="mt-10 space-y-8">
+              <Link
+                href="/admin"
+                className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Admin
+              </Link>
+              <section className="space-y-2">
+                <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
+                  Course-level Overview
+                </h1>
+                <p className="text-base text-slate-600">
+                  You are not listed as an instructor on any course offering
+                  yet, so there are no stats to show. Create a course or get
+                  added as an instructor on an existing one, then try again.
+                </p>
+              </section>
+            </main>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   // No course chosen yet → show the picker.
   if (!selected) {
@@ -95,7 +122,7 @@ export default async function CourseOverviewRoute({ searchParams }: PageProps) {
 
   return (
     <main>
-      <CourseOverviewPage overview={overview} />
+      <LegacyCourseOverviewPage overview={overview} />
     </main>
   );
 }

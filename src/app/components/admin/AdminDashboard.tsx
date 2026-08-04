@@ -3,13 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  BarChart3,
-  BookOpen,
-  UserPlus,
-} from "lucide-react";
+import { ArrowRight, BookOpen, UserPlus } from "lucide-react";
 
 import type { AdminOfferingListItem } from "@/lib/queries/admin/offerings";
 
@@ -43,18 +37,10 @@ export function AdminDashboard({
 
   return (
     <>
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-8 sm:px-6">
-        <Link
-          href="/login"
-          className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Login
-        </Link>
-
+      <div className="mt-10 flex w-full flex-col gap-8">
         <header className="rounded-[36px] border border-slate-200/80 bg-white px-8 py-8 shadow-[0_30px_80px_-40px_rgba(7,31,65,0.45)]">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#c8102e]">
-            OHMS Admin
+            HourSpace Admin
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#071f41] sm:text-4xl">
             Administration
@@ -64,14 +50,6 @@ export function AdminDashboard({
             <span className="font-mono text-[#071f41]">{utorid}</span> (
             {firstName} {lastName})
           </p>
-          <Link
-            href="/instructor/course-stats/overview"
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#071f41] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
-          >
-            <BarChart3 className="h-4 w-4" />
-            Course-level statistics
-            <ArrowRight className="h-4 w-4" />
-          </Link>
         </header>
 
         {canBulkAddInstructors ? (

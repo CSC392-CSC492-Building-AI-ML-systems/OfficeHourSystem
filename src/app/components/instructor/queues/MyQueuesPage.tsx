@@ -119,9 +119,13 @@ export default function MyQueuesPage({
         <main className="mt-10 space-y-8">
           <section className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
-              My Queues
+              Today&apos;s Sessions
             </h1>
             <p className="text-base text-slate-600">{courseLabel}</p>
+            <p className="max-w-3xl text-m leading-6 text-slate-500">
+              Start an office hour session here to open T-Card scanning and
+              create the live queue for students.
+            </p>
           </section>
 
           {error ? (
@@ -137,10 +141,7 @@ export default function MyQueuesPage({
                 <CalendarDays className="h-5 w-5" />
               </span>
               <div>
-                <h2 className="text-xl font-semibold text-[#071f41]">
-                  Today&apos;s Sessions
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="text-sm text-slate-500">
                   Open the next session workspace when students begin checking
                   in.
                 </p>
