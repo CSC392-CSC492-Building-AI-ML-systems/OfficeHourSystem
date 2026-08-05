@@ -4,6 +4,7 @@ import {
 } from "@/lib/auth/getRequestSession";
 import { assertSessionOperator } from "@/lib/auth/sessionOperator";
 import { prisma } from "@/lib/prisma";
+import { getMcsAdminClient } from "@/lib/mcs/get-mcs-admin-client";
 import { scanCheckIn } from "@/lib/queries/scan_check_in/scan-check-in";
 import type { IdentifierType, ScanCheckInResult } from "@/lib/types/queue";
 
@@ -32,7 +33,20 @@ export async function scanCheckInService(
   // Step 4: Only the offering's instructor or a host of this session may scan
   await assertSessionOperator(userId, ohSession.id, ohSession.offeringId);
 
-  // Step 5: Look up the student and insert attendance
+  // Step 5: Resolve an NFC CSN through MCS without storing it locally.
+  if (identifierType === "csn") {
+    try {
+      const utorid =
+        await getMcsAdminClient().lookupUtoridByCsn(identifierValue);
+      if (!utorid) return { outcome: "student_not_found" };
+
+      return scanCheckIn(ohSession.id, ohSession.offeringId, "utorid", utorid);
+    } catch {
+      return { outcome: "csn_lookup_unavailable" };
+    }
+  }
+
+  // Step 6: Look up the student and insert attendance
   return scanCheckIn(
     ohSession.id,
     ohSession.offeringId,

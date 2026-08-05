@@ -8,8 +8,8 @@
  *
  * Scenarios covered:
  *   TCard swipe (well-formed):
- *     1.  ASCII separators  %name^name^1011661168^date?;barcode?
- *     2.  Chinese ellipsis  %NAME……NAME……1011661168……date？；barcode？
+ *     1.  ASCII separators  %name^name^1234567890^date?;barcode?
+ *     2.  Chinese ellipsis  %NAME……NAME……1234567890……date？；barcode？
  *     3.  Different student / multi-field swipe
  *   TCard swipe (edge-case — missing trailing separator):
  *     4.  Date digits fused into student number → barcode fallback
@@ -29,10 +29,11 @@
  *     14. 9-digit number
  *     15. 11-digit number
  *     16. 15-digit barcode (one short)
- *     17. 17-digit barcode (one long)
- *     18. Mixed alphanumeric that looks like neither
- *     19. UTORid with uppercase (rejected — must be lowercase)
- *     20. 7-char lowercase string
+ *   NFC / CSN:
+ *     17. Seven-byte UID with spaces
+ *     18. Seven-byte UID with colons
+ *     19. Decimal CSN
+ *   Other invalid inputs include mixed alphanumeric and malformed UTORids.
  */
 
 import { parseIdentifier } from "@/lib/utils/scan_check_in/parse-identifier";
@@ -69,24 +70,21 @@ console.log("=== parse-identifier.test.ts ===\n");
 // ── TCard swipe: well-formed ──────────────────────────────────────────────────
 
 test("TCard swipe — ASCII separators (^) extracts student number", () => {
-  // Real swipe: %haozhe^huo^1011661168^8/20/2024?;2176103009687101?
-  const raw = "%haozhe^huo^1011661168^8/20/2024?;2176103009687101?";
-  expect(parseIdentifier(raw), { type: "student_number", value: "1011661168" });
+  const raw = "%sample^student^1234567890^1/1/2030?;9876543210123456?";
+  expect(parseIdentifier(raw), { type: "student_number", value: "1234567890" });
 });
 
 test("TCard swipe — uppercase name, Chinese ellipsis (……) separator", () => {
-  // Real swipe from field testing
   const raw =
-    "%HAOZHE\u2026\u2026HUO\u2026\u2026" +
-    "1011661168" +
-    "\u2026\u20268/20/2024\uff1f\uff1b2176103009687101\uff1f";
-  expect(parseIdentifier(raw), { type: "student_number", value: "1011661168" });
+    "%SAMPLE\u2026\u2026STUDENT\u2026\u2026" +
+    "1234567890" +
+    "\u2026\u20261/1/2030\uff1f\uff1b9876543210123456\uff1f";
+  expect(parseIdentifier(raw), { type: "student_number", value: "1234567890" });
 });
 
-test("TCard swipe — different student (jingcheng liang)", () => {
-  // Real swipe: %jingcheng^liang^1011097965^2/6/2026?;2176102914868302?
-  const raw = "%jingcheng^liang^1011097965^2/6/2026?;2176102914868302?";
-  expect(parseIdentifier(raw), { type: "student_number", value: "1011097965" });
+test("TCard swipe — different synthetic student", () => {
+  const raw = "%example^person^2003004005^2/2/2030?;1234567890123456?";
+  expect(parseIdentifier(raw), { type: "student_number", value: "2003004005" });
 });
 
 test("TCard swipe — single-char separator wrapping student number", () => {
@@ -111,11 +109,11 @@ test("TCard swipe fallback — missing trailing separator, extracts barcode", ()
   // Date digits (8/20) fused into student number → swiper regex fails,
   // fallback finds the 16-digit barcode that follows
   const raw =
-    "%HAOZHE\u2026\u2026HUO\u2026\u20261011661168" +
-    "8/20/2024\uff1f\uff1b2176103009687101\uff1f";
-  // Student number would be 10116611688 (11 digits) — no match for regex
-  // Barcode fallback: first 16-digit run = 2176103009687101
-  expect(parseIdentifier(raw), { type: "barcode", value: "2176103009687101" });
+    "%SAMPLE\u2026\u2026STUDENT\u2026\u20261234567890" +
+    "1/1/2030\uff1f\uff1b9876543210123456\uff1f";
+  // Student number would be 12345678901 (11 digits) — no match for regex
+  // Barcode fallback: first 16-digit run = 9876543210123456
+  expect(parseIdentifier(raw), { type: "barcode", value: "9876543210123456" });
 });
 
 test("TCard swipe fallback — % prefix but no 16-digit sequence → null", () => {
@@ -126,16 +124,16 @@ test("TCard swipe fallback — % prefix but no 16-digit sequence → null", () =
 // ── Barcode (standalone) ──────────────────────────────────────────────────────
 
 test("Barcode — exactly 16 digits", () => {
-  expect(parseIdentifier("2176301960087102"), {
+  expect(parseIdentifier("8765432109876543"), {
     type: "barcode",
-    value: "2176301960087102",
+    value: "8765432109876543",
   });
 });
 
 test("Barcode — 16 digits with surrounding whitespace", () => {
-  expect(parseIdentifier("  2176301960087102  "), {
+  expect(parseIdentifier("  8765432109876543  "), {
     type: "barcode",
-    value: "2176301960087102",
+    value: "8765432109876543",
   });
 });
 
@@ -209,11 +207,28 @@ test("Invalid — 11-digit number (too long for student number) → null", () =>
 });
 
 test("Invalid — 15-digit number (one short of barcode) → null", () => {
-  expect(parseIdentifier("217630196008710"), null);
+  expect(parseIdentifier("876543210987654"), null);
 });
 
-test("Invalid — 17-digit number (one long of barcode) → null", () => {
-  expect(parseIdentifier("21763019600871020"), null);
+test("NFC UID - 7 hex bytes are reversed and converted to decimal CSN", () => {
+  expect(parseIdentifier("01 23 45 67 89 AB CD"), {
+    type: "csn",
+    value: "57890976857137921",
+  });
+});
+
+test("NFC UID - colon-separated lowercase bytes are accepted", () => {
+  expect(parseIdentifier("01:23:45:67:89:ab:cd"), {
+    type: "csn",
+    value: "57890976857137921",
+  });
+});
+
+test("CSN - 17-digit decimal value is preserved as a string", () => {
+  expect(parseIdentifier("12345678901234567"), {
+    type: "csn",
+    value: "12345678901234567",
+  });
 });
 
 test("Invalid — UTORid with uppercase (must be all lowercase) → null", () => {

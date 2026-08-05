@@ -26,7 +26,7 @@ export type HelpingStudentDto = {
 };
 
 // Identifier types the scan page can receive
-export type IdentifierType = "student_number" | "utorid" | "barcode";
+export type IdentifierType = "student_number" | "utorid" | "barcode" | "csn";
 
 // Result of a scan check-in attempt
 export type ScanCheckInResult =
@@ -35,6 +35,7 @@ export type ScanCheckInResult =
   | { outcome: "mock_user"; studentName: string } // barcode dev mock
   | { outcome: "student_not_found" }
   | { outcome: "not_enrolled" }
+  | { outcome: "csn_lookup_unavailable" }
   | { outcome: "session_not_active" };
 
 // A student's active queue ticket (shown on student My Queue page)
