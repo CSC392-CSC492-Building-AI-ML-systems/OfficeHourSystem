@@ -17,15 +17,32 @@ function getResultDisplay(result: ScanCheckInResult): {
 } {
   switch (result.outcome) {
     case "checked_in":
-      return { text: `✓ ${result.studentName} added to queue`, color: "text-green-600" };
+      return {
+        text: `✓ ${result.studentName} added to queue`,
+        color: "text-green-600",
+      };
     case "already_in_queue":
-      return { text: `${result.studentName} is already in the queue`, color: "text-amber-600" };
+      return {
+        text: `${result.studentName} is already in the queue`,
+        color: "text-amber-600",
+      };
     case "mock_user":
-      return { text: `[DEV] ${result.studentName} — barcode mock`, color: "text-blue-600" };
+      return {
+        text: `[DEV] ${result.studentName} — barcode mock`,
+        color: "text-blue-600",
+      };
     case "student_not_found":
       return { text: "Student not found", color: "text-red-600" };
     case "not_enrolled":
-      return { text: "Student is not enrolled in this course", color: "text-red-600" };
+      return {
+        text: "Student is not enrolled in this course",
+        color: "text-red-600",
+      };
+    case "csn_lookup_unavailable":
+      return {
+        text: "TCard lookup unavailable. Enter student number or UTORid.",
+        color: "text-red-600",
+      };
     case "session_not_active":
       return { text: "Session is no longer active", color: "text-red-600" };
   }
@@ -132,14 +149,13 @@ export function ScanPage({ sessionPublicId }: ScanPageProps) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#f4f7fb] px-4">
       <div className="w-full max-w-xl space-y-8">
-
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl font-semibold tracking-tight text-[#071f41]">
             Scan to Check In
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            Swipe TCard, scan barcode, or type student number / UTORid
+            Tap or swipe TCard, scan barcode, or type student number / UTORid
           </p>
         </div>
 
@@ -159,9 +175,10 @@ export function ScanPage({ sessionPublicId }: ScanPageProps) {
             spellCheck={false}
             className={`w-full rounded-full border px-6 py-4 text-lg shadow-sm outline-none transition
               placeholder:text-slate-400
-              ${processing
-                ? "border-slate-200 bg-slate-50 text-slate-400"
-                : "border-slate-300 bg-white text-slate-900 focus:border-[#071f41] focus:ring-2 focus:ring-[#071f41]/10"
+              ${
+                processing
+                  ? "border-slate-200 bg-slate-50 text-slate-400"
+                  : "border-slate-300 bg-white text-slate-900 focus:border-[#071f41] focus:ring-2 focus:ring-[#071f41]/10"
               }`}
           />
           {processing && (
@@ -178,18 +195,28 @@ export function ScanPage({ sessionPublicId }: ScanPageProps) {
           </p>
         )}
         {resultDisplay && !parseError && (
-          <p className={`text-center text-sm font-medium ${resultDisplay.color}`}>
+          <p
+            className={`text-center text-sm font-medium ${resultDisplay.color}`}
+          >
             {resultDisplay.text}
           </p>
         )}
 
         {/* Identifier format hint */}
         <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-xs text-slate-500 space-y-1">
-          <p><span className="font-semibold">TCard swipe / barcode scan</span> — detected automatically</p>
-          <p><span className="font-semibold">10-digit number</span> — student number</p>
-          <p><span className="font-semibold">8-char string</span> — UTORid (e.g. chenjohn)</p>
+          <p>
+            <span className="font-semibold">TCard swipe / barcode scan</span> —
+            detected automatically
+          </p>
+          <p>
+            <span className="font-semibold">10-digit number</span> — student
+            number
+          </p>
+          <p>
+            <span className="font-semibold">8-char string</span> — UTORid (e.g.
+            chenjohn)
+          </p>
         </div>
-
       </div>
     </div>
   );
