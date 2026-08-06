@@ -77,6 +77,10 @@ export async function GET(request: NextRequest) {
   let lastName: string | null = null;
   let email: string | null = null;
 
+  for (const [key, value] of request.headers.entries()) {
+    console.log(`${key}: ${value}`);
+  }
+
   if (isProd) {
     // Apache + mod_shib injects these headers on proxied requests. Next.js
     // is only reachable via Apache on localhost (see docker-compose / Apache config).

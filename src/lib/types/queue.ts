@@ -30,11 +30,11 @@ export type IdentifierType = "student_number" | "utorid" | "barcode";
 
 // Result of a scan check-in attempt
 export type ScanCheckInResult =
-  | { outcome: "checked_in"; studentName: string }
-  | { outcome: "already_in_queue"; studentName: string }
-  | { outcome: "mock_user"; studentName: string } // barcode dev mock
+  | { outcome: "checked_in" }
+  | { outcome: "already_in_queue"; firstName: string }
+  | { outcome: "mock_user" } // barcode dev mock
   | { outcome: "student_not_found" }
-  | { outcome: "not_enrolled" }
+  | { outcome: "not_enrolled"; firstName: string }
   | { outcome: "session_not_active" };
 
 // A student's active queue ticket (shown on student My Queue page)

@@ -19,12 +19,11 @@ export async function scanCheckIn(
   identifierType: IdentifierType,
   identifierValue: string,
 ): Promise<ScanCheckInResult> {
-
   // ── Barcode: use mock map, never hit the real DB for user lookup ──
   if (identifierType === "barcode") {
-    const mockName = MOCK_BARCODE_MAP[identifierValue];
-    if (!mockName) return { outcome: "student_not_found" };
-    return { outcome: "mock_user", studentName: mockName };
+    if (!MOCK_BARCODE_MAP[identifierValue])
+      return { outcome: "student_not_found" };
+    return { outcome: "mock_user" };
   }
 
   // ── Find the student by student_number or utorid, along with their
@@ -37,8 +36,6 @@ export async function scanCheckIn(
     select: {
       id: true,
       firstName: true,
-      lastName: true,
-      publicId: true,
       memberships: {
         where: { offeringId },
         select: { role: true },
@@ -48,21 +45,16 @@ export async function scanCheckIn(
 
   if (!student) return { outcome: "student_not_found" };
 
-  const studentName =
-    [student.firstName, student.lastName].filter(Boolean).join(" ") ||
-    student.publicId;
+  const firstName = student.firstName ?? "";
 
   // ── Verify the student is enrolled in this offering ───────────────
   const membership = student.memberships[0];
 
   if (!membership || membership.role !== "STUDENT") {
-    return { outcome: "not_enrolled" };
+    return { outcome: "not_enrolled", firstName };
   }
 
   // ── Insert attendance (unique constraint handles duplicates) ──────
-
-
-
   try {
     await prisma.officeHourAttendance.create({
       data: {
@@ -72,7 +64,7 @@ export async function scanCheckIn(
         checkedInAt: new Date(),
       },
     });
-    return { outcome: "checked_in", studentName };
+    return { outcome: "checked_in" };
   } catch (e: unknown) {
     // Prisma unique constraint violation → student already in queue
     if (
@@ -81,7 +73,7 @@ export async function scanCheckIn(
       "code" in e &&
       (e as { code: string }).code === "P2002"
     ) {
-      return { outcome: "already_in_queue", studentName };
+      return { outcome: "already_in_queue", firstName };
     }
     throw e;
   }

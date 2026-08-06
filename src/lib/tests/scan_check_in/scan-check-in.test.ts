@@ -6,17 +6,17 @@
  *
  * Scenarios covered:
  *   Happy path:
- *     1.  Look up by student_number → checked_in, studentName matches
- *     2.  Look up by utorid → checked_in, studentName matches
+ *     1.  Look up by student_number → checked_in
+ *     2.  Look up by utorid → checked_in
  *     3.  Look up by barcode (mock map hit) → mock_user outcome
- *     4.  studentName falls back to publicId when firstName/lastName absent
+ *     4.  Student with no firstName/lastName → still checked_in
  *   Failure cases:
  *     5.  student_number not in DB → student_not_found
  *     6.  utorid not in DB → student_not_found
  *     7.  barcode not in mock map → student_not_found
- *     8.  Student exists but not enrolled in offering → not_enrolled
- *     9.  Student enrolled as TA (not STUDENT role) → not_enrolled
- *     10. Student already in queue → already_in_queue (P2002 handled)
+ *     8.  Student exists but not enrolled in offering → not_enrolled + firstName
+ *     9.  Student enrolled as TA (not STUDENT role) → not_enrolled + firstName
+ *     10. Student already in queue → already_in_queue + firstName (P2002)
  *   Re-join:
  *     11. Student checked in, then resolved to AttendanceRecord, then checks
  *         in again → checked_in (new active attendance created)
@@ -102,36 +102,28 @@ async function main() {
   await cleanupAll();
 
   // ── 1. Look up by student_number → checked_in ────────────────────────────
-  await runTest(
-    "student_number lookup → checked_in, studentName returned",
-    async () => {
-      await cleanupAll();
-      const offering = await makeOffering("101");
-      const session = await makeSession(offering.id);
-      const student = await makeStudent("snumA", offering.id);
+  await runTest("student_number lookup → checked_in", async () => {
+    await cleanupAll();
+    const offering = await makeOffering("101");
+    const session = await makeSession(offering.id);
+    const student = await makeStudent("snumA", offering.id);
 
-      const result = await scanCheckIn(
-        session.id,
-        offering.id,
-        "student_number",
-        student.studentNumber!,
-      );
+    const result = await scanCheckIn(
+      session.id,
+      offering.id,
+      "student_number",
+      student.studentNumber!,
+    );
 
-      assertEqual(result.outcome, "checked_in", "outcome");
-      assert("studentName" in result, "studentName present");
-      assert(
-        (result as { studentName: string }).studentName.includes("snumA"),
-        "studentName contains last name",
-      );
+    assertEqual(result.outcome, "checked_in", "outcome");
 
-      // Row exists in DB with correct status
-      const row = await prisma.officeHourAttendance.findFirst({
-        where: { sessionId: session.id, studentId: student.id },
-      });
-      assert(row !== null, "attendance row created");
-      assertEqual(row!.status, "WAITING", "status is WAITING");
-    },
-  );
+    // Row exists in DB with correct status
+    const row = await prisma.officeHourAttendance.findFirst({
+      where: { sessionId: session.id, studentId: student.id },
+    });
+    assert(row !== null, "attendance row created");
+    assertEqual(row!.status, "WAITING", "status is WAITING");
+  });
 
   // ── 2. Look up by utorid → checked_in ────────────────────────────────────
   await runTest("utorid lookup → checked_in", async () => {
@@ -155,66 +147,49 @@ async function main() {
   });
 
   // ── 3. Barcode in mock map → mock_user ───────────────────────────────────
-  await runTest(
-    "barcode in mock map → mock_user, studentName from map",
-    async () => {
-      await cleanupAll();
-      const offering = await makeOffering("103");
-      const session = await makeSession(offering.id);
+  await runTest("barcode in mock map → mock_user", async () => {
+    await cleanupAll();
+    const offering = await makeOffering("103");
+    const session = await makeSession(offering.id);
 
-      // No DB student needed — mock map is keyed by barcode string
-      const result = await scanCheckIn(
-        session.id,
-        offering.id,
-        "barcode",
-        "1234567890123456",
-      );
+    // No DB student needed — mock map is keyed by barcode string
+    const result = await scanCheckIn(
+      session.id,
+      offering.id,
+      "barcode",
+      "1234567890123456",
+    );
 
-      assertEqual(result.outcome, "mock_user", "outcome");
-      assert("studentName" in result, "studentName present");
-      assertEqual(
-        (result as { studentName: string }).studentName,
-        "Mock Student",
-        "studentName from mock map",
-      );
-    },
-  );
+    assertEqual(result.outcome, "mock_user", "outcome");
+  });
 
-  // ── 4. studentName falls back to publicId when name fields are empty ──────
-  await runTest(
-    "student with no firstName/lastName → publicId used as studentName",
-    async () => {
-      await cleanupAll();
-      const offering = await makeOffering("104");
-      const session = await makeSession(offering.id);
+  // ── 4. Missing names still check in successfully ─────────────────────────
+  await runTest("student with no firstName/lastName → checked_in", async () => {
+    await cleanupAll();
+    const offering = await makeOffering("104");
+    const session = await makeSession(offering.id);
 
-      // Create user with NULL names
-      const student = await prisma.user.create({
-        data: {
-          utorid: `${TEST_PREFIX}sc_noname`,
-          email: `${TEST_PREFIX}sc_noname@mail.utoronto.ca`,
-          // firstName / lastName deliberately omitted → will be null in DB
-        },
-      });
-      await prisma.offeringMember.create({
-        data: { userId: student.id, offeringId: offering.id, role: "STUDENT" },
-      });
+    // Create user with NULL names
+    const student = await prisma.user.create({
+      data: {
+        utorid: `${TEST_PREFIX}sc_noname`,
+        email: `${TEST_PREFIX}sc_noname@mail.utoronto.ca`,
+        // firstName / lastName deliberately omitted → will be null in DB
+      },
+    });
+    await prisma.offeringMember.create({
+      data: { userId: student.id, offeringId: offering.id, role: "STUDENT" },
+    });
 
-      const result = await scanCheckIn(
-        session.id,
-        offering.id,
-        "utorid",
-        student.utorid,
-      );
+    const result = await scanCheckIn(
+      session.id,
+      offering.id,
+      "utorid",
+      student.utorid,
+    );
 
-      assertEqual(result.outcome, "checked_in", "outcome");
-      assertEqual(
-        (result as { studentName: string }).studentName,
-        student.publicId,
-        "studentName falls back to publicId",
-      );
-    },
-  );
+    assertEqual(result.outcome, "checked_in", "outcome");
+  });
 
   // ── 5. student_number not in DB → student_not_found ──────────────────────
   await runTest("unknown student_number → student_not_found", async () => {
@@ -280,6 +255,11 @@ async function main() {
     );
 
     assertEqual(result.outcome, "not_enrolled", "outcome");
+    assertEqual(
+      (result as { firstName: string }).firstName,
+      "Scan",
+      "firstName returned",
+    );
   });
 
   // ── 9. Student enrolled as TA → not_enrolled ─────────────────────────────
@@ -299,6 +279,11 @@ async function main() {
       );
 
       assertEqual(result.outcome, "not_enrolled", "outcome");
+      assertEqual(
+        (result as { firstName: string }).firstName,
+        "Scan",
+        "firstName returned",
+      );
     },
   );
 
@@ -328,6 +313,11 @@ async function main() {
         student.utorid,
       );
       assertEqual(second.outcome, "already_in_queue", "second scan outcome");
+      assertEqual(
+        (second as { firstName: string }).firstName,
+        "Scan",
+        "firstName returned",
+      );
 
       // Only one row in DB
       const rows = await prisma.officeHourAttendance.findMany({
