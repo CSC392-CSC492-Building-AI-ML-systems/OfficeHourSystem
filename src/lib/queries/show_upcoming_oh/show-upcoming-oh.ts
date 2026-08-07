@@ -1,17 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
-
-// Get the start and end of today (midnight to 23:59:59)
-function getTodayRange() {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
-
-  return { start, end };
-}
+import { getTorontoTodayRange } from "@/lib/time/toronto";
 
 // Find office hour sessions happening today that this user may run. The rule is
 // the same in both modes — INSTRUCTOR sees every session, a TA sees only the
@@ -26,7 +16,7 @@ export async function getTodaySessionsForTeachingTeam(
   userId: number,
   scope?: { offeringId: number; isInstructor: boolean },
 ) {
-  const { start, end } = getTodayRange();
+  const { start, end } = getTorontoTodayRange();
 
   let where: Prisma.OfficeHourSessionWhereInput;
 
