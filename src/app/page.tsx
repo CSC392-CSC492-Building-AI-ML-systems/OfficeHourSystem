@@ -142,10 +142,10 @@ export default function Home() {
           ))}
         </div>
         <Link
-          href="/course"
+          href="/api/auth/session?redirect=/home"
           className="shrink-0 rounded-full bg-[#c8102e] px-3.5 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-[#a50d25] sm:px-4 sm:text-sm"
         >
-          Login
+          Get Started
         </Link>
       </nav>
 
@@ -174,14 +174,14 @@ export default function Home() {
               <span className="text-[#f8b4bf]">SYSTEM</span>
             </h1>
             <p className="mt-8 max-w-md text-lg leading-8 text-slate-300">
-              Drop-in hours, interest signals, and live debugging queues — all
-              in one campus tool.
+              Find out more about your office hours. Let&apos;s create a better
+              HourSpace!
             </p>
             <Link
-              href="/course"
+              href="/api/auth/session?redirect=/home"
               className="mt-10 inline-flex w-fit items-center gap-3 bg-white px-7 py-4 text-sm font-bold uppercase tracking-wider text-[#071f41] transition hover:bg-[#eaf1ff]"
             >
-              Login
+              Get Started
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
