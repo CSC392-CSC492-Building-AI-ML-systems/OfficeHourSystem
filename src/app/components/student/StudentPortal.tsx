@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, BookOpen, ListOrdered } from "lucide-react";
+import { ArrowRight, BookOpen, ListOrdered } from "lucide-react";
 
+import { ProfileMenu } from "@/app/components/shared/ProfileMenu";
 import type { StudentOfferingListItem } from "@/lib/queries/student/offerings";
 
 type StudentPortalProps = {
@@ -19,26 +20,23 @@ export function StudentPortal({
   return (
     <main className="min-h-screen bg-[#f4f7fb]">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-8 sm:px-6">
-        <Link
-          href="/login"
-          className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Login
-        </Link>
-
         <header className="rounded-[36px] border border-slate-200/80 bg-white px-8 py-8 shadow-[0_30px_80px_-40px_rgba(7,31,65,0.45)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#c8102e]">
-            HourSpace Student
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#071f41] sm:text-4xl">
-            Student page
-          </h1>
-          <p className="mt-3 text-base text-slate-600">
-            Signed in as{" "}
-            <span className="font-mono text-[#071f41]">{utorid}</span> (
-            {firstName} {lastName})
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#c8102e]">
+                HourSpace Student
+              </p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#071f41] sm:text-4xl">
+                Student page
+              </h1>
+              <p className="mt-3 text-base text-slate-600">
+                Signed in as{" "}
+                <span className="font-mono text-[#071f41]">{utorid}</span> (
+                {firstName} {lastName})
+              </p>
+            </div>
+            <ProfileMenu />
+          </div>
         </header>
 
         {/* Global queue status — lives here (not inside a course): one place

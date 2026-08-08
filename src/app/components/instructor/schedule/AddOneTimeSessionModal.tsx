@@ -51,8 +51,8 @@ const sessionTypeOptions: Array<{
   },
   {
     id: "debugging-queue",
-    label: "Debugging Queue",
-    description: "One-on-one support for deeper assignment and code blockers.",
+    label: "Help Centre Office Hours",
+    description: "Join a queue for one-on-one help.",
     icon: Bug,
   },
   {
@@ -101,7 +101,7 @@ function AddOneTimeSessionForm({
   const [date, setDate] = useState(defaultOfficeHourDateInput);
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("16:00");
-  const [locationDetail, setLocationDetail] = useState("Room 402");
+  const [locationDetail, setLocationDetail] = useState("DH 2034");
   const [hostPublicIds, setHostPublicIds] = useState<string[]>([]);
 
   const showError = (message: string) => {
@@ -293,7 +293,7 @@ function AddOneTimeSessionForm({
                 value={locationDetail}
                 maxLength={LOCATION_MAX_LENGTH}
                 onChange={(event) => setLocationDetail(event.target.value)}
-                placeholder="Room 402 or Zoom"
+                placeholder="DH 2034 or Zoom"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
               />
               <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />

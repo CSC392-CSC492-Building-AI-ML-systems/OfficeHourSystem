@@ -8,8 +8,8 @@ import {
 } from "@/app/components/shared/Navbar";
 
 const STUDENT_NAV: AppNavItem[] = [
-  { key: "courses", label: "Courses", href: "/course" },
-  { key: "queue", label: "My Queue", href: "/course/my-queue" },
+  { key: "courses", label: "Courses", href: "/student" },
+  { key: "queue", label: "My Queue", href: "/student/my-queue" },
 ];
 
 type NavbarProps = {

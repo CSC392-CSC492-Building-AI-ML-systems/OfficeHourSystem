@@ -12,10 +12,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "HourSpace",
   description:
-    "Office hours for the University of Toronto — find sessions, mark interest, and join debugging queues.",
+    "Find office hours, mark sessions you plan to attend, and check your Help Centre queue position.",
 };
 
 export default function RootLayout({
