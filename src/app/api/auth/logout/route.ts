@@ -10,5 +10,11 @@ export async function POST() {
   );
   session.destroy();
 
-  return new Response(null, { status: 204 });
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Cache-Control": "no-store",
+      "Clear-Site-Data": '"cache"',
+    },
+  });
 }
