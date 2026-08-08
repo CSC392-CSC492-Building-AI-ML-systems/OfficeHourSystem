@@ -73,7 +73,7 @@ export function ProfileMenu() {
     setLoggingOut(true);
     const response = await fetch("/api/auth/logout", { method: "POST" });
     if (response.ok) {
-      window.location.assign("/");
+      window.location.replace("/");
       return;
     }
     setLoggingOut(false);
