@@ -7,6 +7,7 @@ import {
 } from "@/app/components/course/courseNav";
 import { Navbar } from "@/app/components/shared/Navbar";
 import { isAdmin } from "@/lib/adminList";
+import { canUploadAdminClasslist } from "@/lib/auth/canAccessAdmin";
 import {
   getRequestSession,
   parseSessionUserId,
@@ -45,7 +46,7 @@ export default async function AdminPage() {
           firstName={session.firstName}
           lastName={session.lastName}
           canBulkAddInstructors={viewerIsSuperAdmin}
-          canUploadClasslist={viewerIsSuperAdmin}
+          canUploadClasslist={canUploadAdminClasslist(session.utorid)}
           offerings={offerings}
         />
       </div>

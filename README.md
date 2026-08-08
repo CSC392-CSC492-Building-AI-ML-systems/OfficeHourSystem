@@ -1,49 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HourSpace
+
+HourSpace is an office-hour management system for University of Toronto
+Mississauga computer science courses. It supports course scheduling, student
+interest, help queues, classlist management, and TCard-based check-ins.
+
+## Technology
+
+- Next.js 16
+- React 19
+- TypeScript
+- Prisma
+- PostgreSQL
+- Tailwind CSS
+- Docker
 
 ## Getting Started
 
-This project uses [pnpm](https://pnpm.io). Install dependencies first:
+### Requirements
+
+- Node.js 22 or later
+- Corepack
+- Docker with Docker Compose
+
+### Installation
+
+Enable Corepack and install the project dependencies:
 
 ```bash
+corepack enable
 pnpm install
 ```
 
-Then run the development server:
+Create a local environment file from the provided example:
+
+```bash
+cp .env.example .env
+```
+
+Use `.env.example` as the configuration reference and provide values suitable
+for your local environment. Do not commit `.env` or any credentials.
+
+Set up the local PostgreSQL service and apply the checked-in migrations:
+
+```bash
+pnpm db:setup
+```
+
+Start the development server:
 
 ```bash
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in a browser.
 
-You can start editing the page by modifying `src/app/page.tsx`. The page auto-updates as you edit the file.
+## Available Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Purpose |
+| --- | --- |
+| `pnpm dev` | Start the development server |
+| `pnpm build` | Create a production build |
+| `pnpm start` | Start the production server |
+| `pnpm typecheck` | Run TypeScript checks |
+| `pnpm lint` | Run ESLint |
 
-## Learn More
+## Continuous Deployment
 
-To learn more about Next.js, take a look at the following resources:
+The repository includes a continuous deployment workflow. Updates merged into
+`master` are deployed through the configured GitHub Actions self-hosted runner.
+Merged PRs would be deployed on Uoft VM running on **hourspace.utm.utoronto.ca**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Codebase Overview
-
+```text
+src/
+  app/          Pages, UI components, and API routes
+  actions/      Server actions
+  services/     Application workflows
+  lib/          Queries, authentication, and shared utilities
+prisma/         Prisma schema and migrations
+scripts/        Development and deployment scripts
+config/         Server configuration examples
+public/         Static assets
 ```
-/
-├── src/
-│   ├── actions/        ← server actions; wrappers for services, auth as needed
-│   ├── app/            ← pages, components, and API routes (app/api/...)
-│   ├── lib/            ← reusable helpers (prisma, session, queries, etc.)
-│   └── services/       ← business-logic workflows
-├── prisma/             ← schema and migrations
-└── public/             ← static assets
-```
+
+## Contributing
+
+Before starting a substantial change, contact a project maintainer or Professor
+Rutwa Engineer to confirm the scope and ownership of the work.
+
+Use a dedicated branch for each change and keep pull requests focused. Run the
+relevant type checks and lint checks before requesting review.
+
+## Contact
+
+For project access, contribution questions, or deployment coordination, contact
+the repository maintainers or Professor Rutwa Engineer.

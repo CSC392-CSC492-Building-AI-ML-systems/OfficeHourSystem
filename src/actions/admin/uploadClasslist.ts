@@ -2,11 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { userCanAccessAdmin } from "@/lib/auth/canAccessAdmin";
-import {
-  getRequestSession,
-  parseSessionUserId,
-} from "@/lib/auth/getRequestSession";
+import { requireSuperAdminAccess } from "@/lib/auth/canAccessAdmin";
 import { parseClasslistCSVText } from "@/lib/csv/parseCSV";
 import { importClasslist } from "@/lib/queries/classlist";
 import { addOrUpdateStaffMember } from "@/lib/queries/offeringMember";
@@ -33,15 +29,7 @@ export async function uploadAdminClasslistAction(
   formData: FormData,
 ): Promise<AdminClasslistUploadResult> {
   try {
-    const session = await getRequestSession();
-    if (!session) {
-      throw new Error("Authentication required");
-    }
-
-    const userId = parseSessionUserId(session);
-    if (!(await userCanAccessAdmin(userId, session.utorid))) {
-      throw new Error("Instructor or admin access required");
-    }
+    const session = await requireSuperAdminAccess();
 
     const termCode = formData.get("termCode");
     if (typeof termCode !== "string" || termCode.trim().length === 0) {
