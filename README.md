@@ -4,15 +4,6 @@ HourSpace is an office-hour management system for University of Toronto
 Mississauga computer science courses. It supports course scheduling, student
 interest, help queues, classlist management, and TCard-based check-ins.
 
-## Features
-
-- Office-hour scheduling and recurring sessions
-- Upcoming session and interest tracking
-- Help Centre check-in and queue management
-- TCard-based student lookup
-- Course offering and classlist management
-- Office-hour attendance and course statistics
-
 ## Technology
 
 - Next.js 16
@@ -77,6 +68,7 @@ Open [http://localhost:3000](http://localhost:3000) in a browser.
 
 The repository includes a continuous deployment workflow. Updates merged into
 `master` are deployed through the configured GitHub Actions self-hosted runner.
+Merged PRs would be deployed on Uoft VM running on **hourspace.utm.utoronto.ca**
 
 ## Project Structure
 
