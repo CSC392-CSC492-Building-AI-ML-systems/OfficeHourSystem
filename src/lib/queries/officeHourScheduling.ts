@@ -956,7 +956,7 @@ export async function getUpcomingSessionsForHost(
         `${session.offering.course.code} ${session.title}`.toUpperCase(),
       title:
         session.type === "DEBUGGING"
-          ? "Debugging Queue"
+          ? "Help Centre Office Hours"
           : session.type === "GROUP"
             ? "Topic Group"
             : "General Office Hours",

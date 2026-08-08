@@ -13,7 +13,7 @@ const TYPE_STYLES: Record<
     accent: "border-l-[#1e4fa1]",
   },
   DEBUGGING: {
-    label: "Debugging",
+    label: "Help Centre",
     badge: "bg-[#fdecef] text-[#c8102e]",
     accent: "border-l-[#c8102e]",
   },
