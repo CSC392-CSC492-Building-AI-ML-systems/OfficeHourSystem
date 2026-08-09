@@ -33,7 +33,7 @@ export default async function CoursePage() {
     <main className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <Navbar
-          brandHref="/course"
+          brandHref="/"
           activeKey="courses"
           items={COURSE_NAV_ITEMS}
           endItems={courseNavEndItems(

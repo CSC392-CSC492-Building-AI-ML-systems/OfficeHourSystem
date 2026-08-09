@@ -32,7 +32,7 @@ export function Navbar({ showQueueLink = true, courseLabel }: NavbarProps) {
     <AppNavbar
       items={items}
       activeKey={activeKey}
-      brandHref="/"
+      brandHref="/course"
       courseLabel={courseLabel}
     />
   );
