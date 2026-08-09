@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { unsealData } from "iron-session";
 
 import type { SessionData } from "@/lib/session";
-import { shouldRefreshSessionIdentity } from "@/lib/auth/sessionIdentity";
-
-const PRIVATE_CACHE_CONTROL = "private, no-store, max-age=0, must-revalidate";
 
 // ---------------------------------------------------------------------------
 // Routes that do NOT require authentication
@@ -29,27 +26,6 @@ function isPublic(pathname: string): boolean {
   return false;
 }
 
-function preventPrivateCaching(response: NextResponse): NextResponse {
-  response.headers.set("Cache-Control", PRIVATE_CACHE_CONTROL);
-  return response;
-}
-
-function sessionBootstrapRedirect(request: NextRequest): NextResponse {
-  const loginUrl = new URL("/api/auth/session", request.url);
-  loginUrl.searchParams.set(
-    "redirect",
-    request.nextUrl.pathname + request.nextUrl.search,
-  );
-  return preventPrivateCaching(NextResponse.redirect(loginUrl));
-}
-
-function identityChangedResponse(): NextResponse {
-  return new NextResponse("Authentication identity changed.", {
-    status: 401,
-    headers: { "Cache-Control": PRIVATE_CACHE_CONTROL },
-  });
-}
-
 // ---------------------------------------------------------------------------
 // Middleware
 // ---------------------------------------------------------------------------
@@ -59,18 +35,6 @@ export async function proxy(request: NextRequest) {
 
   if (isPublic(pathname)) {
     return NextResponse.next();
-  }
-
-  const isProduction = process.env.NODE_ENV === "production";
-  const shibbolethUtorid = request.headers.get("utorid")?.trim() || null;
-
-  // Production requests must have a current Shibboleth identity. Never render
-  // protected data based only on a potentially stale application cookie.
-  if (isProduction && !shibbolethUtorid) {
-    if (request.method !== "GET" && request.method !== "HEAD") {
-      return identityChangedResponse();
-    }
-    return sessionBootstrapRedirect(request);
   }
 
   // Check for a valid iron-session cookie
@@ -95,20 +59,7 @@ export async function proxy(request: NextRequest) {
       });
 
       if (session?.userId) {
-        const identityChanged = shouldRefreshSessionIdentity(
-          isProduction,
-          shibbolethUtorid,
-          session.utorid,
-        );
-
-        if (identityChanged) {
-          if (request.method !== "GET" && request.method !== "HEAD") {
-            return identityChangedResponse();
-          }
-          return sessionBootstrapRedirect(request);
-        }
-
-        return preventPrivateCaching(NextResponse.next());
+        return NextResponse.next();
       }
     } catch {
       // Tampered or expired cookie — fall through to redirect
@@ -118,7 +69,9 @@ export async function proxy(request: NextRequest) {
   // No valid session → bootstrap one via /api/auth/session
   // The route reads the utorid header (prod) or DEV_UTORID env var (dev),
   // creates the session cookie, and redirects back here.
-  return sessionBootstrapRedirect(request);
+  const loginUrl = new URL("/api/auth/session", request.url);
+  loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {

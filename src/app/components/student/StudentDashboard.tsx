@@ -1,4 +1,5 @@
 import { Navbar } from "./Navbar";
+import { FeatureBanner } from "./cards/FeatureBanner";
 import { SessionRow } from "./cards/SessionRow";
 import type { StudentDashboardSessionDto } from "@/services/student_dashboard/student-dashboard";
 
@@ -123,6 +124,12 @@ export default function StudentDashboard({
               </div>
             )}
           </section>
+
+          <FeatureBanner
+            title="Enhance Your Learning Experience"
+            description="Our Triple-Stream system ensures you get the right support at the right time. From quick questions to deep technical debugging."
+            buttonText="How it works"
+          />
         </main>
       </div>
     </div>

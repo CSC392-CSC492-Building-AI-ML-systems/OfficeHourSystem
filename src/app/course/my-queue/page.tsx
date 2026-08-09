@@ -7,28 +7,13 @@ import {
 import { StudentMyQueuePage } from "@/app/components/student/StudentMyQueuePage";
 import { Navbar } from "@/app/components/shared/Navbar";
 import { isAdmin } from "@/lib/adminList";
-import {
-  getRequestSession,
-  parseSessionUserId,
-} from "@/lib/auth/getRequestSession";
-import {
-  resolveAvailableWorkspaceViews,
-  resolveDefaultWorkspacePath,
-} from "@/lib/auth/resolveHomeRedirect";
+import { getRequestSession } from "@/lib/auth/getRequestSession";
 import { getStudentQueueService } from "@/services/student_queue/student-queue";
 
 export default async function CourseMyQueueRoute() {
   const session = await getRequestSession();
   if (!session) {
     redirect("/api/auth/session?redirect=/course/my-queue");
-  }
-
-  const views = await resolveAvailableWorkspaceViews(
-    parseSessionUserId(session),
-    session.utorid,
-  );
-  if (!views.includes("instructor")) {
-    redirect(resolveDefaultWorkspacePath(views));
   }
 
   const tickets = await getStudentQueueService();

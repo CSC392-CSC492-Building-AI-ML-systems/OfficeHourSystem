@@ -66,6 +66,7 @@ export function Navbar({
   endItems = [],
   activeKey,
   brandHref = "/",
+  courseLabel,
   showSearch = false,
   trailing,
 }: NavbarProps) {
@@ -97,7 +98,7 @@ export function Navbar({
 
           <div className="flex items-center gap-6">
             <NavLinks items={endItems} activeKey={activeKey} />
-            {trailing ?? <ProfileMenu />}
+            {trailing ?? <ProfileMenu courseLabel={courseLabel} />}
           </div>
         </div>
       </div>

@@ -150,7 +150,7 @@ export default function SessionStatsListPage({
                 {courseCode}
               </h1>
               <p className="text-base text-slate-600">
-                Per-session Help Centre Office Hours statistics.
+                Per-session debugging office-hour stats.
               </p>
             </div>
 
@@ -184,7 +184,7 @@ export default function SessionStatsListPage({
 
           {sessions.length === 0 ? (
             <p className="rounded-[28px] border border-slate-200/80 bg-white px-6 py-16 text-center text-sm text-slate-500">
-              No Help Centre Office Hours found for this course yet.
+              No debugging office hours found for this course yet.
             </p>
           ) : (
             <section className="grid gap-5 lg:grid-cols-2">

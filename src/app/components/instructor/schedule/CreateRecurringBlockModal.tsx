@@ -62,8 +62,8 @@ const sessionTypeOptions: Array<{
   },
   {
     id: "debugging-queue",
-    label: "Help Centre Office Hours",
-    description: "Join a queue for one-on-one help.",
+    label: "Debugging Queue",
+    description: "One-on-one support for deeper assignment and code blockers.",
     icon: Bug,
   },
   {
@@ -131,7 +131,7 @@ function CreateRecurringBlockForm({
   );
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("16:00");
-  const [locationDetail, setLocationDetail] = useState("DH 2034");
+  const [locationDetail, setLocationDetail] = useState("Room 402");
   const [blockName, setBlockName] = useState("");
   const [hostPublicIds, setHostPublicIds] = useState<string[]>([]);
 
@@ -383,7 +383,7 @@ function CreateRecurringBlockForm({
                 value={locationDetail}
                 maxLength={LOCATION_MAX_LENGTH}
                 onChange={(event) => setLocationDetail(event.target.value)}
-                placeholder="DH 2034 or Zoom"
+                placeholder="Room 402 or Zoom"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
               />
               <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />

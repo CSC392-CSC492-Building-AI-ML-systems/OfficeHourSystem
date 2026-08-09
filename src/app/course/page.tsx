@@ -11,10 +11,6 @@ import {
   getRequestSession,
   parseSessionUserId,
 } from "@/lib/auth/getRequestSession";
-import {
-  resolveAvailableWorkspaceViews,
-  resolveDefaultWorkspacePath,
-} from "@/lib/auth/resolveHomeRedirect";
 import { listCoursePickerOfferings } from "@/lib/queries/course/offerings";
 import { prisma } from "@/lib/prisma";
 
@@ -25,11 +21,6 @@ export default async function CoursePage() {
   }
 
   const userId = parseSessionUserId(session);
-  const views = await resolveAvailableWorkspaceViews(userId, session.utorid);
-  if (!views.includes("instructor")) {
-    redirect(resolveDefaultWorkspacePath(views));
-  }
-
   const [courses, user] = await Promise.all([
     listCoursePickerOfferings(userId),
     prisma.user.findUnique({

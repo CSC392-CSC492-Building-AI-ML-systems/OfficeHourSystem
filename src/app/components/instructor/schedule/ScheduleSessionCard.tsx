@@ -43,8 +43,18 @@ const sessionStyles = {
 } as const;
 
 function SessionTypeLabel({ label }: { label: string }) {
+  const twoLineMatch = label.match(/^(Debugging|Topic)\s+(Queue|Group)$/);
+  if (twoLineMatch) {
+    return (
+      <p className="text-[10px] font-semibold tracking-[0.14em] opacity-85">
+        <span className="block leading-none">{twoLineMatch[1]}</span>
+        <span className="mt-px block leading-none">{twoLineMatch[2]}</span>
+      </p>
+    );
+  }
+
   return (
-    <p className="text-[10px] font-semibold leading-tight tracking-[0.12em] opacity-85">
+    <p className="whitespace-nowrap text-[11px] font-semibold leading-tight tracking-[0.18em] opacity-85">
       {label}
     </p>
   );

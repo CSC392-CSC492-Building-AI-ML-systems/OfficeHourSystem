@@ -10,25 +10,33 @@ import {
 } from "lucide-react";
 
 const NAV_LINKS = [
-  { label: "Using HourSpace", href: "#how-it-works" },
+  { label: "How it works", href: "#how-it-works" },
   // { label: "Interest", href: "#mark-interest" },
   // { label: "Sessions", href: "#session-types" },
   { label: "Queue", href: "#debugging-queue" },
   { label: "Students", href: "#for-students" },
 ];
 
-const HOURSPACE_ACTIONS = [
+const HOW_IT_WORKS = [
   {
-    title: "View your office hours",
-    body: "Open a course to see upcoming office hours, including the time, location, and session type.",
+    step: "01",
+    title: "Sign in with your UTORid",
+    body: "Use the Login button to open HourSpace with your campus account. Pick Student, Instructor, or Admin based on how you use the system.",
   },
   {
-    title: "Mark your interest",
-    body: "Select I'm interested on an upcoming session you plan to attend.",
+    step: "02",
+    title: "Open your course dashboard",
+    body: "Students see enrolled courses and upcoming office hours for the week — including time, location, and session type.",
   },
   {
-    title: "Join a help queue",
-    body: "At Help Centre Office Hours, scan your T-Card to join the queue, then open My Queue to check your position.",
+    step: "03",
+    title: "Mark that you are interested",
+    body: "Tap I'm interested on a session you plan to attend. That tells staff you are coming and helps them collect statistics for future planning.",
+  },
+  {
+    step: "04",
+    title: "Join the debugging queue",
+    body: "When a Debugging Queue is live, scan your T-Card to check in, then open My Queue to watch your place in line until a TA or instructor helps you.",
   },
 ];
 
@@ -40,9 +48,9 @@ const OH_TYPES = [
     icon: CalendarRange,
   },
   {
-    label: "Help Centre",
-    title: "Help Centre Office Hours",
-    description: "Join the on-site queue for one-on-one help.",
+    label: "Debugging",
+    title: "Debugging Queue",
+    description: "One-on-one support for deeper assignment and code blockers.",
     icon: Bug,
   },
   {
@@ -56,11 +64,15 @@ const OH_TYPES = [
 const INTEREST_POINTS = [
   {
     title: "Find a session on your dashboard",
-    body: "View the course, title, time, and location for each upcoming session.",
+    body: "Each upcoming office hour shows the course, title, time range, and location so you can plan your week.",
   },
   {
-    title: "Select “I'm interested”",
-    body: "The button changes to Already interested after your selection is saved.",
+    title: "Tap “I'm interested”",
+    body: "One click records that you plan to attend. The button updates to Already interested so you know it was saved.",
+  },
+  {
+    title: "Help staff prepare",
+    body: "Interest counts help instructors and TAs see how busy a session may be.",
   },
 ];
 
@@ -68,17 +80,17 @@ const DEBUGGING_STEPS = [
   {
     step: "01",
     title: "Arrive when the queue is active",
-    body: "Check-in begins at the office hour location when staff open the session.",
+    body: "Debugging Queue sessions are for deeper, one-on-one help. When staff open the session, check-in starts at the office hour location.",
   },
   {
     step: "02",
     title: "Scan your T-Card to join",
-    body: "A TA or instructor scans your T-Card to add you to the queue.",
+    body: "A TA or instructor scans your T-Card. That creates your ticket in the live queue — you do not join from the student page alone.",
   },
   {
     step: "03",
     title: "Watch My Queue",
-    body: "Open My Queue to see your position, estimated wait, and current status.",
+    body: "Open My Queue from the student page to see your position (#), estimated wait, and when you move to Being helped. Status refreshes automatically.",
   },
 ];
 
@@ -93,11 +105,11 @@ const STUDENT_FEATURES = [
   },
   {
     title: "My Queue across courses",
-    body: "Check your Help Centre queue position from one place, even if you are waiting in more than one course.",
+    body: "When a debugging queue is live, check your position from one place — even if you are waiting in more than one course.",
   },
   {
     title: "Clear session details",
-    body: "View the time, location, and session type before attending.",
+    body: "Time, location, and session type (Drop-In, Debugging, or Group) are shown up front before you commit.",
   },
 ];
 
@@ -130,10 +142,10 @@ export default function Home() {
           ))}
         </div>
         <Link
-          href="/api/auth/session?redirect=/home"
+          href="/course"
           className="shrink-0 rounded-full bg-[#c8102e] px-3.5 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-[#a50d25] sm:px-4 sm:text-sm"
         >
-          Get Started
+          Login
         </Link>
       </nav>
 
@@ -162,14 +174,14 @@ export default function Home() {
               <span className="text-[#f8b4bf]">SYSTEM</span>
             </h1>
             <p className="mt-8 max-w-md text-lg leading-8 text-slate-300">
-              Find out more about your office hours. Let&apos;s create a better
-              HourSpace!
+              Drop-in hours, interest signals, and live debugging queues — all
+              in one campus tool.
             </p>
             <Link
-              href="/api/auth/session?redirect=/home"
+              href="/course"
               className="mt-10 inline-flex w-fit items-center gap-3 bg-white px-7 py-4 text-sm font-bold uppercase tracking-wider text-[#071f41] transition hover:bg-[#eaf1ff]"
             >
-              Get Started
+              Login
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -202,17 +214,25 @@ export default function Home() {
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <h2 className="text-4xl font-black tracking-tight text-[#071f41] sm:text-5xl">
-            Using HourSpace
+            How it works
           </h2>
+          <p className="max-w-sm text-base text-slate-600">
+            From sign-in to getting help in four steps.
+          </p>
         </div>
 
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {HOURSPACE_ACTIONS.map((item) => (
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {HOW_IT_WORKS.map((item) => (
             <article
-              key={item.title}
-              className="relative overflow-hidden rounded-[28px] bg-white p-6 shadow-[0_20px_50px_-30px_rgba(7,31,65,0.25)]"
+              key={item.step}
+              className="group relative overflow-hidden rounded-[28px] bg-white p-6 shadow-[0_20px_50px_-30px_rgba(7,31,65,0.25)]"
             >
-              <h3 className="text-lg font-bold text-[#071f41]">{item.title}</h3>
+              <p className="text-6xl font-black leading-none text-[#f0ebe3] transition group-hover:text-[#fdecef]">
+                {item.step}
+              </p>
+              <h3 className="mt-4 text-lg font-bold text-[#071f41]">
+                {item.title}
+              </h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 {item.body}
               </p>
@@ -240,7 +260,7 @@ export default function Home() {
               <span className="font-bold underline decoration-white/40 underline-offset-4">
                 I&apos;m interested
               </span>{" "}
-              on an upcoming session you plan to attend.
+              on any upcoming session. One click — no appointment required.
             </p>
           </div>
 
@@ -339,10 +359,12 @@ export default function Home() {
           <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#c8102e]">
-                Help Centre Office Hours
+                Debugging Queue
               </p>
               <h2 className="mt-4 text-4xl font-black leading-tight text-[#071f41]">
-                Check your queue position
+                Live queue,
+                <br />
+                real-time updates
               </h2>
               <p className="mt-6 text-base leading-7 text-slate-600">
                 Scan your T-Card on site, then track position and wait time in
@@ -372,10 +394,8 @@ export default function Home() {
                   <p className="text-xs font-bold uppercase tracking-widest text-[#f8b4bf]">
                     CSC108
                   </p>
-                  <p className="mt-2 text-2xl font-bold">
-                    Help Centre Office Hours
-                  </p>
-                  <p className="mt-1 text-sm text-slate-400">DH 2034 · Today</p>
+                  <p className="mt-2 text-2xl font-bold">Debugging Queue</p>
+                  <p className="mt-1 text-sm text-slate-400">DH 2014 · Today</p>
                 </div>
                 <div className="text-right">
                   <p className="flex items-center gap-2 text-5xl font-black">
@@ -437,10 +457,10 @@ export default function Home() {
 
         <div className="mt-16 flex justify-center">
           <Link
-            href="/api/auth/session?redirect=/home"
+            href="/course"
             className="inline-flex items-center gap-3 rounded-full bg-[#c8102e] px-10 py-4 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-[#a50d25]"
           >
-            Get Started
+            Login to HourSpace
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

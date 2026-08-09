@@ -1,4 +1,4 @@
-import { requireSuperAdminAccess } from "@/lib/auth/canAccessAdmin";
+import { requireInstructorSession } from "@/lib/auth/getUserRole";
 import { importClasslist } from "@/lib/queries/classlist";
 
 import { parseClasslistCSVText } from "./parseCSV";
@@ -51,7 +51,7 @@ function toFailure(error: unknown): ClasslistUploadFailure {
   };
 }
 
-async function assertClasslistUploadAccess(): Promise<void> {
+async function assertInstructorAccess(): Promise<void> {
   if (
     process.env.ALLOW_CLASSLIST_UPLOAD_BYPASS === "1" &&
     process.env.NODE_ENV !== "production"
@@ -59,18 +59,18 @@ async function assertClasslistUploadAccess(): Promise<void> {
     return;
   }
 
-  await requireSuperAdminAccess();
+  await requireInstructorSession();
 }
 
 /**
  * Parse an uploaded classlist CSV and import it in a single DB transaction.
- * Requires a super-admin listed in `adminList.txt`.
+ * Requires an authenticated user with `isInstructor` set in the database.
  */
 export async function uploadClasslistFromFormData(
   formData: FormData,
 ): Promise<ClasslistUploadResult> {
   try {
-    await assertClasslistUploadAccess();
+    await assertInstructorAccess();
 
     const termCode = readTermCodeFromFormData(formData);
     const csvText = await readCsvTextFromFormData(formData);
