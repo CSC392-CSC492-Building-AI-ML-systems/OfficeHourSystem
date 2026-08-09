@@ -14,6 +14,7 @@ import {
   parseSessionUserId,
 } from "@/lib/auth/getRequestSession";
 import { listAllOfferings } from "@/lib/queries/admin/offerings";
+import { prisma } from "@/lib/prisma";
 
 export default async function AdminPage() {
   const session = await getRequestSession();
@@ -22,7 +23,13 @@ export default async function AdminPage() {
   }
 
   const userId = parseSessionUserId(session);
-  const allowed = await userCanAccessAdmin(userId, session.utorid);
+  const [allowed, user] = await Promise.all([
+    userCanAccessAdmin(userId, session.utorid),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { isInstructor: true },
+    }),
+  ]);
 
   if (!allowed) {
     return (
@@ -70,7 +77,7 @@ export default async function AdminPage() {
           brandHref="/course"
           activeKey="admin"
           items={COURSE_NAV_ITEMS}
-          endItems={courseNavEndItems(true)}
+          endItems={courseNavEndItems(true, user?.isInstructor === true)}
         />
         <AdminDashboard
           utorid={session.utorid}

@@ -36,7 +36,10 @@ export default async function CoursePage() {
           brandHref="/course"
           activeKey="courses"
           items={COURSE_NAV_ITEMS}
-          endItems={courseNavEndItems(isAdmin(session.utorid))}
+          endItems={courseNavEndItems(
+            isAdmin(session.utorid),
+            user?.isInstructor === true,
+          )}
         />
 
         <header className="mb-8 mt-10">
