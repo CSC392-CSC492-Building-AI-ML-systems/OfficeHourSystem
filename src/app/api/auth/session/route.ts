@@ -129,6 +129,7 @@ export async function GET(request: NextRequest) {
   session.email = user.email ?? "";
   session.firstName = user.firstName ?? "";
   session.lastName = user.lastName ?? "";
+  delete session.impersonator;
   await session.save();
 
   // ------------------------------------------------------------------

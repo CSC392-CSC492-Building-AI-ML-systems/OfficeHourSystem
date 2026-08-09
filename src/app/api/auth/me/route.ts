@@ -13,5 +13,7 @@ export async function GET() {
     lastName: session.lastName,
     utorid: session.utorid,
     email: session.email,
+    impersonating: Boolean(session.impersonator),
+    realUtorid: session.impersonator?.utorid ?? null,
   });
 }

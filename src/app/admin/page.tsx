@@ -85,6 +85,7 @@ export default async function AdminPage() {
           lastName={session.lastName}
           canBulkAddInstructors={viewerIsSuperAdmin}
           canUploadClasslist={viewerIsSuperAdmin}
+          canImpersonate={viewerIsSuperAdmin}
           offerings={offerings}
         />
       </div>

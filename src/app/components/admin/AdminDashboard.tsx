@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { ArrowRight, BookOpen, UserPlus } from "lucide-react";
 
+import { impersonateUserAction } from "@/actions/admin/impersonate";
 import type { AdminOfferingListItem } from "@/lib/queries/admin/offerings";
 
 import { AddOfferingInstructorModal } from "./AddOfferingInstructorModal";
@@ -17,6 +18,7 @@ type AdminDashboardProps = {
   lastName: string;
   canBulkAddInstructors: boolean;
   canUploadClasslist: boolean;
+  canImpersonate: boolean;
   offerings: AdminOfferingListItem[];
 };
 
@@ -26,14 +28,31 @@ export function AdminDashboard({
   lastName,
   canBulkAddInstructors,
   canUploadClasslist,
+  canImpersonate,
   offerings: initialOfferings,
 }: AdminDashboardProps) {
   const router = useRouter();
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [addInstructorTarget, setAddInstructorTarget] =
     useState<AdminOfferingListItem | null>(null);
+  const [impersonateUtorid, setImpersonateUtorid] = useState("");
+  const [impersonating, setImpersonating] = useState(false);
+  const [impersonateError, setImpersonateError] = useState<string | null>(null);
 
   const refresh = () => router.refresh();
+
+  const handleImpersonate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setImpersonating(true);
+    setImpersonateError(null);
+    const result = await impersonateUserAction(impersonateUtorid);
+    if (!result.ok) {
+      setImpersonateError(result.error);
+      setImpersonating(false);
+      return;
+    }
+    window.location.assign(result.redirectTo);
+  };
 
   return (
     <>
@@ -69,6 +88,50 @@ export function AdminDashboard({
               <UserPlus className="h-4 w-4" />
               Bulk add instructors
             </button>
+          </section>
+        ) : null}
+
+        {canImpersonate ? (
+          <section className="rounded-[30px] border border-slate-200/80 bg-white px-6 py-5 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
+            <h2 className="text-lg font-semibold text-[#071f41]">
+              Become another user
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Act as an existing account for debugging. Switch back from the
+              profile menu. Super-admin only.
+            </p>
+            <form
+              onSubmit={handleImpersonate}
+              className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start"
+            >
+              <div className="min-w-0 flex-1">
+                <label htmlFor="impersonate-utorid" className="sr-only">
+                  UTORid
+                </label>
+                <input
+                  id="impersonate-utorid"
+                  type="text"
+                  value={impersonateUtorid}
+                  onChange={(event) => setImpersonateUtorid(event.target.value)}
+                  placeholder="UTORid"
+                  autoComplete="off"
+                  disabled={impersonating}
+                  className="w-full rounded-full border border-slate-200 bg-[#f8fafc] px-5 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] disabled:opacity-60"
+                />
+                {impersonateError ? (
+                  <p className="mt-2 text-sm text-[#c8102e]">
+                    {impersonateError}
+                  </p>
+                ) : null}
+              </div>
+              <button
+                type="submit"
+                disabled={impersonating || !impersonateUtorid.trim()}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(7,31,65,0.7)] transition hover:bg-[#0f2942] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Become user
+              </button>
+            </form>
           </section>
         ) : null}
 

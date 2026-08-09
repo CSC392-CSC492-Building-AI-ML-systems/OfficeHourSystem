@@ -3,10 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { UserCircle } from "lucide-react";
 
+import { stopImpersonationAction } from "@/actions/admin/impersonate";
+
 type ProfileUser = {
   firstName: string;
   lastName: string;
   utorid: string;
+  impersonating?: boolean;
+  realUtorid?: string | null;
 };
 
 type ProfileMenuProps = {
@@ -18,6 +22,8 @@ export function ProfileMenu({ courseLabel }: ProfileMenuProps) {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<ProfileUser | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [switchingBack, setSwitchingBack] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,6 +77,18 @@ export function ProfileMenu({ courseLabel }: ProfileMenuProps) {
     ? `${user.firstName} ${user.lastName}`.trim() || user.utorid
     : null;
 
+  const handleSwitchBack = async () => {
+    setSwitchingBack(true);
+    setSwitchError(null);
+    const result = await stopImpersonationAction();
+    if (!result.ok) {
+      setSwitchError(result.error);
+      setSwitchingBack(false);
+      return;
+    }
+    window.location.assign(result.redirectTo);
+  };
+
   return (
     <div ref={rootRef} className="relative">
       <button
@@ -119,6 +137,26 @@ export function ProfileMenu({ courseLabel }: ProfileMenuProps) {
                     <p className="mt-0.5 font-semibold text-[#071f41]">
                       {courseLabel}
                     </p>
+                  </div>
+                ) : null}
+                {user.impersonating ? (
+                  <div className="border-t border-slate-100 pt-3">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={switchingBack}
+                      onClick={() => void handleSwitchBack()}
+                      className="w-full rounded-full bg-[#071f41] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0f2942] disabled:opacity-60"
+                    >
+                      {switchingBack
+                        ? "Switching…"
+                        : `Switch back to ${user.realUtorid ?? "admin"}`}
+                    </button>
+                    {switchError ? (
+                      <p className="mt-2 text-xs text-[#c8102e]">
+                        {switchError}
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
               </>
