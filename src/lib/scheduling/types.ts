@@ -96,6 +96,8 @@ export type ScheduleSessionDto = {
   hostLabel: string;
   hasOverride?: boolean;
   overrideLocation?: string;
+  interestedCount: number;
+  checkedInCount: number;
 };
 
 export type RecurringRuleDto = {

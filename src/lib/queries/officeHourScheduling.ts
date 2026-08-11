@@ -201,6 +201,7 @@ type SessionWithRelations = Prisma.OfficeHourSessionGetPayload<{
         };
       };
     };
+    _count: { select: { interests: true; records: true; attendances: true } };
   };
 }>;
 
@@ -223,6 +224,7 @@ const sessionInclude = {
       },
     },
   },
+  _count: { select: { interests: true, records: true, attendances: true } },
 } as const;
 
 function userDisplayName(user: {
@@ -313,6 +315,8 @@ function mapSessionToDto(
     hostLabel,
     hasOverride,
     overrideLocation: hasLocationOverride ? sessionLocation : undefined,
+    interestedCount: session._count.interests,
+    checkedInCount: session._count.records + session._count.attendances,
   };
 }
 
