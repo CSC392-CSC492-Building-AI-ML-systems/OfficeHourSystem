@@ -81,18 +81,18 @@ const INTEREST_POINTS = [
 const DEBUGGING_STEPS = [
   {
     step: "01",
-    title: "Arrive when the queue is active",
-    body: "Help Centre sessions are for deeper, one-on-one help. When staff open the session, check-in starts at the office hour location.",
+    title: "Arrive to the session",
+    body: "A computer set up with a NFC reader will be available for you to scan",
   },
   {
     step: "02",
     title: "Scan your T-Card to join",
-    body: "A TA or instructor scans your T-Card. That creates your ticket in the live queue — you do not join from the student page alone.",
+    body: "Scan your T-Card and you'll be placed into the queue.",
   },
   {
     step: "03",
     title: "Watch My Queue",
-    body: "Open My Queue from the student page to see your position (#), estimated wait, and when you move to Being helped. Status refreshes automatically.",
+    body: "Open My Queue from the student page to track your position and see your estimated wait time.",
   },
 ];
 
@@ -177,8 +177,8 @@ export default function Home() {
             </h1>
             <p className="mt-8 max-w-md text-lg leading-8 text-slate-300">
               Track your office hours, with live queues and student marks of
-              interest. Track your statistics and see how your office hours are
-              doing.
+              interest. Prevent students from crowding teaching staff with a
+              digital queue.
             </p>
             <Link
               href="/course"
