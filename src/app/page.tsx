@@ -3,10 +3,12 @@ import {
   ArrowRight,
   Bug,
   CalendarRange,
+  Clock,
   Clock3,
-  RefreshCw,
+  MapPin,
   Users,
 } from "lucide-react";
+import { QueuePreviewHeader } from "@/app/components/student/QueuePreviewHeader";
 import { SessionRow } from "@/app/components/student/cards/SessionRow";
 
 const NAV_LINKS = [
@@ -328,12 +330,10 @@ export default function Home() {
           <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#c8102e]">
-                Help Centre
+                The Queue
               </p>
               <h2 className="mt-4 text-4xl font-black leading-tight text-[#071f41]">
-                Live queue,
-                <br />
-                real-time updates
+                How The Queue Works
               </h2>
               <p className="mt-6 text-base leading-7 text-slate-600">
                 Scan your T-Card on site, then track position and wait time in
@@ -357,39 +357,44 @@ export default function Home() {
               </ol>
             </div>
 
-            <div className="rounded-[32px] bg-[#071f41] p-8 text-white">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#f8b4bf]">
-                    CSC108
-                  </p>
-                  <p className="mt-2 text-2xl font-bold">Help Centre</p>
-                  <p className="mt-1 text-sm text-slate-400">DH 2014 · Today</p>
-                </div>
-                <div className="text-right">
-                  <p className="flex items-center gap-2 text-5xl font-black">
-                    <Users className="h-8 w-8 text-slate-500" />
-                    #3
-                  </p>
-                  <p className="mt-2 rounded-full bg-[#1e4fa1] px-3 py-1 text-xs font-bold">
-                    ~20 min wait
-                  </p>
-                </div>
-              </div>
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                {["Your #", "Est. wait", "Being helped"].map((label) => (
-                  <div
-                    key={label}
-                    className="rounded-2xl bg-white/5 px-4 py-3 text-center"
-                  >
-                    <p className="text-xs font-bold text-[#f8b4bf]">{label}</p>
+            <div className="rounded-[32px] bg-[#f4f7fb] p-6 sm:p-8">
+              <QueuePreviewHeader />
+
+              <div className="rounded-[24px] border border-slate-200/80 bg-white p-6 shadow-[0_12px_40px_-24px_rgba(15,41,66,0.3)]">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-[#c8102e]">
+                      CSC108
+                    </p>
+                    <h3 className="text-lg font-semibold text-[#071f41]">
+                      Help Centre
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        DH 2014
+                      </span>
+                      <span>Aug 11 · 2:00 PM–3:00 PM</span>
+                    </div>
                   </div>
-                ))}
+
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <span className="flex items-center gap-1.5 text-2xl font-black text-[#071f41]">
+                      <Users className="h-5 w-5 text-slate-400" />
+                      #3
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#eaf1ff] px-3 py-1 text-xs font-semibold text-[#1e4fa1]">
+                      <Clock className="h-3 w-3" />
+                      ~20 min ±5 min
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
+                  <span>Checked in at 2:08 PM</span>
+                  <span>Waited 12 min</span>
+                </div>
               </div>
-              <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-400">
-                <RefreshCw className="h-3 w-3" />
-                Updates automatically
-              </p>
             </div>
           </div>
         </div>
