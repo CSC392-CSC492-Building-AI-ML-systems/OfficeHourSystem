@@ -57,19 +57,22 @@ const sessionTypeOptions: Array<{
   {
     id: "drop-in",
     label: "Professor Office Hours",
-    description: "Open office hours for quick questions and concept checks.",
+    description:
+      "Regular open ended office hours for any questions or concerns.",
     icon: CalendarRange,
   },
   {
     id: "debugging-queue",
     label: "Help Centre",
-    description: "One-on-one support for deeper assignment and code blockers.",
+    description:
+      "Get clarity on any debugging issues or questions with course TAs.",
     icon: Bug,
   },
   {
     id: "topic-group",
     label: "Custom",
-    description: "Small-group sessions focused on a specific topic or review.",
+    description:
+      "Create your own sessions and work together with other students. Good for study groups or review sessions.",
     icon: Users,
   },
 ];

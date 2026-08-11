@@ -43,17 +43,20 @@ const HOW_IT_WORKS = [
 const OH_TYPES = [
   {
     title: "Professor Office Hours",
-    description: "Open office hours for quick questions and concept checks.",
+    description:
+      "Regular open ended office hours for any questions or concerns.",
     icon: CalendarRange,
   },
   {
     title: "Help Centre",
-    description: "One-on-one support for deeper assignment and code blockers.",
+    description:
+      "Get clarity on any debugging issues or questions with course TAs.",
     icon: Bug,
   },
   {
     title: "Custom",
-    description: "Small-group sessions focused on a specific topic or review.",
+    description:
+      "Create your own sessions and work together with other students. Good for study groups or review sessions.",
     icon: Users,
   },
 ];
