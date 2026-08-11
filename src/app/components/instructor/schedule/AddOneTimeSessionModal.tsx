@@ -51,7 +51,7 @@ const sessionTypeOptions: Array<{
   },
   {
     id: "debugging-queue",
-    label: "Debugging Queue",
+    label: "Help Centre",
     description: "One-on-one support for deeper assignment and code blockers.",
     icon: Bug,
   },

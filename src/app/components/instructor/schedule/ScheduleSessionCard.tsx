@@ -43,7 +43,7 @@ const sessionStyles = {
 } as const;
 
 function SessionTypeLabel({ label }: { label: string }) {
-  const twoLineMatch = label.match(/^(Debugging|Topic)\s+(Queue|Group)$/);
+  const twoLineMatch = label.match(/^(Help|Topic)\s+(Centre|Group)$/);
   if (twoLineMatch) {
     return (
       <p className="text-[10px] font-semibold tracking-[0.14em] opacity-85">

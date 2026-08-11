@@ -10,7 +10,7 @@
  *   3. Add the DEV user to the offering as TA
  *   4. Create 3 OH sessions happening today
  *   5. Create 5 fake students enrolled in the offering
- *   6. Add 3 students as WAITING and 1 as IN_HELP in the Debugging Queue session
+ *   6. Add 3 students as WAITING and 1 as IN_HELP in the Help Centre session
  *
  * Safe to run multiple times — uses upsert so it won't create duplicates.
  */
@@ -110,7 +110,7 @@ async function main() {
       status: "SCHEDULED" as const,
     },
     {
-      title: "Debugging Queue",
+      title: "Help Centre",
       type: "DEBUGGING" as const,
       startsAt: s2Start,
       endsAt: s2End,
@@ -155,7 +155,7 @@ async function main() {
     });
   }
 
-  // Step 6: Find the Debugging Queue session to add fake students to it
+  // Step 6: Find the Help Centre session to add fake students to it
   const debugSession = await prisma.officeHourSession.findFirst({
     where: { offeringId: offering.id, type: "DEBUGGING" },
   });

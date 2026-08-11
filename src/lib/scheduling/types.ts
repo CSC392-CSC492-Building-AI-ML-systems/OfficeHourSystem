@@ -20,7 +20,7 @@ export function uiSessionTypeToOfficeHourType(
 export function officeHourTypeLabel(type: OfficeHourType): string {
   switch (type) {
     case "DEBUGGING":
-      return "Debugging Queue";
+      return "Help Centre";
     case "GROUP":
       return "Topic Group";
     default:
