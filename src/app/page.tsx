@@ -4,10 +4,10 @@ import {
   Bug,
   CalendarRange,
   Clock3,
-  MapPin,
   RefreshCw,
   Users,
 } from "lucide-react";
+import { SessionRow } from "@/app/components/student/cards/SessionRow";
 
 const NAV_LINKS = [
   { label: "How it works", href: "#how-it-works" },
@@ -21,12 +21,12 @@ const HOW_IT_WORKS = [
   {
     step: "01",
     title: "Sign in with your UTORid",
-    body: "Use the Login button to open HourSpace with your campus account. Pick Student, Instructor, or Admin based on how you use the system.",
+    body: "Use the Login button to open HourSpace with your campus account.",
   },
   {
     step: "02",
     title: "Open your course dashboard",
-    body: "Students see enrolled courses and upcoming office hours for the week — including time, location, and session type.",
+    body: "See your enrolled courses and the upcoming office hours for the week including time, location, and session type.",
   },
   {
     step: "03",
@@ -35,21 +35,21 @@ const HOW_IT_WORKS = [
   },
   {
     step: "04",
-    title: "Join the debugging queue",
-    body: "When a Debugging Queue is live, scan your T-Card to check in, then open My Queue to watch your place in line until a TA or instructor helps you.",
+    title: "Join the queue",
+    body: "When office hours are live, tap your T Card to check in. Check on My Queue to see your position in line until a TA or instructor helps you.",
   },
 ];
 
 const OH_TYPES = [
   {
-    label: "Drop-In",
-    title: "Drop-in office hours",
+    label: "Professor",
+    title: "Professor Office Hours",
     description: "Open office hours for quick questions and concept checks.",
     icon: CalendarRange,
   },
   {
-    label: "Debugging",
-    title: "Debugging Queue",
+    label: "Help",
+    title: "Help Centre",
     description: "One-on-one support for deeper assignment and code blockers.",
     icon: Bug,
   },
@@ -80,7 +80,7 @@ const DEBUGGING_STEPS = [
   {
     step: "01",
     title: "Arrive when the queue is active",
-    body: "Debugging Queue sessions are for deeper, one-on-one help. When staff open the session, check-in starts at the office hour location.",
+    body: "Help Centre sessions are for deeper, one-on-one help. When staff open the session, check-in starts at the office hour location.",
   },
   {
     step: "02",
@@ -105,11 +105,11 @@ const STUDENT_FEATURES = [
   },
   {
     title: "My Queue across courses",
-    body: "When a debugging queue is live, check your position from one place — even if you are waiting in more than one course.",
+    body: "When a Help Centre is live, check your position from one place — even if you are waiting in more than one course.",
   },
   {
     title: "Clear session details",
-    body: "Time, location, and session type (Drop-In, Debugging, or Group) are shown up front before you commit.",
+    body: "Time, location, and session type (Professor Office Hours, Help Centre, or Group) are shown up front before you commit.",
   },
 ];
 
@@ -174,8 +174,9 @@ export default function Home() {
               <span className="text-[#f8b4bf]">SYSTEM</span>
             </h1>
             <p className="mt-8 max-w-md text-lg leading-8 text-slate-300">
-              Drop-in hours, interest signals, and live debugging queues — all
-              in one campus tool.
+              Track your office hours, with live queues and student marks of
+              interest. Track your statistics and see how your office hours are
+              doing.
             </p>
             <Link
               href="/course"
@@ -196,7 +197,7 @@ export default function Home() {
             </div>
             <div className="rounded-3xl bg-white/10 p-5 backdrop-blur-sm">
               <Clock3 className="h-5 w-5 text-[#f8b4bf]" />
-              <p className="mt-4 text-sm font-semibold">Drop-In</p>
+              <p className="mt-4 text-sm font-semibold">Professor</p>
               <p className="mt-1 text-xs text-slate-300">Quick questions</p>
             </div>
             <div className="rounded-3xl bg-[#1e4fa1] p-5">
@@ -216,9 +217,7 @@ export default function Home() {
           <h2 className="text-4xl font-black tracking-tight text-[#071f41] sm:text-5xl">
             How it works
           </h2>
-          <p className="max-w-sm text-base text-slate-600">
-            From sign-in to getting help in four steps.
-          </p>
+          <p className="max-w-sm text-base text-slate-600"></p>
         </div>
 
         <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -255,54 +254,29 @@ export default function Home() {
               <br />
               you&apos;re coming
             </h2>
-            <p className="mt-6 text-base leading-7 text-white/85">
-              Tap{" "}
-              <span className="font-bold underline decoration-white/40 underline-offset-4">
-                I&apos;m interested
-              </span>{" "}
-              on any upcoming session. One click — no appointment required.
-            </p>
-          </div>
-
-          <div className="rounded-[32px] bg-white p-6 text-slate-900 shadow-2xl">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-[#1e4fa1]">
-                  Drop-In
-                </p>
-                <p className="mt-1 text-lg font-bold text-[#071f41]">
-                  Example session
-                </p>
-                <p className="mt-2 flex flex-wrap gap-3 text-sm text-slate-500">
-                  <span className="inline-flex items-center gap-1">
-                    <Clock3 className="h-3.5 w-3.5" />
-                    2:00 – 3:00 PM
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" />
-                    DH 2014
-                  </span>
-                </p>
-              </div>
-              <span className="w-fit rounded-full bg-[#071f41] px-5 py-2.5 text-sm font-semibold text-white">
-                I&apos;m interested
-              </span>
-            </div>
-            <ul className="mt-6 space-y-4 border-t border-slate-100 pt-6">
+            <ul className="mt-6 space-y-4">
               {INTEREST_POINTS.map((point) => (
                 <li key={point.title} className="flex gap-3">
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#c8102e]" />
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-white" />
                   <div>
-                    <p className="font-semibold text-[#071f41]">
-                      {point.title}
-                    </p>
-                    <p className="mt-0.5 text-sm text-slate-600">
-                      {point.body}
-                    </p>
+                    <p className="font-semibold text-white">{point.title}</p>
+                    <p className="mt-0.5 text-sm text-white/80">{point.body}</p>
                   </div>
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="h-fit self-center rounded-[32px] bg-white p-5 text-slate-900 shadow-2xl">
+            <SessionRow
+              sessionId={0}
+              type="REGULAR"
+              courseCode="CSC108"
+              title="Morning Professor Office Hours"
+              time="2:00 – 3:00 PM"
+              location="DH 2014"
+              demo
+            />
           </div>
         </div>
       </section>
@@ -359,7 +333,7 @@ export default function Home() {
           <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#c8102e]">
-                Debugging Queue
+                Help Centre
               </p>
               <h2 className="mt-4 text-4xl font-black leading-tight text-[#071f41]">
                 Live queue,
@@ -394,7 +368,7 @@ export default function Home() {
                   <p className="text-xs font-bold uppercase tracking-widest text-[#f8b4bf]">
                     CSC108
                   </p>
-                  <p className="mt-2 text-2xl font-bold">Debugging Queue</p>
+                  <p className="mt-2 text-2xl font-bold">Help Centre</p>
                   <p className="mt-1 text-sm text-slate-400">DH 2014 · Today</p>
                 </div>
                 <div className="text-right">

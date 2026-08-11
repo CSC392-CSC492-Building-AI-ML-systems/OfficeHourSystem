@@ -98,7 +98,7 @@ async function main() {
       offeringId: csc301.id,
       daysBack: 1,
       hour: 10,
-      title: "Morning Drop-in (hist)",
+      title: "Morning Professor Office Hours (hist)",
     },
     {
       offeringId: csc301.id,
@@ -116,7 +116,7 @@ async function main() {
       offeringId: csc301.id,
       daysBack: 5,
       hour: 10,
-      title: "Morning Drop-in (hist)",
+      title: "Morning Professor Office Hours (hist)",
     },
     {
       offeringId: csc358.id,

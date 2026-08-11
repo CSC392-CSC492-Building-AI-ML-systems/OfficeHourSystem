@@ -959,7 +959,7 @@ export async function getUpcomingSessionsForHost(
           ? "Help Centre"
           : session.type === "GROUP"
             ? "Topic Group"
-            : "General Office Hours",
+            : "Professor Office Hours",
       time: `${isToday ? "Today" : formatSessionDateLabel(session.startsAt)}, ${formatDateTimeLabel(session.startsAt)} - ${formatDateTimeLabel(session.endsAt)}`,
       location: session.location ?? "TBD",
       isHighlighted: index === 0 && session.type === "DEBUGGING",

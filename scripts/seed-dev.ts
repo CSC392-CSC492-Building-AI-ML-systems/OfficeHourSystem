@@ -102,7 +102,7 @@ async function main() {
 
   const sessions = [
     {
-      title: "Morning Drop-in",
+      title: "Morning Professor Office Hours",
       type: "REGULAR" as const,
       startsAt: s1Start,
       endsAt: s1End,

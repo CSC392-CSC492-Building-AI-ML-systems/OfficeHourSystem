@@ -45,7 +45,7 @@ const sessionTypeOptions: Array<{
 }> = [
   {
     id: "drop-in",
-    label: "Drop-in",
+    label: "Professor Office Hours",
     description: "Open office hours for quick questions and concept checks.",
     icon: CalendarRange,
   },

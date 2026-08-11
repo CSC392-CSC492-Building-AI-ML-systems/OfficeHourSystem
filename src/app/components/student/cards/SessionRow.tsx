@@ -8,7 +8,7 @@ const TYPE_STYLES: Record<
   { label: string; badge: string; accent: string }
 > = {
   REGULAR: {
-    label: "Drop-In",
+    label: "Professor Office Hours",
     badge: "bg-[#eaf1ff] text-[#1e4fa1]",
     accent: "border-l-[#1e4fa1]",
   },

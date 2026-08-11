@@ -24,7 +24,7 @@ export function officeHourTypeLabel(type: OfficeHourType): string {
     case "GROUP":
       return "Topic Group";
     default:
-      return "Drop-in";
+      return "Professor Office Hours";
   }
 }
 
