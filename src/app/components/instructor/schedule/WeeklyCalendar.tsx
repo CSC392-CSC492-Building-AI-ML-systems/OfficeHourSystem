@@ -234,8 +234,7 @@ export function WeeklyCalendar({
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#fbfdff]/80 px-6">
             <div className="pointer-events-auto max-w-sm rounded-[24px] border border-slate-200/80 bg-white px-6 py-8 text-center shadow-[0_18px_50px_-30px_rgba(15,41,66,0.25)]">
               <p className="text-sm leading-6 text-slate-600">
-                No sessions this week. Create a recurring block for weekly
-                office hours, or add a one-time session for a single day.
+                No sessions this week.
               </p>
               {canEdit && (onCreateRecurring || onCreateOneTime) ? (
                 <div className="mt-5 flex flex-col gap-3">
