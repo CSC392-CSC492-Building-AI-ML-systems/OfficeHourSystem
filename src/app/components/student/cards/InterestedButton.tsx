@@ -6,17 +6,24 @@ import { recordInterest } from "@/actions/ohInterests";
 type InterestedButtonProps = {
   sessionId: number;
   initiallyInterested?: boolean;
+  demo?: boolean;
 };
 
 export function InterestedButton({
   sessionId,
   initiallyInterested = false,
+  demo = false,
 }: InterestedButtonProps) {
   const [isInterested, setIsInterested] = useState(initiallyInterested);
   const [isPending, startTransition] = useTransition();
 
   const handleClick = () => {
     if (isInterested || isPending) return;
+
+    if (demo) {
+      setIsInterested(true);
+      return;
+    }
 
     startTransition(async () => {
       try {

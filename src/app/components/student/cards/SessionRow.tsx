@@ -32,6 +32,7 @@ type SessionRowProps = {
   time: string;
   location: string;
   isInterested?: boolean;
+  demo?: boolean;
 };
 
 export function SessionRow({
@@ -42,6 +43,7 @@ export function SessionRow({
   time,
   location,
   isInterested = false,
+  demo = false,
 }: SessionRowProps) {
   const style = TYPE_STYLES[type];
 
@@ -76,6 +78,7 @@ export function SessionRow({
       <InterestedButton
         sessionId={sessionId}
         initiallyInterested={isInterested}
+        demo={demo}
       />
     </div>
   );
