@@ -42,19 +42,16 @@ const HOW_IT_WORKS = [
 
 const OH_TYPES = [
   {
-    label: "Professor",
     title: "Professor Office Hours",
     description: "Open office hours for quick questions and concept checks.",
     icon: CalendarRange,
   },
   {
-    label: "Help",
     title: "Help Centre",
     description: "One-on-one support for deeper assignment and code blockers.",
     icon: Bug,
   },
   {
-    label: "Custom",
     title: "Custom",
     description: "Small-group sessions focused on a specific topic or review.",
     icon: Users,
@@ -294,7 +291,7 @@ export default function Home() {
             const tall = i === 1;
             return (
               <article
-                key={type.label}
+                key={type.title}
                 className={`flex flex-col rounded-[28px] p-7 ${
                   tall
                     ? "bg-[#071f41] text-white md:row-span-1"
@@ -304,13 +301,8 @@ export default function Home() {
                 <Icon
                   className={`h-8 w-8 ${tall ? "text-[#f8b4bf]" : "text-[#c8102e]"}`}
                 />
-                <p
-                  className={`mt-6 text-xs font-bold uppercase tracking-widest ${tall ? "text-white/60" : "text-slate-400"}`}
-                >
-                  {type.label}
-                </p>
                 <h3
-                  className={`mt-2 text-2xl font-bold ${tall ? "text-white" : "text-[#071f41]"}`}
+                  className={`mt-6 text-2xl font-bold ${tall ? "text-white" : "text-[#071f41]"}`}
                 >
                   {type.title}
                 </h3>
