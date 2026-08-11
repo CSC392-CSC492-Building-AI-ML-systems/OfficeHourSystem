@@ -22,7 +22,7 @@ export function officeHourTypeLabel(type: OfficeHourType): string {
     case "DEBUGGING":
       return "Help Centre";
     case "GROUP":
-      return "Topic Group";
+      return "Custom";
     default:
       return "Professor Office Hours";
   }

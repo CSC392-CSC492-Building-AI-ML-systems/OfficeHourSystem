@@ -118,7 +118,7 @@ async function main() {
       status: "ACTIVE" as const,
     },
     {
-      title: "Group Topic Session",
+      title: "Custom Session",
       type: "GROUP" as const,
       startsAt: s3Start,
       endsAt: s3End,

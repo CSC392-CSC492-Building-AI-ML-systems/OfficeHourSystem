@@ -44,7 +44,7 @@ const sessionStyles = {
 
 function SessionTypeLabel({ label }: { label: string }) {
   const twoLineMatch = label.match(
-    /^(Help|Topic|Professor)\s+(Centre|Group|Office Hours)$/,
+    /^(Help|Professor)\s+(Centre|Office Hours)$/,
   );
   if (twoLineMatch) {
     return (

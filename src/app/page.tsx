@@ -54,8 +54,8 @@ const OH_TYPES = [
     icon: Bug,
   },
   {
-    label: "Group",
-    title: "Topic Group",
+    label: "Custom",
+    title: "Custom",
     description: "Small-group sessions focused on a specific topic or review.",
     icon: Users,
   },
@@ -109,7 +109,7 @@ const STUDENT_FEATURES = [
   },
   {
     title: "Clear session details",
-    body: "Time, location, and session type (Professor Office Hours, Help Centre, or Group) are shown up front before you commit.",
+    body: "Time, location, and session type (Professor Office Hours, Help Centre, or Custom) are shown up front before you commit.",
   },
 ];
 

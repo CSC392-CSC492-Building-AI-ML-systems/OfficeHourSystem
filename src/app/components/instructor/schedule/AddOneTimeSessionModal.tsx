@@ -57,7 +57,7 @@ const sessionTypeOptions: Array<{
   },
   {
     id: "topic-group",
-    label: "Topic Group",
+    label: "Custom",
     description: "Small-group sessions focused on a specific topic or review.",
     icon: Users,
   },

@@ -18,7 +18,7 @@ const TYPE_STYLES: Record<
     accent: "border-l-[#c8102e]",
   },
   GROUP: {
-    label: "Group",
+    label: "Custom",
     badge: "bg-[#edf7ff] text-[#0f5f8f]",
     accent: "border-l-[#0f5f8f]",
   },
