@@ -33,7 +33,7 @@ const HOW_IT_WORKS = [
   {
     step: "03",
     title: "Mark that you are interested",
-    body: "Tap I'm interested on a session you plan to attend. That tells staff you are coming and helps them collect statistics for future planning.",
+    body: "Tap I'm interested on a session you plan to attend.",
   },
   {
     step: "04",
@@ -73,8 +73,8 @@ const INTEREST_POINTS = [
     body: "One click records that you plan to attend. The button updates to Already interested so you know it was saved.",
   },
   {
-    title: "Help staff prepare",
-    body: "Interest counts help instructors and TAs see how busy a session may be.",
+    title: "Change your response anytime",
+    body: "Tap Already interested if you no longer plan to attend.",
   },
 ];
 
