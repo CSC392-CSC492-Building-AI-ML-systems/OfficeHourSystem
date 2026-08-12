@@ -26,12 +26,42 @@ function isPublic(pathname: string): boolean {
   return false;
 }
 
+function normalizeUtorid(value: string | null | undefined): string | null {
+  const normalized = value?.trim().toLowerCase();
+  return normalized || null;
+}
+
+/**
+ * A normal session belongs to session.utorid. During impersonation that value
+ * is the target user, while Shibboleth still identifies the real admin stored
+ * in session.impersonator. Compare against that real identity  so impersonation
+ * remains active without allowing a different Shibboleth account to reuse it.
+ */
+function sessionMatchesCurrentIdentity(
+  session: SessionData,
+  authenticatedUtorid: string | null,
+): boolean {
+  // Jacky :) Check whether the session owner matches the current authenticated identity.
+  const sessionOwnerUtorid = session.impersonator?.utorid ?? session.utorid;
+  const currentUtorid = normalizeUtorid(authenticatedUtorid);
+
+  return (
+    currentUtorid !== null &&
+    normalizeUtorid(sessionOwnerUtorid) === currentUtorid
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Middleware
 // ---------------------------------------------------------------------------
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isProduction = process.env.NODE_ENV === "production";
+  // Use Shibboleth in production and DEV_UTORID for local identity simulation.
+  const authenticatedUtorid = isProduction
+    ? request.headers.get("utorid")
+    : (process.env.DEV_UTORID ?? null);
 
   if (isPublic(pathname)) {
     return NextResponse.next();
@@ -58,7 +88,11 @@ export async function proxy(request: NextRequest) {
         password: sessionSecret,
       });
 
-      if (session?.userId) {
+      // Apply the same identity check in production and local development.
+      if (
+        session?.userId &&
+        sessionMatchesCurrentIdentity(session, authenticatedUtorid)
+      ) {
         return NextResponse.next();
       }
     } catch {
@@ -66,7 +100,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // No valid session → bootstrap one via /api/auth/session
+  // No valid or identity-matching session then bootstrap via /api/auth/session.
   // The route reads the utorid header (prod) or DEV_UTORID env var (dev),
   // creates the session cookie, and redirects back here.
   const loginUrl = new URL("/api/auth/session", request.url);
