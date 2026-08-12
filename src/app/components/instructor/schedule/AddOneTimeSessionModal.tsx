@@ -104,7 +104,7 @@ function AddOneTimeSessionForm({
   const [date, setDate] = useState(defaultOfficeHourDateInput);
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("16:00");
-  const [locationDetail, setLocationDetail] = useState("Room 402");
+  const [locationDetail, setLocationDetail] = useState("DH 2034");
   const [hostPublicIds, setHostPublicIds] = useState<string[]>([]);
 
   const showError = (message: string) => {
