@@ -37,14 +37,14 @@ function NavLinks({
   if (items.length === 0) return null;
 
   return (
-    <nav className="flex flex-wrap items-center gap-6 text-sm font-medium">
+    <nav className="flex flex-wrap items-center gap-6 text-base font-medium">
       {items.map((link) => {
         const isActive = link.key === activeKey;
         return (
           <Link
             key={link.key}
             href={link.href}
-            className={`relative pb-3 transition ${
+            className={`relative inline-flex h-11 items-center transition ${
               isActive
                 ? "text-[#071f41]"
                 : "text-slate-500 hover:text-[#071f41]"
@@ -52,7 +52,7 @@ function NavLinks({
           >
             {link.label}
             {isActive ? (
-              <span className="absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-[#c8102e]" />
+              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#c8102e]" />
             ) : null}
           </Link>
         );
