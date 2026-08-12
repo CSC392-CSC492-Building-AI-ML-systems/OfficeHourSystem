@@ -201,6 +201,7 @@ type SessionWithRelations = Prisma.OfficeHourSessionGetPayload<{
         };
       };
     };
+    _count: { select: { interests: true; records: true; attendances: true } };
   };
 }>;
 
@@ -223,6 +224,7 @@ const sessionInclude = {
       },
     },
   },
+  _count: { select: { interests: true, records: true, attendances: true } },
 } as const;
 
 function userDisplayName(user: {
@@ -313,6 +315,8 @@ function mapSessionToDto(
     hostLabel,
     hasOverride,
     overrideLocation: hasLocationOverride ? sessionLocation : undefined,
+    interestedCount: session._count.interests,
+    checkedInCount: session._count.records + session._count.attendances,
   };
 }
 
@@ -956,10 +960,10 @@ export async function getUpcomingSessionsForHost(
         `${session.offering.course.code} ${session.title}`.toUpperCase(),
       title:
         session.type === "DEBUGGING"
-          ? "Help Centre Office Hours"
+          ? "Help Centre"
           : session.type === "GROUP"
-            ? "Topic Group"
-            : "General Office Hours",
+            ? "Custom"
+            : "Professor Office Hours",
       time: `${isToday ? "Today" : formatSessionDateLabel(session.startsAt)}, ${formatDateTimeLabel(session.startsAt)} - ${formatDateTimeLabel(session.endsAt)}`,
       location: session.location ?? "TBD",
       isHighlighted: index === 0 && session.type === "DEBUGGING",

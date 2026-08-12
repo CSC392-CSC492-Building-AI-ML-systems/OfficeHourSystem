@@ -168,7 +168,7 @@ async function main() {
 
   // 3. Session A — completed, rich data + a repeat visitor (Alice ×2) + a no-show (Dave)
   await makeSession(
-    "Debugging Queue (Mon)",
+    "Help Centre (Mon)",
     daysAgo(3, 14),
     "COMPLETED",
     [
@@ -183,7 +183,7 @@ async function main() {
 
   // 4. Session B — completed, smaller
   await makeSession(
-    "Debugging Queue (Wed)",
+    "Help Centre (Wed)",
     daysAgo(1, 10),
     "COMPLETED",
     [
@@ -195,7 +195,7 @@ async function main() {
 
   // 5. Session C — upcoming/scheduled → attendance metrics NA, interest only
   await makeSession(
-    "Debugging Queue (Upcoming)",
+    "Help Centre (Upcoming)",
     daysFromNow(2, 14),
     "SCHEDULED",
     [],

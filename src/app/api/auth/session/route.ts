@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 
 import { prisma } from "@/lib/prisma";
 import { getSessionOptions, type SessionData } from "@/lib/session";
-import { resolveAuthIdentity } from "@/lib/auth/sessionIdentity";
 
 // ---------------------------------------------------------------------------
 // GET /api/auth/session
@@ -73,21 +72,27 @@ export async function GET(request: NextRequest) {
   // ------------------------------------------------------------------
   // 1. Resolve identity from Shibboleth headers or dev env vars
   // ------------------------------------------------------------------
-  const { utorid, firstName, lastName, email } = resolveAuthIdentity({
-    isProduction: isProd,
-    shibboleth: {
-      utorid: request.headers.get("utorid"),
-      firstName: request.headers.get("givenName"),
-      lastName: request.headers.get("surname"),
-      email: request.headers.get("mail") ?? request.headers.get("email"),
-    },
-    development: {
-      utorid: process.env.DEV_UTORID ?? null,
-      firstName: process.env.DEV_FIRSTNAME ?? null,
-      lastName: process.env.DEV_LASTNAME ?? null,
-      email: process.env.DEV_EMAIL ?? null,
-    },
-  });
+  let utorid: string | null = null;
+  let firstName: string | null = null;
+  let lastName: string | null = null;
+  let email: string | null = null;
+
+  if (isProd) {
+    // Apache + mod_shib injects these headers on proxied requests. Next.js
+    // is only reachable via Apache on localhost (see docker-compose / Apache config).
+    utorid = request.headers.get("utorid");
+    firstName = request.headers.get("givenName");
+    lastName = request.headers.get("surname");
+    email = request.headers.get("mail") ?? request.headers.get("email");
+  }
+
+  if (!isProd || !utorid) {
+    // Dev mode or local Docker without Shibboleth — fall back to DEV_UTORID.
+    utorid = utorid ?? process.env.DEV_UTORID ?? null;
+    firstName = firstName ?? process.env.DEV_FIRSTNAME ?? utorid;
+    lastName = lastName ?? process.env.DEV_LASTNAME ?? utorid;
+    email = email ?? process.env.DEV_EMAIL ?? `${utorid}@mail.utoronto.ca`;
+  }
 
   if (!utorid) {
     return NextResponse.json(
@@ -96,7 +101,7 @@ export async function GET(request: NextRequest) {
           ? "Shibboleth authentication required. Access this application through the protected URL."
           : "DEV_UTORID is not set. Add it to your .env file to simulate a logged-in user.",
       },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
+      { status: 401 },
     );
   }
 
@@ -124,6 +129,7 @@ export async function GET(request: NextRequest) {
   session.email = user.email ?? "";
   session.firstName = user.firstName ?? "";
   session.lastName = user.lastName ?? "";
+  delete session.impersonator;
   await session.save();
 
   // ------------------------------------------------------------------
@@ -144,7 +150,5 @@ export async function GET(request: NextRequest) {
     "localhost";
   const origin = `${proto}://${host}`;
 
-  const response = NextResponse.redirect(new URL(safeRedirect, origin));
-  response.headers.set("Cache-Control", "no-store");
-  return response;
+  return NextResponse.redirect(new URL(safeRedirect, origin));
 }

@@ -23,6 +23,8 @@ export interface ScheduleSession {
   hostLabel: string;
   hasOverride?: boolean;
   overrideLocation?: string;
+  interestedCount: number;
+  checkedInCount: number;
 }
 
 export interface ScheduleStaffMember {

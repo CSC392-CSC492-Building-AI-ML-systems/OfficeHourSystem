@@ -7,7 +7,7 @@
  * What it does:
  *   1. Creates 5 past OH sessions (spread across last 7 days)
  *   2. Inserts ~40 OfficeHourAttendanceRecord rows with realistic help durations
- *   3. Sets today's "Debugging Queue" back to SCHEDULED so you can start it fresh
+ *   3. Sets today's "Help Centre" back to SCHEDULED so you can start it fresh
  *   4. Adds liang696 as WAITING in a fresh ACTIVE session for student-queue testing
  */
 
@@ -98,13 +98,13 @@ async function main() {
       offeringId: csc301.id,
       daysBack: 1,
       hour: 10,
-      title: "Morning Drop-in (hist)",
+      title: "Morning Professor Office Hours (hist)",
     },
     {
       offeringId: csc301.id,
       daysBack: 2,
       hour: 14,
-      title: "Debugging Queue (hist)",
+      title: "Help Centre (hist)",
     },
     {
       offeringId: csc358.id,
@@ -116,7 +116,7 @@ async function main() {
       offeringId: csc301.id,
       daysBack: 5,
       hour: 10,
-      title: "Morning Drop-in (hist)",
+      title: "Morning Professor Office Hours (hist)",
     },
     {
       offeringId: csc358.id,
@@ -207,12 +207,12 @@ async function main() {
   }
   console.log(`\nInserted ${recordCount} attendance records`);
 
-  // ── Reset today's ACTIVE "Debugging Queue" back to SCHEDULED ────────────
+  // ── Reset today's ACTIVE Help Centre back to SCHEDULED ────────────
   const resetCount = await prisma.officeHourSession.updateMany({
     where: {
       offering: { termCode: "20261" },
       status: "ACTIVE",
-      title: { contains: "Debugging" },
+      type: "DEBUGGING",
     },
     data: { status: "SCHEDULED" },
   });
@@ -223,21 +223,21 @@ async function main() {
         session: {
           status: "SCHEDULED",
           offering: { termCode: "20261" },
-          title: { contains: "Debugging" },
+          type: "DEBUGGING",
         },
       },
     });
     console.log(
-      `Reset ${resetCount.count} Debugging Queue session(s) to SCHEDULED`,
+      `Reset ${resetCount.count} Help Centre session(s) to SCHEDULED`,
     );
   }
 
-  // ── Add liang696 as WAITING in today's Debugging Queue (make it ACTIVE) ─
+  // ── Add liang696 as WAITING in today's Help Centre (make it ACTIVE) ─
   const liang = await prisma.user.findUnique({ where: { utorid: "liang696" } });
   const debugSession = await prisma.officeHourSession.findFirst({
     where: {
       offering: { termCode: "20261", course: { code: "CSC301H5" } },
-      title: { contains: "Debugging" },
+      type: "DEBUGGING",
       status: "SCHEDULED",
     },
   });

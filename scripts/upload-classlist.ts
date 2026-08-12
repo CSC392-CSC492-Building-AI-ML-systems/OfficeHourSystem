@@ -8,7 +8,7 @@
  *   DATABASE_URL configured in .env
  *
  * Auth is bypassed for local non-production runs so you can test without
- * a browser session. Production uploads require a super-admin session.
+ * a browser session. Production uploads still require an instructor cookie.
  */
 
 import "dotenv/config";

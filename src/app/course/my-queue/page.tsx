@@ -11,10 +11,7 @@ import {
   getRequestSession,
   parseSessionUserId,
 } from "@/lib/auth/getRequestSession";
-import {
-  resolveAvailableWorkspaceViews,
-  resolveDefaultWorkspacePath,
-} from "@/lib/auth/resolveHomeRedirect";
+import { prisma } from "@/lib/prisma";
 import { getStudentQueueService } from "@/services/student_queue/student-queue";
 
 export default async function CourseMyQueueRoute() {
@@ -23,15 +20,14 @@ export default async function CourseMyQueueRoute() {
     redirect("/api/auth/session?redirect=/course/my-queue");
   }
 
-  const views = await resolveAvailableWorkspaceViews(
-    parseSessionUserId(session),
-    session.utorid,
-  );
-  if (!views.includes("instructor")) {
-    redirect(resolveDefaultWorkspacePath(views));
-  }
-
-  const tickets = await getStudentQueueService();
+  const userId = parseSessionUserId(session);
+  const [tickets, user] = await Promise.all([
+    getStudentQueueService(),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { isInstructor: true },
+    }),
+  ]);
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
@@ -39,7 +35,10 @@ export default async function CourseMyQueueRoute() {
         <Navbar
           brandHref="/course"
           items={COURSE_NAV_ITEMS}
-          endItems={courseNavEndItems(isAdmin(session.utorid))}
+          endItems={courseNavEndItems(
+            isAdmin(session.utorid),
+            user?.isInstructor === true,
+          )}
           activeKey="queue"
         />
         <main className="mt-10">

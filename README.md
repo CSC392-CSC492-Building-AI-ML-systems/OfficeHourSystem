@@ -56,13 +56,13 @@ Open [http://localhost:3000](http://localhost:3000) in a browser.
 
 ## Available Commands
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev` | Start the development server |
-| `pnpm build` | Create a production build |
-| `pnpm start` | Start the production server |
-| `pnpm typecheck` | Run TypeScript checks |
-| `pnpm lint` | Run ESLint |
+| Command          | Purpose                      |
+| ---------------- | ---------------------------- |
+| `pnpm dev`       | Start the development server |
+| `pnpm build`     | Create a production build    |
+| `pnpm start`     | Start the production server  |
+| `pnpm typecheck` | Run TypeScript checks        |
+| `pnpm lint`      | Run ESLint                   |
 
 ## Continuous Deployment
 

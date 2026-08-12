@@ -49,7 +49,7 @@ export async function getScheduleAccess(
     select: { role: true },
   });
 
-  if (!member || member.role === "STUDENT") {
+  if (!member) {
     return null;
   }
 

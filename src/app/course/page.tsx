@@ -11,10 +11,6 @@ import {
   getRequestSession,
   parseSessionUserId,
 } from "@/lib/auth/getRequestSession";
-import {
-  resolveAvailableWorkspaceViews,
-  resolveDefaultWorkspacePath,
-} from "@/lib/auth/resolveHomeRedirect";
 import { listCoursePickerOfferings } from "@/lib/queries/course/offerings";
 import { prisma } from "@/lib/prisma";
 
@@ -25,11 +21,6 @@ export default async function CoursePage() {
   }
 
   const userId = parseSessionUserId(session);
-  const views = await resolveAvailableWorkspaceViews(userId, session.utorid);
-  if (!views.includes("instructor")) {
-    redirect(resolveDefaultWorkspacePath(views));
-  }
-
   const [courses, user] = await Promise.all([
     listCoursePickerOfferings(userId),
     prisma.user.findUnique({
@@ -42,10 +33,13 @@ export default async function CoursePage() {
     <main className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <Navbar
-          brandHref="/course"
+          brandHref="/"
           activeKey="courses"
           items={COURSE_NAV_ITEMS}
-          endItems={courseNavEndItems(isAdmin(session.utorid))}
+          endItems={courseNavEndItems(
+            isAdmin(session.utorid),
+            user?.isInstructor === true,
+          )}
         />
 
         <header className="mb-8 mt-10">

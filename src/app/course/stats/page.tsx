@@ -9,7 +9,11 @@ import {
 import CourseOverviewPage from "@/app/components/instructor/stats/CourseOverviewPage";
 import { Navbar } from "@/app/components/shared/Navbar";
 import { isAdmin } from "@/lib/adminList";
-import { getRequestSession } from "@/lib/auth/getRequestSession";
+import {
+  getRequestSession,
+  parseSessionUserId,
+} from "@/lib/auth/getRequestSession";
+import { prisma } from "@/lib/prisma";
 import {
   getCourseOverviewService,
   listInstructorOfferingsService,
@@ -27,10 +31,12 @@ function StatsShell({
   children,
   courseLabel,
   showAdmin,
+  isInstructor,
 }: {
   children: ReactNode;
   courseLabel?: string;
   showAdmin: boolean;
+  isInstructor: boolean;
 }) {
   return (
     <main className="min-h-screen bg-[#f4f7fb] text-slate-900">
@@ -39,7 +45,7 @@ function StatsShell({
           brandHref="/course"
           activeKey="stats"
           items={COURSE_NAV_ITEMS}
-          endItems={courseNavEndItems(showAdmin)}
+          endItems={courseNavEndItems(showAdmin, isInstructor)}
           courseLabel={courseLabel}
         />
         {children}
@@ -84,13 +90,21 @@ export default async function CourseStatsPage({ searchParams }: PageProps) {
     redirect("/api/auth/session?redirect=/course/stats");
   }
 
+  const userId = parseSessionUserId(session);
   const showAdmin = isAdmin(session.utorid);
-  const offerings = await listInstructorOfferingsService();
+  const [offerings, user] = await Promise.all([
+    listInstructorOfferingsService(),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { isInstructor: true },
+    }),
+  ]);
+  const isInstructor = user?.isInstructor === true;
   const { offering: selected } = await searchParams;
 
   if (!selected) {
     return (
-      <StatsShell showAdmin={showAdmin}>
+      <StatsShell showAdmin={showAdmin} isInstructor={isInstructor}>
         <header className="mb-8 mt-10">
           <h1 className="text-3xl font-bold tracking-tight text-[#071f41]">
             Course Stats
@@ -131,6 +145,7 @@ export default async function CourseStatsPage({ searchParams }: PageProps) {
   return (
     <StatsShell
       showAdmin={showAdmin}
+      isInstructor={isInstructor}
       courseLabel={`${overview.courseCode} · Term ${overview.termCode}`}
     >
       <div className="mt-10">

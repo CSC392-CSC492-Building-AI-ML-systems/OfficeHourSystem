@@ -1,21 +1,29 @@
 "use client";
 
-import Link from "next/link";
-import { LogOut, PanelsTopLeft, UserCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { UserCircle } from "lucide-react";
+
+import { stopImpersonationAction } from "@/actions/admin/impersonate";
 
 type ProfileUser = {
   firstName: string;
   lastName: string;
   utorid: string;
-  canSwitchView: boolean;
+  impersonating?: boolean;
+  realUtorid?: string | null;
 };
 
-export function ProfileMenu() {
+type ProfileMenuProps = {
+  /** Shown only on course-scoped pages, e.g. "CSC108 · Term 20265". */
+  courseLabel?: string;
+};
+
+export function ProfileMenu({ courseLabel }: ProfileMenuProps) {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<ProfileUser | null>(null);
   const [loadError, setLoadError] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
+  const [switchingBack, setSwitchingBack] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -23,12 +31,12 @@ export function ProfileMenu() {
 
     async function loadProfile() {
       try {
-        const response = await fetch("/api/auth/me");
-        if (!response.ok) {
+        const res = await fetch("/api/auth/me");
+        if (!res.ok) {
           if (!cancelled) setLoadError(true);
           return;
         }
-        const data = (await response.json()) as ProfileUser;
+        const data = (await res.json()) as ProfileUser;
         if (!cancelled) {
           setUser(data);
           setLoadError(false);
@@ -69,15 +77,17 @@ export function ProfileMenu() {
     ? `${user.firstName} ${user.lastName}`.trim() || user.utorid
     : null;
 
-  async function logOut() {
-    setLoggingOut(true);
-    const response = await fetch("/api/auth/logout", { method: "POST" });
-    if (response.ok) {
-      window.location.replace("/");
+  const handleSwitchBack = async () => {
+    setSwitchingBack(true);
+    setSwitchError(null);
+    const result = await stopImpersonationAction();
+    if (!result.ok) {
+      setSwitchError(result.error);
+      setSwitchingBack(false);
       return;
     }
-    setLoggingOut(false);
-  }
+    window.location.assign(result.redirectTo);
+  };
 
   return (
     <div ref={rootRef} className="relative">
@@ -95,43 +105,62 @@ export function ProfileMenu() {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_18px_50px_-30px_rgba(15,41,66,0.45)]"
+          className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_-30px_rgba(15,41,66,0.45)]"
         >
-          <div className="px-4 py-3 text-sm">
+          <div className="border-b border-slate-100 px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+              Profile
+            </p>
+          </div>
+          <div className="space-y-3 px-4 py-3 text-sm">
             {loadError && !user ? (
               <p className="text-slate-500">Unable to load profile.</p>
             ) : !user ? (
-              <p className="text-slate-500">Loading...</p>
+              <p className="text-slate-500">Loading…</p>
             ) : (
-              <div>
-                <p className="font-semibold text-[#071f41]">{fullName}</p>
-                <p className="mt-1 font-mono text-xs text-slate-500">
-                  {user.utorid}
-                </p>
-              </div>
+              <>
+                <div>
+                  <p className="text-xs text-slate-400">Full name</p>
+                  <p className="mt-0.5 font-semibold text-[#071f41]">
+                    {fullName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400">UTORid</p>
+                  <p className="mt-0.5 font-mono text-[#071f41]">
+                    {user.utorid}
+                  </p>
+                </div>
+                {courseLabel ? (
+                  <div>
+                    <p className="text-xs text-slate-400">Course + Session</p>
+                    <p className="mt-0.5 font-semibold text-[#071f41]">
+                      {courseLabel}
+                    </p>
+                  </div>
+                ) : null}
+                {user.impersonating ? (
+                  <div className="border-t border-slate-100 pt-3">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={switchingBack}
+                      onClick={() => void handleSwitchBack()}
+                      className="w-full rounded-full bg-[#071f41] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0f2942] disabled:opacity-60"
+                    >
+                      {switchingBack
+                        ? "Switching…"
+                        : `Switch back to ${user.realUtorid ?? "admin"}`}
+                    </button>
+                    {switchError ? (
+                      <p className="mt-2 text-xs text-[#c8102e]">
+                        {switchError}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </>
             )}
-          </div>
-          <div className="border-t border-slate-100 p-2">
-            {user?.canSwitchView ? (
-              <Link
-                role="menuitem"
-                href="/switch-view"
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-[#071f41] hover:bg-slate-50"
-              >
-                <PanelsTopLeft className="h-4 w-4" />
-                Switch view
-              </Link>
-            ) : null}
-            <button
-              type="button"
-              role="menuitem"
-              disabled={loggingOut}
-              onClick={() => void logOut()}
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-[#071f41] hover:bg-slate-50 disabled:opacity-50"
-            >
-              <LogOut className="h-4 w-4" />
-              Log out
-            </button>
           </div>
         </div>
       ) : null}

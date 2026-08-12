@@ -8,6 +8,7 @@ import {
   courseInstructorQueuesPath,
   courseInstructorSchedulePath,
   instructorDashboardHref,
+  studentDashboardHref,
 } from "@/lib/offeringUrls";
 import {
   cancelSession,
@@ -15,9 +16,11 @@ import {
   createRecurringBlock,
   deleteRecurringBlock,
   getInstructorSchedulePage,
+  listScheduleWeek,
   updateRecurringBlock,
   updateSession,
 } from "@/lib/queries/officeHourScheduling";
+import { requireOfferingStudent } from "@/lib/auth/requireOfferingAccess";
 import type {
   CreateOneTimeSessionInput,
   CreateRecurringBlockInput,
@@ -32,6 +35,7 @@ function revalidateSchedulingPaths(offeringPublicId: string) {
   revalidatePath(courseInstructorSchedulePath(offeringPublicId));
   revalidatePath(courseInstructorQueuesPath(offeringPublicId));
   revalidatePath(courseInstructorActiveQueuePath(offeringPublicId));
+  revalidatePath(studentDashboardHref(offeringPublicId));
 }
 
 export async function getSchedulePageAction(params: {
@@ -85,6 +89,15 @@ export async function createOneTimeSessionAction(
   const userId = await requireSessionUserId();
   await createOneTimeSession(userId, input);
   revalidateSchedulingPaths(input.offeringPublicId);
+}
+
+export async function getStudentScheduleWeekAction(params: {
+  offeringPublicId: string;
+  weekStart?: string;
+}) {
+  const userId = await requireSessionUserId();
+  await requireOfferingStudent(userId, params.offeringPublicId);
+  return listScheduleWeek(userId, params.offeringPublicId, params.weekStart);
 }
 
 export async function updateSessionAction(

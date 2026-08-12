@@ -20,11 +20,11 @@ export function uiSessionTypeToOfficeHourType(
 export function officeHourTypeLabel(type: OfficeHourType): string {
   switch (type) {
     case "DEBUGGING":
-      return "Help Centre Office Hours";
+      return "Help Centre";
     case "GROUP":
-      return "Topic Group";
+      return "Custom";
     default:
-      return "Drop-in";
+      return "Professor Office Hours";
   }
 }
 
@@ -96,6 +96,8 @@ export type ScheduleSessionDto = {
   hostLabel: string;
   hasOverride?: boolean;
   overrideLocation?: string;
+  interestedCount: number;
+  checkedInCount: number;
 };
 
 export type RecurringRuleDto = {

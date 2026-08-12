@@ -82,14 +82,14 @@ async function main() {
   );
 
   await runTest(
-    "resolveHomeRedirectPath → instructor view for instructors, student portal for students",
+    "resolveHomeRedirectPath → admin for instructors, student portal for students",
     async () => {
       assertEqual(
         await resolveHomeRedirectPath(
           platformInstructor.id,
           platformInstructor.utorid,
         ),
-        "/course",
+        "/admin",
         "instructor home",
       );
       assertEqual(

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { parseAdminList } from "@/lib/adminList";
 import { requireSessionUserId } from "@/lib/auth/getRequestSession";
+import { requireOfferingTeachingStaff } from "@/lib/auth/requireOfferingAccess";
 import { instructorDashboardHref } from "@/lib/offeringUrls";
 import {
   addOrUpdateStaffMember,
@@ -30,6 +31,9 @@ export type BulkStaffActionResult =
 export async function getInstructorStaffPageData(
   offeringPublicId: string,
 ): Promise<InstructorStaffPageData> {
+  const userId = await requireSessionUserId();
+  await requireOfferingTeachingStaff(userId, offeringPublicId);
+
   const [staff, weeklySlotCount] = await Promise.all([
     getOfferingStaffMembers(offeringPublicId),
     getActiveWeeklySlotCount(offeringPublicId),

@@ -5,10 +5,6 @@ import {
   getRequestSession,
   parseSessionUserId,
 } from "@/lib/auth/getRequestSession";
-import {
-  resolveAvailableWorkspaceViews,
-  resolveDefaultWorkspacePath,
-} from "@/lib/auth/resolveHomeRedirect";
 import { buildLegacyOfferingRedirectUrl } from "@/lib/legacyOfferingRedirect";
 import { listStudentOfferings } from "@/lib/queries/student/offerings";
 
@@ -29,11 +25,6 @@ export default async function StudentPortalPage({ searchParams }: PageProps) {
   }
 
   const userId = parseSessionUserId(session);
-  const views = await resolveAvailableWorkspaceViews(userId, session.utorid);
-  if (!views.includes("student")) {
-    redirect(resolveDefaultWorkspacePath(views));
-  }
-
   const offerings = await listStudentOfferings(userId);
 
   return (

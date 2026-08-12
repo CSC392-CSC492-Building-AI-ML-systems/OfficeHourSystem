@@ -56,20 +56,23 @@ const sessionTypeOptions: Array<{
 }> = [
   {
     id: "drop-in",
-    label: "Drop-in",
-    description: "Open office hours for quick questions and concept checks.",
+    label: "Professor Office Hours",
+    description:
+      "Regular open ended office hours for any questions or concerns.",
     icon: CalendarRange,
   },
   {
     id: "debugging-queue",
-    label: "Help Centre Office Hours",
-    description: "Join a queue for one-on-one help.",
+    label: "Help Centre",
+    description:
+      "Get clarity on any debugging issues or questions with course TAs.",
     icon: Bug,
   },
   {
     id: "topic-group",
-    label: "Topic Group",
-    description: "Small-group sessions focused on a specific topic or review.",
+    label: "Custom",
+    description:
+      "Create your own sessions and work together with other students. Good for study groups or review sessions.",
     icon: Users,
   },
 ];
@@ -383,7 +386,7 @@ function CreateRecurringBlockForm({
                 value={locationDetail}
                 maxLength={LOCATION_MAX_LENGTH}
                 onChange={(event) => setLocationDetail(event.target.value)}
-                placeholder="DH 2034 or Zoom"
+                placeholder="Room 402 or Zoom"
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
               />
               <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />

@@ -4,12 +4,23 @@ import type { SessionOptions } from "iron-session";
 // Session data shape stored inside the encrypted cookie
 // ---------------------------------------------------------------------------
 
+/** Real admin identity kept while the cookie acts as another user. */
+export type ImpersonatorSnapshot = {
+  userId: string;
+  utorid: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+};
+
 export interface SessionData {
   userId: string;
   utorid: string;
   firstName: string;
   lastName: string;
   email: string;
+  /** Present only while a super-admin is impersonating someone else. */
+  impersonator?: ImpersonatorSnapshot;
 }
 
 // ---------------------------------------------------------------------------

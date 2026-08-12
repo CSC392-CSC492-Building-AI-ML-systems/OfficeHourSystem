@@ -8,7 +8,7 @@ const TYPE_STYLES: Record<
   { label: string; badge: string; accent: string }
 > = {
   REGULAR: {
-    label: "Drop-In",
+    label: "Professor Office Hours",
     badge: "bg-[#eaf1ff] text-[#1e4fa1]",
     accent: "border-l-[#1e4fa1]",
   },
@@ -18,7 +18,7 @@ const TYPE_STYLES: Record<
     accent: "border-l-[#c8102e]",
   },
   GROUP: {
-    label: "Group",
+    label: "Custom",
     badge: "bg-[#edf7ff] text-[#0f5f8f]",
     accent: "border-l-[#0f5f8f]",
   },
@@ -32,6 +32,7 @@ type SessionRowProps = {
   time: string;
   location: string;
   isInterested?: boolean;
+  demo?: boolean;
 };
 
 export function SessionRow({
@@ -42,6 +43,7 @@ export function SessionRow({
   time,
   location,
   isInterested = false,
+  demo = false,
 }: SessionRowProps) {
   const style = TYPE_STYLES[type];
 
@@ -76,6 +78,7 @@ export function SessionRow({
       <InterestedButton
         sessionId={sessionId}
         initiallyInterested={isInterested}
+        demo={demo}
       />
     </div>
   );

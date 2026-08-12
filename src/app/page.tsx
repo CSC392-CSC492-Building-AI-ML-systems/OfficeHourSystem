@@ -3,52 +3,62 @@ import {
   ArrowRight,
   Bug,
   CalendarRange,
+  Clock,
   Clock3,
   MapPin,
-  RefreshCw,
   Users,
 } from "lucide-react";
+import { QueuePreviewHeader } from "@/app/components/student/QueuePreviewHeader";
+import { SessionRow } from "@/app/components/student/cards/SessionRow";
 
 const NAV_LINKS = [
-  { label: "Using HourSpace", href: "#how-it-works" },
+  { label: "How it works", href: "#how-it-works" },
   // { label: "Interest", href: "#mark-interest" },
   // { label: "Sessions", href: "#session-types" },
   { label: "Queue", href: "#debugging-queue" },
   { label: "Students", href: "#for-students" },
 ];
 
-const HOURSPACE_ACTIONS = [
+const HOW_IT_WORKS = [
   {
-    title: "View your office hours",
-    body: "Open a course to see upcoming office hours, including the time, location, and session type.",
+    step: "01",
+    title: "Sign in with your UTORid",
+    body: "Use the Login button to open HourSpace with your campus account.",
   },
   {
-    title: "Mark your interest",
-    body: "Select I'm interested on an upcoming session you plan to attend.",
+    step: "02",
+    title: "Open your course dashboard",
+    body: "See your enrolled courses and the upcoming office hours for the week including time, location, and session type.",
   },
   {
-    title: "Join a help queue",
-    body: "At Help Centre Office Hours, scan your T-Card to join the queue, then open My Queue to check your position.",
+    step: "03",
+    title: "Mark that you are interested",
+    body: "Tap I'm interested on a session you plan to attend.",
+  },
+  {
+    step: "04",
+    title: "Join the queue",
+    body: "When office hours are live, tap your T Card to check in. Check on My Queue to see your position in line until a TA or instructor helps you.",
   },
 ];
 
 const OH_TYPES = [
   {
-    label: "Drop-In",
-    title: "Drop-in office hours",
-    description: "Open office hours for quick questions and concept checks.",
+    title: "Professor Office Hours",
+    description:
+      "Regular open ended office hours for any questions or concerns.",
     icon: CalendarRange,
   },
   {
-    label: "Help Centre",
-    title: "Help Centre Office Hours",
-    description: "Join the on-site queue for one-on-one help.",
+    title: "Help Centre",
+    description:
+      "Get clarity on any debugging issues or questions with course TAs.",
     icon: Bug,
   },
   {
-    label: "Group",
-    title: "Topic Group",
-    description: "Small-group sessions focused on a specific topic or review.",
+    title: "Custom",
+    description:
+      "Create your own sessions and work together with other students. Good for study groups or review sessions.",
     icon: Users,
   },
 ];
@@ -56,29 +66,33 @@ const OH_TYPES = [
 const INTEREST_POINTS = [
   {
     title: "Find a session on your dashboard",
-    body: "View the course, title, time, and location for each upcoming session.",
+    body: "Each upcoming office hour shows the course, title, time range, and location so you can plan your week.",
   },
   {
-    title: "Select “I'm interested”",
-    body: "The button changes to Already interested after your selection is saved.",
+    title: "Tap “I'm interested”",
+    body: "One click records that you plan to attend. The button updates to Already interested so you know it was saved.",
+  },
+  {
+    title: "Change your response anytime",
+    body: "Tap Already interested if you no longer plan to attend.",
   },
 ];
 
 const DEBUGGING_STEPS = [
   {
     step: "01",
-    title: "Arrive when the queue is active",
-    body: "Check-in begins at the office hour location when staff open the session.",
+    title: "Arrive to the session",
+    body: "A computer set up with a NFC reader will be available for you to scan",
   },
   {
     step: "02",
     title: "Scan your T-Card to join",
-    body: "A TA or instructor scans your T-Card to add you to the queue.",
+    body: "Scan your T-Card and you'll be placed into the queue.",
   },
   {
     step: "03",
     title: "Watch My Queue",
-    body: "Open My Queue to see your position, estimated wait, and current status.",
+    body: "Open My Queue from the student page to track your position and see your estimated wait time.",
   },
 ];
 
@@ -93,11 +107,11 @@ const STUDENT_FEATURES = [
   },
   {
     title: "My Queue across courses",
-    body: "Check your Help Centre queue position from one place, even if you are waiting in more than one course.",
+    body: "When a Help Centre is live, check your position from one place — even if you are waiting in more than one course.",
   },
   {
     title: "Clear session details",
-    body: "View the time, location, and session type before attending.",
+    body: "Time, location, and session type (Professor Office Hours, Help Centre, or Custom) are shown up front before you commit.",
   },
 ];
 
@@ -130,10 +144,10 @@ export default function Home() {
           ))}
         </div>
         <Link
-          href="/api/auth/session?redirect=/home"
+          href="/course"
           className="shrink-0 rounded-full bg-[#c8102e] px-3.5 py-2 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-[#a50d25] sm:px-4 sm:text-sm"
         >
-          Get Started
+          Login
         </Link>
       </nav>
 
@@ -162,14 +176,15 @@ export default function Home() {
               <span className="text-[#f8b4bf]">SYSTEM</span>
             </h1>
             <p className="mt-8 max-w-md text-lg leading-8 text-slate-300">
-              Find out more about your office hours. Let&apos;s create a better
-              HourSpace!
+              Track your office hours, with live queues and student marks of
+              interest. Prevent students from crowding teaching staff with a
+              digital queue.
             </p>
             <Link
-              href="/api/auth/session?redirect=/home"
+              href="/course"
               className="mt-10 inline-flex w-fit items-center gap-3 bg-white px-7 py-4 text-sm font-bold uppercase tracking-wider text-[#071f41] transition hover:bg-[#eaf1ff]"
             >
-              Get Started
+              Login
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -184,7 +199,7 @@ export default function Home() {
             </div>
             <div className="rounded-3xl bg-white/10 p-5 backdrop-blur-sm">
               <Clock3 className="h-5 w-5 text-[#f8b4bf]" />
-              <p className="mt-4 text-sm font-semibold">Drop-In</p>
+              <p className="mt-4 text-sm font-semibold">Professor</p>
               <p className="mt-1 text-xs text-slate-300">Quick questions</p>
             </div>
             <div className="rounded-3xl bg-[#1e4fa1] p-5">
@@ -202,17 +217,23 @@ export default function Home() {
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <h2 className="text-4xl font-black tracking-tight text-[#071f41] sm:text-5xl">
-            Using HourSpace
+            How it works
           </h2>
+          <p className="max-w-sm text-base text-slate-600"></p>
         </div>
 
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {HOURSPACE_ACTIONS.map((item) => (
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {HOW_IT_WORKS.map((item) => (
             <article
-              key={item.title}
-              className="relative overflow-hidden rounded-[28px] bg-white p-6 shadow-[0_20px_50px_-30px_rgba(7,31,65,0.25)]"
+              key={item.step}
+              className="group relative overflow-hidden rounded-[28px] bg-white p-6 shadow-[0_20px_50px_-30px_rgba(7,31,65,0.25)]"
             >
-              <h3 className="text-lg font-bold text-[#071f41]">{item.title}</h3>
+              <p className="text-6xl font-black leading-none text-[#f0ebe3] transition group-hover:text-[#fdecef]">
+                {item.step}
+              </p>
+              <h3 className="mt-4 text-lg font-bold text-[#071f41]">
+                {item.title}
+              </h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 {item.body}
               </p>
@@ -235,54 +256,29 @@ export default function Home() {
               <br />
               you&apos;re coming
             </h2>
-            <p className="mt-6 text-base leading-7 text-white/85">
-              Tap{" "}
-              <span className="font-bold underline decoration-white/40 underline-offset-4">
-                I&apos;m interested
-              </span>{" "}
-              on an upcoming session you plan to attend.
-            </p>
-          </div>
-
-          <div className="rounded-[32px] bg-white p-6 text-slate-900 shadow-2xl">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-[#1e4fa1]">
-                  Drop-In
-                </p>
-                <p className="mt-1 text-lg font-bold text-[#071f41]">
-                  Example session
-                </p>
-                <p className="mt-2 flex flex-wrap gap-3 text-sm text-slate-500">
-                  <span className="inline-flex items-center gap-1">
-                    <Clock3 className="h-3.5 w-3.5" />
-                    2:00 – 3:00 PM
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" />
-                    DH 2014
-                  </span>
-                </p>
-              </div>
-              <span className="w-fit rounded-full bg-[#071f41] px-5 py-2.5 text-sm font-semibold text-white">
-                I&apos;m interested
-              </span>
-            </div>
-            <ul className="mt-6 space-y-4 border-t border-slate-100 pt-6">
+            <ul className="mt-6 space-y-4">
               {INTEREST_POINTS.map((point) => (
                 <li key={point.title} className="flex gap-3">
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#c8102e]" />
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-white" />
                   <div>
-                    <p className="font-semibold text-[#071f41]">
-                      {point.title}
-                    </p>
-                    <p className="mt-0.5 text-sm text-slate-600">
-                      {point.body}
-                    </p>
+                    <p className="font-semibold text-white">{point.title}</p>
+                    <p className="mt-0.5 text-sm text-white/80">{point.body}</p>
                   </div>
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="h-fit self-center rounded-[32px] bg-white p-5 text-slate-900 shadow-2xl">
+            <SessionRow
+              sessionId={0}
+              type="REGULAR"
+              courseCode="CSC108"
+              title="Morning Professor Office Hours"
+              time="2:00 – 3:00 PM"
+              location="DH 2014"
+              demo
+            />
           </div>
         </div>
       </section>
@@ -300,7 +296,7 @@ export default function Home() {
             const tall = i === 1;
             return (
               <article
-                key={type.label}
+                key={type.title}
                 className={`flex flex-col rounded-[28px] p-7 ${
                   tall
                     ? "bg-[#071f41] text-white md:row-span-1"
@@ -310,13 +306,8 @@ export default function Home() {
                 <Icon
                   className={`h-8 w-8 ${tall ? "text-[#f8b4bf]" : "text-[#c8102e]"}`}
                 />
-                <p
-                  className={`mt-6 text-xs font-bold uppercase tracking-widest ${tall ? "text-white/60" : "text-slate-400"}`}
-                >
-                  {type.label}
-                </p>
                 <h3
-                  className={`mt-2 text-2xl font-bold ${tall ? "text-white" : "text-[#071f41]"}`}
+                  className={`mt-6 text-2xl font-bold ${tall ? "text-white" : "text-[#071f41]"}`}
                 >
                   {type.title}
                 </h3>
@@ -339,10 +330,10 @@ export default function Home() {
           <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#c8102e]">
-                Help Centre Office Hours
+                The Queue
               </p>
               <h2 className="mt-4 text-4xl font-black leading-tight text-[#071f41]">
-                Check your queue position
+                How The Queue Works
               </h2>
               <p className="mt-6 text-base leading-7 text-slate-600">
                 Scan your T-Card on site, then track position and wait time in
@@ -366,41 +357,44 @@ export default function Home() {
               </ol>
             </div>
 
-            <div className="rounded-[32px] bg-[#071f41] p-8 text-white">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#f8b4bf]">
-                    CSC108
-                  </p>
-                  <p className="mt-2 text-2xl font-bold">
-                    Help Centre Office Hours
-                  </p>
-                  <p className="mt-1 text-sm text-slate-400">DH 2034 · Today</p>
-                </div>
-                <div className="text-right">
-                  <p className="flex items-center gap-2 text-5xl font-black">
-                    <Users className="h-8 w-8 text-slate-500" />
-                    #3
-                  </p>
-                  <p className="mt-2 rounded-full bg-[#1e4fa1] px-3 py-1 text-xs font-bold">
-                    ~20 min wait
-                  </p>
-                </div>
-              </div>
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                {["Your #", "Est. wait", "Being helped"].map((label) => (
-                  <div
-                    key={label}
-                    className="rounded-2xl bg-white/5 px-4 py-3 text-center"
-                  >
-                    <p className="text-xs font-bold text-[#f8b4bf]">{label}</p>
+            <div className="rounded-[32px] bg-[#f4f7fb] p-6 sm:p-8">
+              <QueuePreviewHeader />
+
+              <div className="rounded-[24px] border border-slate-200/80 bg-white p-6 shadow-[0_12px_40px_-24px_rgba(15,41,66,0.3)]">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-[#c8102e]">
+                      CSC108
+                    </p>
+                    <h3 className="text-lg font-semibold text-[#071f41]">
+                      Help Centre
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        DH 2014
+                      </span>
+                      <span>Aug 11 · 2:00 PM–3:00 PM</span>
+                    </div>
                   </div>
-                ))}
+
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <span className="flex items-center gap-1.5 text-2xl font-black text-[#071f41]">
+                      <Users className="h-5 w-5 text-slate-400" />
+                      #3
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#eaf1ff] px-3 py-1 text-xs font-semibold text-[#1e4fa1]">
+                      <Clock className="h-3 w-3" />
+                      ~20 min ±5 min
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
+                  <span>Checked in at 2:08 PM</span>
+                  <span>Waited 12 min</span>
+                </div>
               </div>
-              <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-400">
-                <RefreshCw className="h-3 w-3" />
-                Updates automatically
-              </p>
             </div>
           </div>
         </div>
@@ -437,10 +431,10 @@ export default function Home() {
 
         <div className="mt-16 flex justify-center">
           <Link
-            href="/api/auth/session?redirect=/home"
+            href="/course"
             className="inline-flex items-center gap-3 rounded-full bg-[#c8102e] px-10 py-4 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-[#a50d25]"
           >
-            Get Started
+            Login to HourSpace
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
