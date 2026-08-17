@@ -5,22 +5,25 @@ import { getRequestSession } from "@/lib/auth/getRequestSession";
 import { getSessionStatsDetailService } from "@/services/course_stats/session-detail";
 import type { SessionStatsDetailDto } from "@/lib/types/queue";
 
-interface PageProps {
-  params: Promise<{ sessionPublicId: string }>;
-}
+type PageProps = {
+  searchParams: Promise<{ session?: string }>;
+};
 
-export default async function SessionStatsDetailRoute({ params }: PageProps) {
-  const { sessionPublicId } = await params;
+export default async function CourseSessionStatsDetailRoute({
+  searchParams,
+}: PageProps) {
+  const { session: sessionPublicId } = await searchParams;
+  if (!sessionPublicId) {
+    redirect("/course/stats");
+  }
 
-  const session = await getRequestSession();
-  if (!session) {
+  const authSession = await getRequestSession();
+  if (!authSession) {
     redirect(
-      `/api/auth/session?redirect=/instructor/course-stats/${sessionPublicId}`,
+      `/api/auth/session?redirect=${encodeURIComponent(`/course/stats/session?session=${sessionPublicId}`)}`,
     );
   }
 
-  // The service enforces the per-offering INSTRUCTOR check; on any failure
-  // (not found / not authorized) send the user back to the overview.
   let detail: SessionStatsDetailDto;
   try {
     detail = await getSessionStatsDetailService(sessionPublicId);

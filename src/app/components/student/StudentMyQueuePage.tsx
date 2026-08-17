@@ -10,14 +10,14 @@ const AUTO_REFRESH_MS = 15_000;
 const MANUAL_COOLDOWN_MS = 5_000;
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString([], {
-    hour: "2-digit",
+  return new Date(iso).toLocaleTimeString("en-US", {
+    hour: "numeric",
     minute: "2-digit",
   });
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString([], {
+  return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });
@@ -173,8 +173,8 @@ export function StudentMyQueuePage({
           </h1>
           <p className="mt-0.5 text-sm text-slate-500">
             Updated at{" "}
-            {lastRefreshed.toLocaleTimeString([], {
-              hour: "2-digit",
+            {lastRefreshed.toLocaleTimeString("en-US", {
+              hour: "numeric",
               minute: "2-digit",
               second: "2-digit",
             })}

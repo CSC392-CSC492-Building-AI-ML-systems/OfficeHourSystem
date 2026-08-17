@@ -6,8 +6,8 @@ import { RefreshCw } from "lucide-react";
 const COOLDOWN_MS = 5_000;
 
 function formatUpdatedAt(date: Date) {
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
+  return date.toLocaleTimeString("en-US", {
+    hour: "numeric",
     minute: "2-digit",
     second: "2-digit",
   });
