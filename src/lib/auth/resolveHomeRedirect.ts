@@ -16,7 +16,7 @@ export async function resolveHomeRedirectPath(
     return "/admin";
   }
 
-  return "/student";
+  return "/course";
 }
 
 export function workspaceHrefForRole(

@@ -25,7 +25,7 @@ export default async function SessionStatsDetailRoute({ params }: PageProps) {
   try {
     detail = await getSessionStatsDetailService(sessionPublicId);
   } catch {
-    redirect("/instructor/course-stats");
+    redirect("/course/stats");
   }
 
   return (
