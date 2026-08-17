@@ -3,29 +3,34 @@
 import { useState } from "react";
 import { CalendarClock, Trash2, X } from "lucide-react";
 import {
+  formatDateOnlyLocal,
   snapOfficeHourEndTime,
   snapOfficeHourStartTime,
   validateOfficeHourTimes,
 } from "@/lib/scheduling/time";
 import { FieldCharLimitHint } from "./FieldCharLimitHint";
+import { OfficeHourHostSelect } from "./OfficeHourHostSelect";
 import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
 import {
   BLOCK_NAME_MAX_LENGTH,
   clampToMaxLength,
   LOCATION_MAX_LENGTH,
 } from "./scheduleFieldLimits";
-import type { RecurringRule } from "./types";
+import type { RecurringRule, ScheduleStaffMember } from "./types";
 import { useModalOverlay } from "./useModalOverlay";
 
 interface EditRecurringBlockModalProps {
   isOpen: boolean;
   block: RecurringRule | null;
+  staff: ScheduleStaffMember[];
   onClose: () => void;
   onSave: (input: {
     title: string;
     location: string;
     startTime: string;
     endTime: string;
+    applyFrom: string;
+    hostUserPublicIds: string[];
   }) => Promise<void>;
   onDelete: () => Promise<void>;
   onError?: (message: string | null) => void;
@@ -34,6 +39,7 @@ interface EditRecurringBlockModalProps {
 export function EditRecurringBlockModal({
   isOpen,
   block,
+  staff,
   onClose,
   onSave,
   onDelete,
@@ -49,6 +55,7 @@ export function EditRecurringBlockModal({
     <EditRecurringBlockForm
       key={block.id}
       block={block}
+      staff={staff}
       onClose={onClose}
       onSave={onSave}
       onDelete={onDelete}
@@ -59,12 +66,14 @@ export function EditRecurringBlockModal({
 
 function EditRecurringBlockForm({
   block,
+  staff,
   onClose,
   onSave,
   onDelete,
   onError,
 }: {
   block: RecurringRule;
+  staff: ScheduleStaffMember[];
   onClose: () => void;
   onSave: EditRecurringBlockModalProps["onSave"];
   onDelete: EditRecurringBlockModalProps["onDelete"];
@@ -85,20 +94,28 @@ function EditRecurringBlockForm({
   const [endTime, setEndTime] = useState(() =>
     snapOfficeHourEndTime(block.startTime, block.endTime),
   );
+  const [applyFrom, setApplyFrom] = useState(() =>
+    formatDateOnlyLocal(new Date()),
+  );
+  const [hostPublicIds, setHostPublicIds] = useState(() => [
+    ...block.hostPublicIds,
+  ]);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  const showError = (message: string) => {
-    onError?.(message);
-    onClose();
-  };
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handleSave = async () => {
+    setFormError(null);
     onError?.(null);
 
     const timeError = validateOfficeHourTimes(startTime, endTime);
     if (timeError) {
-      showError(timeError);
+      setFormError(timeError);
+      return;
+    }
+
+    if (!applyFrom) {
+      setFormError("Choose a date to apply changes from.");
       return;
     }
 
@@ -109,13 +126,16 @@ function EditRecurringBlockForm({
         location: location.trim(),
         startTime,
         endTime,
+        applyFrom,
+        hostUserPublicIds: hostPublicIds,
       });
     } catch (saveError) {
-      showError(
+      const message =
         saveError instanceof Error
           ? saveError.message
-          : "Failed to update recurring block.",
-      );
+          : "Failed to update recurring block.";
+      setFormError(message);
+      onError?.(message);
     } finally {
       setSubmitting(false);
     }
@@ -129,16 +149,18 @@ function EditRecurringBlockForm({
       return;
     }
 
+    setFormError(null);
     onError?.(null);
     setDeleting(true);
     try {
       await onDelete();
     } catch (deleteError) {
-      showError(
+      const message =
         deleteError instanceof Error
           ? deleteError.message
-          : "Failed to delete recurring block.",
-      );
+          : "Failed to delete recurring block.";
+      setFormError(message);
+      onError?.(message);
     } finally {
       setDeleting(false);
     }
@@ -150,7 +172,7 @@ function EditRecurringBlockForm({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl rounded-[32px] border border-slate-200/80 bg-white shadow-[0_40px_120px_-50px_rgba(7,31,65,0.7)]"
+        className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[32px] border border-slate-200/80 bg-white shadow-[0_40px_120px_-50px_rgba(7,31,65,0.7)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-6 border-b border-slate-200 px-6 py-5 sm:px-8">
@@ -164,7 +186,7 @@ function EditRecurringBlockForm({
               </h2>
               <p className="mt-1 text-sm text-slate-600">
                 Repeats: {block.repeats} ({block.validFrom} – {block.validUntil}
-                ) (not editable)
+                )
               </p>
             </div>
           </div>
@@ -179,6 +201,12 @@ function EditRecurringBlockForm({
         </div>
 
         <div className="space-y-5 px-6 py-6 sm:px-8">
+          {formError ? (
+            <p className="rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm text-[#9f1239]">
+              {formError}
+            </p>
+          ) : null}
+
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-[#071f41]">
               Block Name
@@ -215,10 +243,31 @@ function EditRecurringBlockForm({
             onEndTimeChange={setEndTime}
           />
 
-          <p className="text-xs leading-5 text-slate-500">
-            Changes apply to the rule and all upcoming scheduled sessions in
-            this block. Individual session overrides are not changed here.
-          </p>
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-[#071f41]">
+              Apply changes from
+            </span>
+            <input
+              type="date"
+              value={applyFrom}
+              min={block.validFromInput}
+              max={block.validUntilInput}
+              onChange={(event) => setApplyFrom(event.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
+            />
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              Sessions before this date keep their current details. Sessions on
+              or after this date are updated.
+            </p>
+          </label>
+
+          <OfficeHourHostSelect
+            staff={staff}
+            value={hostPublicIds}
+            onChange={setHostPublicIds}
+            label="Hosts"
+            hint="Hosts are updated on the rule and on sessions from the apply-from date onward."
+          />
         </div>
 
         <div className="flex flex-col gap-3 border-t border-slate-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">

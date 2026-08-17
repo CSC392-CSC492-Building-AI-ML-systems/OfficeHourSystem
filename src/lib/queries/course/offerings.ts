@@ -31,7 +31,7 @@ export async function listCoursePickerOfferings(
   userId: number,
 ): Promise<CoursePickerItem[]> {
   const memberships = await prisma.offeringMember.findMany({
-    where: { userId },
+    where: { userId, offering: { archivedAt: null } },
     select: {
       role: true,
       offering: {

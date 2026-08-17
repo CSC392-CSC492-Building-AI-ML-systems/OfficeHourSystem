@@ -68,6 +68,7 @@ export default async function AdminPage() {
   const offerings = await listAllOfferings({
     viewerUserId: userId,
     viewerIsSuperAdmin,
+    includeArchived: true,
   });
 
   return (

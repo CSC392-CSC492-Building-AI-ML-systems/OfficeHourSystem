@@ -35,19 +35,21 @@ model Course {
 }
 
 model CourseOffering {
-  id        Int                  @id @default(autoincrement())
-  publicId  String               @unique @default(cuid())
-  courseId  Int
-  termCode  String
-  createdAt DateTime             @default(now())
-  updatedAt DateTime             @updatedAt
-  course    Course               @relation(fields: [courseId], references: [id])
-  members   OfferingMember[]
-  schedules OfficeHourSchedule[]
-  sessions  OfficeHourSession[]
+  id         Int                  @id @default(autoincrement())
+  publicId   String               @unique @default(cuid())
+  courseId   Int
+  termCode   String
+  archivedAt DateTime?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  course     Course               @relation(fields: [courseId], references: [id])
+  members    OfferingMember[]
+  schedules  OfficeHourSchedule[]
+  sessions   OfficeHourSession[]
 
   @@unique([courseId, termCode])
   @@index([termCode])
+  @@index([archivedAt])
 }
 
 model OfferingMember {

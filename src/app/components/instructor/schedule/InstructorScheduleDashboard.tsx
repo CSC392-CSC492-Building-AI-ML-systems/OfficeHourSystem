@@ -21,10 +21,12 @@ import {
 import type { SchedulePageResponse } from "@/lib/scheduling/types";
 import { WeeklyCalendar } from "./WeeklyCalendar";
 import type {
+  OneTimeSessionListItem,
   RecurringRule,
   ScheduleSession,
   ScheduleStaffMember,
 } from "./types";
+import { OneTimeSessions } from "./OneTimeSessions";
 import type { CreateOneTimeSessionInput } from "@/lib/scheduling/types";
 import type { CreateRecurringBlockInput } from "@/lib/scheduling/types";
 import {
@@ -67,6 +69,9 @@ export default function InstructorScheduleDashboard({
     initialData.sessions,
   );
   const [rules, setRules] = useState<RecurringRule[]>(initialData.rules);
+  const [oneTimeSessions, setOneTimeSessions] = useState<
+    OneTimeSessionListItem[]
+  >(initialData.oneTimeSessions ?? []);
   const [staff, setStaff] = useState<ScheduleStaffMember[]>(initialData.staff);
   const [canEdit, setCanEdit] = useState(initialData.canEdit);
   const [currentUserPublicId, setCurrentUserPublicId] = useState(
@@ -104,6 +109,7 @@ export default function InstructorScheduleDashboard({
         setCalendarDays(data.calendarDays);
         setSessions(data.sessions);
         setRules(data.rules);
+        setOneTimeSessions(data.oneTimeSessions ?? []);
         setStaff(data.staff);
         setCurrentUserPublicId(data.currentUserPublicId);
 
@@ -199,6 +205,8 @@ export default function InstructorScheduleDashboard({
     location: string;
     startTime: string;
     endTime: string;
+    applyFrom: string;
+    hostUserPublicIds: string[];
   }) => {
     if (!editingRule) return;
     setActionError(null);
@@ -207,6 +215,8 @@ export default function InstructorScheduleDashboard({
       location: input.location || null,
       startTime: input.startTime,
       endTime: input.endTime,
+      applyFrom: input.applyFrom,
+      hostUserPublicIds: input.hostUserPublicIds,
     });
     setEditingRule(null);
     await loadSchedule();
@@ -386,6 +396,26 @@ export default function InstructorScheduleDashboard({
             onEditBlock={setEditingRule}
             onCreateBlock={() => setActiveModal("recurring")}
           />
+
+          <OneTimeSessions
+            sessions={oneTimeSessions}
+            canEdit={canEdit}
+            onCreateSession={() => setActiveModal("one-time")}
+            onSelectSession={(sessionId) => {
+              const listed = oneTimeSessions.find(
+                (session) => session.id === sessionId,
+              );
+              setSelectedSessionId(sessionId);
+              if (listed) {
+                const targetWeek = formatDateOnlyLocal(
+                  startOfWeekMonday(new Date(`${listed.date}T12:00:00`)),
+                );
+                if (targetWeek !== weekStart) {
+                  void loadSchedule({ weekStart: targetWeek });
+                }
+              }
+            }}
+          />
         </main>
       </div>
 
@@ -410,6 +440,7 @@ export default function InstructorScheduleDashboard({
           <EditRecurringBlockModal
             isOpen={editingRule !== null}
             block={editingRule}
+            staff={staff}
             onClose={() => setEditingRule(null)}
             onSave={handleUpdateRecurringBlock}
             onDelete={handleDeleteRecurringBlock}

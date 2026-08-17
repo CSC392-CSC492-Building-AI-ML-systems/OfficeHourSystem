@@ -130,6 +130,10 @@ export function RecurringBlocks({
                     {block.defaultLocation}
                   </span>
                 </p>
+                <p className="flex items-center gap-2">
+                  <span className="font-medium text-slate-700">Hosts:</span>{" "}
+                  {block.hostLabel}
+                </p>
               </div>
             </article>
           ))}

@@ -41,12 +41,28 @@ export interface RecurringRule {
   repeats: string;
   validFrom: string;
   validUntil: string;
+  validFromInput: string;
+  validUntilInput: string;
   defaultTime: string;
   startTime: string;
   endTime: string;
   defaultLocation: string;
   mode: "in-person" | "online" | "hybrid";
   accent: "navy" | "red" | "gold";
+  hostPublicIds: string[];
+  hostLabel: string;
+}
+
+export interface OneTimeSessionListItem {
+  id: string;
+  title: string;
+  sessionTypeLabel: string;
+  date: string;
+  dateLabel: string;
+  timeLabel: string;
+  location: string;
+  hostLabel: string;
+  status: string;
 }
 
 export interface CalendarDay {

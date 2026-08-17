@@ -108,12 +108,17 @@ export type RecurringRuleDto = {
   repeats: string;
   validFrom: string;
   validUntil: string;
+  /** `YYYY-MM-DD` for apply-from date picker. */
+  validFromInput: string;
+  validUntilInput: string;
   defaultTime: string;
   startTime: string;
   endTime: string;
   defaultLocation: string;
   mode: "in-person" | "online" | "hybrid";
   accent: "navy" | "red" | "gold";
+  hostPublicIds: string[];
+  hostLabel: string;
 };
 
 export type UpdateRecurringBlockInput = {
@@ -121,6 +126,21 @@ export type UpdateRecurringBlockInput = {
   location?: string | null;
   startTime?: string;
   endTime?: string;
+  /** Inclusive `YYYY-MM-DD`. Sessions before this date are left unchanged. Defaults to today. */
+  applyFrom?: string;
+  hostUserPublicIds?: string[];
+};
+
+export type OneTimeSessionListItemDto = {
+  id: string;
+  title: string;
+  sessionTypeLabel: string;
+  date: string;
+  dateLabel: string;
+  timeLabel: string;
+  location: string;
+  hostLabel: string;
+  status: string;
 };
 
 export type QueueSessionDto = {
@@ -155,6 +175,7 @@ export type SchedulePageResponse = {
   calendarDays: CalendarDayDto[];
   sessions: ScheduleSessionDto[];
   rules: RecurringRuleDto[];
+  oneTimeSessions: OneTimeSessionListItemDto[];
   staff: ScheduleStaffDto[];
   canEdit: boolean;
   currentUserPublicId: string | null;
