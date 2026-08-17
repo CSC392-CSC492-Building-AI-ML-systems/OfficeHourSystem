@@ -8,12 +8,7 @@ type AddMode = "single" | "bulk";
 interface AddTaModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddStaffMember: (input: {
-    utorid: string;
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-  }) => Promise<boolean>;
+  onAddStaffMember: (input: { utorid: string }) => Promise<boolean>;
   onBulkAddStaffMembers: (text: string) => Promise<boolean>;
   isSubmitting: boolean;
   error: string | null;
@@ -34,18 +29,12 @@ export function AddTaModal({
 }: AddTaModalProps) {
   const [mode, setMode] = useState<AddMode>("single");
   const [utorid, setUtorid] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
   const [bulkText, setBulkText] = useState("");
   const utoridRef = useRef<HTMLInputElement>(null);
   const bulkTextRef = useRef<HTMLTextAreaElement>(null);
 
   const resetForm = () => {
     setUtorid("");
-    setFirstName("");
-    setLastName("");
-    setEmail("");
     setBulkText("");
   };
 
@@ -100,12 +89,7 @@ export function AddTaModal({
 
     const success =
       mode === "single"
-        ? await onAddStaffMember({
-            utorid: utorid.trim(),
-            firstName: firstName.trim() || undefined,
-            lastName: lastName.trim() || undefined,
-            email: email.trim() || undefined,
-          })
+        ? await onAddStaffMember({ utorid: utorid.trim() })
         : await onBulkAddStaffMembers(bulkText);
 
     if (success) {
@@ -132,9 +116,8 @@ export function AddTaModal({
               Add teaching assistant{mode === "bulk" ? "s" : ""}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              {mode === "single"
-                ? "UTORid is required. Name and email can be added later."
-                : "Enter UTORids one per line. Name and email can be added later."}
+              They must have signed in to the app at least once. Students
+              already on the classlist cannot be added as TAs.
             </p>
           </div>
           <button
@@ -173,52 +156,17 @@ export function AddTaModal({
           ) : null}
 
           {mode === "single" ? (
-            <>
-              <label className="block space-y-2 text-sm font-medium text-[#071f41]">
-                <span>UTORid</span>
-                <input
-                  ref={utoridRef}
-                  required
-                  value={utorid}
-                  onChange={(event) => setUtorid(event.target.value)}
-                  placeholder="jlee1234"
-                  className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
-                />
-              </label>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2 text-sm font-medium text-[#071f41]">
-                  <span>First name (optional)</span>
-                  <input
-                    value={firstName}
-                    onChange={(event) => setFirstName(event.target.value)}
-                    placeholder="Jordan"
-                    className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
-                  />
-                </label>
-
-                <label className="space-y-2 text-sm font-medium text-[#071f41]">
-                  <span>Last name (optional)</span>
-                  <input
-                    value={lastName}
-                    onChange={(event) => setLastName(event.target.value)}
-                    placeholder="Lee"
-                    className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
-                  />
-                </label>
-              </div>
-
-              <label className="block space-y-2 text-sm font-medium text-[#071f41]">
-                <span>Email (optional)</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="j.lee@mail.utoronto.ca"
-                  className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
-                />
-              </label>
-            </>
+            <label className="block space-y-2 text-sm font-medium text-[#071f41]">
+              <span>UTORid</span>
+              <input
+                ref={utoridRef}
+                required
+                value={utorid}
+                onChange={(event) => setUtorid(event.target.value)}
+                placeholder="jlee1234"
+                className="w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white"
+              />
+            </label>
           ) : (
             <label className="block space-y-2 text-sm font-medium text-[#071f41]">
               <span>UTORids</span>
