@@ -13,8 +13,9 @@ interest, help queues, classlist management, and TCard-based check-ins.
 - PostgreSQL
 - Tailwind CSS
 - Docker
+- pnpm
 
-## Getting Started
+## How to run locally as a developer
 
 ### Requirements
 
@@ -46,6 +47,12 @@ Set up the local PostgreSQL service and apply the checked-in migrations:
 pnpm db:setup
 ```
 
+Optionally load demo accounts and one CSC108 offering:
+
+```bash
+pnpm db:seed
+```
+
 Start the development server:
 
 ```bash
@@ -54,21 +61,58 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) in a browser.
 
+Local identity comes from `DEV_UTORID` in `.env` (no Shibboleth). After
+seeding, use `teststudent`, `testta`, `testinstructor`, or `testadmin`. Change
+the value and restart `pnpm dev` to switch users. `testadmin` must stay listed
+in `adminList.txt` to reach `/admin`.
+
+Production authenticates through Apache + Shibboleth and injects a `utorid`
+header. See `config/apache-shibboleth.conf`.
+
 ## Available Commands
 
-| Command          | Purpose                      |
-| ---------------- | ---------------------------- |
-| `pnpm dev`       | Start the development server |
-| `pnpm build`     | Create a production build    |
-| `pnpm start`     | Start the production server  |
-| `pnpm typecheck` | Run TypeScript checks        |
-| `pnpm lint`      | Run ESLint                   |
+| Command                 | Purpose                                 |
+| ----------------------- | --------------------------------------- |
+| `pnpm dev`              | Start the development server            |
+| `pnpm build`            | Create a production build               |
+| `pnpm start`            | Start the production server             |
+| `pnpm typecheck`        | Run TypeScript checks                   |
+| `pnpm lint`             | Run ESLint                              |
+| `pnpm test`             | Run unit and integration tests          |
+| `pnpm test:unit`        | Run unit tests                          |
+| `pnpm test:integration` | Run integration tests                   |
+| `pnpm db:setup`         | Start Postgres and apply migrations     |
+| `pnpm db:migrate`       | Apply Prisma migrations                 |
+| `pnpm db:seed`          | Load demo users and one course offering |
 
-## Continuous Deployment
+## Routes
 
-The repository includes a continuous deployment workflow. Updates merged into
-`master` are deployed through the configured GitHub Actions self-hosted runner.
-Merged PRs would be deployed on Uoft VM running on **hourspace.utm.utoronto.ca**
+After login, admins land on `/admin` and everyone else on `/course`.
+
+| Path                                    | Who                                                   |
+| --------------------------------------- | ----------------------------------------------------- |
+| `/`                                     | Public landing page                                   |
+| `/course`                               | Course picker                                         |
+| `/course/my-queue`                      | Student's live queue tickets                          |
+| `/course/stats`                         | Instructor course stats (picker and overview)         |
+| `/course/stats/sessions?offering=`      | Per-session stats list                                |
+| `/course/stats/session?session=`        | Single session stats                                  |
+| `/course/[offeringPublicId]/student`    | Student dashboard for one offering                    |
+| `/course/[offeringPublicId]/instructor` | Instructor workspace (staff, queues, schedule, scan)  |
+| `/admin`                                | Platform admin (offerings, classlists, impersonation) |
+
+## Production
+
+On the server, with a clone of this repo and a production `.env` in the repo
+root:
+
+```bash
+bash scripts/deploy.sh
+```
+
+The script pulls the latest `master`, starts Postgres, applies Prisma
+migrations, and rebuilds the app container. GitHub Actions on `master` runs
+the same script on the self-hosted runner at **hourspace.utm.utoronto.ca**.
 
 ## Project Structure
 
@@ -79,8 +123,8 @@ src/
   services/     Application workflows
   lib/          Queries, authentication, and shared utilities
 prisma/         Prisma schema and migrations
-scripts/        Development and deployment scripts
-config/         Server configuration examples
+scripts/        Development seeds and deployment scripts
+config/         Apache / Shibboleth configuration examples
 public/         Static assets
 ```
 
@@ -89,8 +133,8 @@ public/         Static assets
 Before starting a substantial change, contact a project maintainer or Professor
 Rutwa Engineer to confirm the scope and ownership of the work.
 
-Use a dedicated branch for each change and keep pull requests focused. Run the
-relevant type checks and lint checks before requesting review.
+Use a dedicated branch for each change and keep pull requests focused. Run
+`pnpm typecheck`, `pnpm lint`, and `pnpm test` before requesting review.
 
 ## Contact
 
