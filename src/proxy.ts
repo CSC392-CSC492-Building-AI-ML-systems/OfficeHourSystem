@@ -12,7 +12,6 @@ const PUBLIC_PATHS = [
   "/api/health", // health check
   "/api/cron/oh-reminders", // cron trigger — self-guards with CRON_SECRET
   "/", // home page
-  "/login", // role picker (Shibboleth wiring comes later)
 ];
 
 const PUBLIC_PREFIXES = [

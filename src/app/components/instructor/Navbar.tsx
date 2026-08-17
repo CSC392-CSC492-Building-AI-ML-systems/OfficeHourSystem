@@ -21,7 +21,7 @@ const INSTRUCTOR_NAV: Array<{
 type NavbarProps = {
   activeItem?: InstructorNavItem;
   showSearch?: boolean;
-  offeringPublicId?: string;
+  offeringPublicId: string;
   /** Course-scoped label for the profile menu, e.g. "CSC108 · Term 20265". */
   courseLabel?: string;
 };
@@ -36,18 +36,16 @@ export function Navbar({
   const items: AppNavItem[] = INSTRUCTOR_NAV.map(({ key, label, path }) => ({
     key,
     label,
-    href: offeringPublicId ? courseRouteHref(path, offeringPublicId) : path,
+    href: courseRouteHref(path, offeringPublicId),
   }));
 
-  const endItems: AppNavItem[] = offeringPublicId
-    ? [
-        {
-          key: "stats",
-          label: "Course Stats",
-          href: `/course/stats?offering=${encodeURIComponent(offeringPublicId)}`,
-        },
-      ]
-    : [];
+  const endItems: AppNavItem[] = [
+    {
+      key: "stats",
+      label: "Course Stats",
+      href: `/course/stats?offering=${encodeURIComponent(offeringPublicId)}`,
+    },
+  ];
 
   return (
     <AppNavbar
