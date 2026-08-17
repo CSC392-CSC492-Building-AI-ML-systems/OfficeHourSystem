@@ -45,7 +45,7 @@ export async function uploadAdminClasslistAction(
 
     const termCode = formData.get("termCode");
     if (typeof termCode !== "string" || termCode.trim().length === 0) {
-      throw new Error('Missing term code. Expected form field "termCode".');
+      throw new Error('Missing course name. Expected form field "termCode".');
     }
 
     const file = formData.get("file");

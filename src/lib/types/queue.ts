@@ -33,8 +33,16 @@ export type ScanCheckInResult =
   | { outcome: "checked_in"; studentName: string }
   | { outcome: "already_in_queue"; studentName: string }
   | { outcome: "mock_user"; studentName: string } // barcode dev mock
+  /** Identifier not in our DB (and for non-CSN paths, unknown student). */
   | { outcome: "student_not_found" }
+  /** NFC/CSN: MCS has no match for this card. */
+  | { outcome: "mcs_not_found" }
+  /** MCS (or lookup) recognized them, but they have no User row in HourSpace. */
+  | { outcome: "not_in_app" }
+  /** User exists but is not enrolled as a STUDENT in this offering. */
   | { outcome: "not_enrolled" }
+  /** User is a TA or instructor on this offering — cannot check in as a student. */
+  | { outcome: "staff_member" }
   | { outcome: "csn_lookup_unavailable" }
   | { outcome: "session_not_active" };
 

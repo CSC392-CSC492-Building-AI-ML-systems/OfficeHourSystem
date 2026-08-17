@@ -149,10 +149,10 @@ export default function CourseOverviewPage({
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-[#c8102e]">
-            Term {data.termCode}
+            {data.courseCode}
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#071f41]">
-            {data.courseCode}
+            {data.termCode}
           </h1>
           <p className="mt-2 text-sm text-slate-600">
             Based on {data.endedSessionCount} ended session

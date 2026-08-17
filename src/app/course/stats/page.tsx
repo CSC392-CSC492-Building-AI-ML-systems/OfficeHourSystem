@@ -69,16 +69,18 @@ function OfferingCard({ offering }: { offering: InstructorOfferingDto }) {
               "repeating-linear-gradient(-12deg, transparent, transparent 48px, rgba(255,255,255,0.03) 48px, rgba(255,255,255,0.03) 49px)",
           }}
         />
-        <p className="relative text-center text-4xl font-black tracking-tight text-white sm:text-5xl">
-          {offering.courseCode}
+        <p className="relative text-center text-2xl font-black leading-tight tracking-tight text-white sm:text-3xl">
+          {offering.termCode}
         </p>
       </div>
       <div className="flex flex-1 flex-col gap-1 px-4 py-4">
         <p className="truncate text-sm font-semibold text-[#071f41] group-hover:underline">
-          {offering.courseCode}
+          {offering.termCode}
         </p>
         <p className="text-sm text-slate-500">View course statistics</p>
-        <p className="mt-1 text-xs text-slate-400">Term {offering.termCode}</p>
+        <p className="mt-1 text-xs text-slate-400">
+          Code {offering.courseCode}
+        </p>
       </div>
     </Link>
   );
@@ -146,7 +148,7 @@ export default async function CourseStatsPage({ searchParams }: PageProps) {
     <StatsShell
       showAdmin={showAdmin}
       isInstructor={isInstructor}
-      courseLabel={`${overview.courseCode} · Term ${overview.termCode}`}
+      courseLabel={`${overview.termCode} · ${overview.courseCode}`}
     >
       <div className="mt-10">
         <CourseOverviewPage overview={overview} />

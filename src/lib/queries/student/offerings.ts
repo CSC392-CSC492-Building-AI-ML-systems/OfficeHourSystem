@@ -33,7 +33,7 @@ export async function listStudentOfferings(
     offeringPublicId: offering.publicId,
     courseCode: offering.course.code,
     termCode: offering.termCode,
-    courseLabel: `${offering.course.code} · Term ${offering.termCode}`,
+    courseLabel: `${offering.termCode} · ${offering.course.code}`,
     workspaceHref: workspaceHrefForRole("STUDENT", offering.publicId)!,
   }));
 }

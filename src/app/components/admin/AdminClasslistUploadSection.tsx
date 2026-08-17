@@ -21,7 +21,7 @@ export function AdminClasslistUploadSection({
   onSuccess,
 }: AdminClasslistUploadSectionProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [termCode, setTermCode] = useState("");
+  const [courseName, setCourseName] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -61,7 +61,7 @@ export function AdminClasslistUploadSection({
   };
 
   const handleImport = () => {
-    if (!selectedFile || !termCode.trim()) return;
+    if (!selectedFile || !courseName.trim()) return;
 
     setError(null);
     setSuccess(null);
@@ -70,7 +70,8 @@ export function AdminClasslistUploadSection({
     startTransition(async () => {
       const formData = new FormData();
       formData.set("file", selectedFile);
-      formData.set("termCode", termCode.trim());
+      // Stored in CourseOffering.termCode (no schema change); used as display name.
+      formData.set("termCode", courseName.trim());
 
       const result = await uploadAdminClasslistAction(formData);
 
@@ -86,7 +87,7 @@ export function AdminClasslistUploadSection({
           : "";
 
       setSuccess(
-        `Created ${result.courseCode} (term ${result.termCode}) with ${result.imported} student${result.imported === 1 ? "" : "s"}.${clearedNote} You were added as an instructor.`,
+        `Created ${result.termCode} (${result.courseCode}) with ${result.imported} student${result.imported === 1 ? "" : "s"}.${clearedNote} You were added as an instructor.`,
       );
       setCreatedOfferingHref(instructorDashboardHref(result.offeringPublicId));
       resetSelection();
@@ -94,7 +95,7 @@ export function AdminClasslistUploadSection({
     });
   };
 
-  const canSubmit = termCode.trim().length > 0 && selectedFile !== null;
+  const canSubmit = courseName.trim().length > 0 && selectedFile !== null;
 
   return (
     <section className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
@@ -110,14 +111,18 @@ export function AdminClasslistUploadSection({
 
       <div className="space-y-5 px-6 py-5">
         <label className="block space-y-2 text-sm font-medium text-[#071f41]">
-          <span>Term code</span>
+          <span>Course name</span>
           <input
-            value={termCode}
-            onChange={(event) => setTermCode(event.target.value)}
-            placeholder="e.g. 20261"
+            value={courseName}
+            onChange={(event) => setCourseName(event.target.value)}
+            placeholder="e.g. CSC492 Fall 2026"
             disabled={isPending}
-            className="w-full max-w-xs rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white disabled:opacity-60"
+            className="w-full max-w-md rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] focus:bg-white disabled:opacity-60"
           />
+          <p className="text-xs font-normal text-slate-500">
+            A display name for this offering. Use something that distinguishes
+            Fall vs Winter if needed. Course code still comes from the CSV.
+          </p>
         </label>
 
         <div>
@@ -194,8 +199,7 @@ export function AdminClasslistUploadSection({
                 {selectedFile.name}
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                {(selectedFile.size / 1024).toFixed(1)} KB · term{" "}
-                {termCode || "—"}
+                {(selectedFile.size / 1024).toFixed(1)} KB · {courseName || "—"}
               </p>
             </div>
             <button
@@ -216,8 +220,8 @@ export function AdminClasslistUploadSection({
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[#b45309]" />
               <div className="space-y-3">
                 <p className="text-sm text-[#a16207]">
-                  This will create or update the course offering for term{" "}
-                  <span className="font-semibold">{termCode}</span> and import
+                  This will create or update the course offering{" "}
+                  <span className="font-semibold">{courseName}</span> and import
                   all students from the CSV. Re-importing replaces existing
                   student enrollments for that offering.
                 </p>

@@ -33,9 +33,24 @@ function getResultDisplay(result: ScanCheckInResult): {
       };
     case "student_not_found":
       return { text: "Student not found", color: "text-red-600" };
+    case "mcs_not_found":
+      return {
+        text: "Card not recognized. No match in the MCS card database.",
+        color: "text-red-600",
+      };
+    case "not_in_app":
+      return {
+        text: "Card recognized, but this person is not in HourSpace for this course. They may need to be on the classlist and sign in once.",
+        color: "text-red-600",
+      };
     case "not_enrolled":
       return {
-        text: "Student is not enrolled in this course",
+        text: "This person is in HourSpace but is not enrolled as a student in this course.",
+        color: "text-red-600",
+      };
+    case "staff_member":
+      return {
+        text: "This is a staff member (TA or instructor). Staff cannot check in as students.",
         color: "text-red-600",
       };
     case "csn_lookup_unavailable":

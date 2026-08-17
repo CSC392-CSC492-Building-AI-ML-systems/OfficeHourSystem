@@ -37,7 +37,7 @@ export async function resolveInstructorOfferingPage(
     offeringPublicId: context.offeringPublicId,
     courseCode: context.courseCode,
     termCode: context.termCode,
-    courseLabel: `${context.courseCode} · Term ${context.termCode}`,
+    courseLabel: `${context.termCode} · ${context.courseCode}`,
     role: context.role,
     canEdit: context.canEdit,
   };

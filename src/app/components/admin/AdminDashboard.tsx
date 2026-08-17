@@ -96,7 +96,7 @@ export function AdminDashboard({
 
   const handleDelete = async (offering: AdminOfferingListItem) => {
     const confirmed = window.confirm(
-      `Permanently delete ${offering.courseCode} (term ${offering.termCode})? This removes schedules, sessions, attendance, and memberships for this offering.`,
+      `Permanently delete ${offering.termCode} (${offering.courseCode})? This removes schedules, sessions, attendance, and memberships for this offering.`,
     );
     if (!confirmed) {
       return;
@@ -233,7 +233,7 @@ export function AdminDashboard({
           ) : (
             <ul className="divide-y divide-slate-200">
               {initialOfferings.map((offering) => {
-                const label = `${offering.courseCode} · Term ${offering.termCode}`;
+                const label = `${offering.termCode} · ${offering.courseCode}`;
                 const isArchived = offering.archivedAt !== null;
                 const busy = managingOfferingId === offering.offeringPublicId;
 
@@ -355,7 +355,7 @@ export function AdminDashboard({
         <AddOfferingInstructorModal
           isOpen
           offeringPublicId={addInstructorTarget.offeringPublicId}
-          courseLabel={`${addInstructorTarget.courseCode} · Term ${addInstructorTarget.termCode}`}
+          courseLabel={`${addInstructorTarget.termCode} · ${addInstructorTarget.courseCode}`}
           onClose={() => setAddInstructorTarget(null)}
           onSuccess={refresh}
         />

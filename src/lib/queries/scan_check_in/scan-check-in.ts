@@ -18,8 +18,8 @@ export async function scanCheckIn(
   offeringId: number,
   identifierType: IdentifierType,
   identifierValue: string,
+  options?: { fromMcsLookup?: boolean },
 ): Promise<ScanCheckInResult> {
-
   // ── Barcode: use mock map, never hit the real DB for user lookup ──
   if (identifierType === "barcode") {
     const mockName = MOCK_BARCODE_MAP[identifierValue];
@@ -46,22 +46,28 @@ export async function scanCheckIn(
     },
   });
 
-  if (!student) return { outcome: "student_not_found" };
+  if (!student) {
+    // MCS recognized the card, but this person has never signed into HourSpace
+    // / is not in our user table (and thus not on the classlist).
+    if (options?.fromMcsLookup) {
+      return { outcome: "not_in_app" };
+    }
+    return { outcome: "student_not_found" };
+  }
 
   const studentName =
     [student.firstName, student.lastName].filter(Boolean).join(" ") ||
     student.publicId;
 
-  // ── Verify the student is enrolled in this offering ───────────────
   const membership = student.memberships[0];
+
+  if (membership?.role === "TA" || membership?.role === "INSTRUCTOR") {
+    return { outcome: "staff_member" };
+  }
 
   if (!membership || membership.role !== "STUDENT") {
     return { outcome: "not_enrolled" };
   }
-
-  // ── Insert attendance (unique constraint handles duplicates) ──────
-
-
 
   try {
     await prisma.officeHourAttendance.create({

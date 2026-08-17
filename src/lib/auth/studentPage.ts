@@ -35,7 +35,7 @@ export async function resolveStudentOfferingPage(
     offeringPublicId: context.offeringPublicId,
     courseCode: context.courseCode,
     termCode: context.termCode,
-    courseLabel: `${context.courseCode} · Term ${context.termCode}`,
+    courseLabel: `${context.termCode} · ${context.courseCode}`,
     firstName: session.firstName,
     lastName: session.lastName,
     role: context.role,
