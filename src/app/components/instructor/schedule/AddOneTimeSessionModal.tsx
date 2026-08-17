@@ -106,13 +106,15 @@ function AddOneTimeSessionForm({
   const [endTime, setEndTime] = useState("16:00");
   const [locationDetail, setLocationDetail] = useState("DH 2034");
   const [hostPublicIds, setHostPublicIds] = useState<string[]>([]);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const showError = (message: string) => {
+    setFormError(message);
     onError?.(message);
-    onClose();
   };
 
   const handleAdd = async () => {
+    setFormError(null);
     onError?.(null);
 
     const dateError = validateOfficeHourDate(date);
@@ -186,6 +188,12 @@ function AddOneTimeSessionForm({
         </div>
 
         <div className="space-y-8 px-6 py-6 sm:px-8">
+          {formError ? (
+            <p className="rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm text-[#9f1239]">
+              {formError}
+            </p>
+          ) : null}
+
           <section className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
               Session Type

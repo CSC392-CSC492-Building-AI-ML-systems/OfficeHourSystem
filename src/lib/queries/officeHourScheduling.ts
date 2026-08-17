@@ -18,6 +18,7 @@ import { randomUUID } from "node:crypto";
 import type {
   CreateOneTimeSessionInput,
   CreateRecurringBlockInput,
+  OneTimeSessionListItemDto,
   QueueSessionDto,
   RecurringRuleDto,
   ScheduleSessionDto,
@@ -568,6 +569,20 @@ export async function listRecurringRules(
 
   const schedules = await prisma.officeHourSchedule.findMany({
     where: { offeringId: access.offeringId, isActive: true },
+    include: {
+      hosts: {
+        include: {
+          user: {
+            select: {
+              publicId: true,
+              firstName: true,
+              lastName: true,
+              utorid: true,
+            },
+          },
+        },
+      },
+    },
     orderBy: [{ title: "asc" }, { dayOfWeek: "asc" }],
   });
 
@@ -589,6 +604,9 @@ export async function listRecurringRules(
     const repeatDays = group.map((s) => DOW_NAMES[s.dayOfWeek]).join(", ");
     const validFrom = first.validFrom ?? termBounds.validFrom;
     const validUntil = first.validUntil ?? termBounds.validUntil;
+    const hostLabel =
+      first.hosts.map((host) => userDisplayName(host.user)).join(", ") ||
+      "Unassigned";
 
     rules.push({
       id: first.publicId,
@@ -598,16 +616,64 @@ export async function listRecurringRules(
       repeats: repeatDays,
       validFrom: formatCalendarDateLabel(validFrom),
       validUntil: formatCalendarDateLabel(validUntil),
+      validFromInput: formatDateOnlyLocal(validFrom),
+      validUntilInput: formatDateOnlyLocal(validUntil),
       defaultTime: `${formatMinutesAsLabel(first.startMinute)} - ${formatMinutesAsLabel(first.endMinute)}`,
       startTime: minutesToTimeInput(first.startMinute),
       endTime: minutesToTimeInput(first.endMinute),
       defaultLocation: first.location ?? "TBD",
       mode: inferLocationMode(first.location),
       accent: ruleAccentForType(first.type),
+      hostPublicIds: first.hosts.map((host) => host.user.publicId),
+      hostLabel,
     });
   }
 
   return rules;
+}
+
+export async function listOneTimeSessions(
+  userId: number,
+  offeringPublicId: string,
+): Promise<OneTimeSessionListItemDto[]> {
+  const access = await requireScheduleView(userId, offeringPublicId);
+
+  const sessions = await prisma.officeHourSession.findMany({
+    where: {
+      offeringId: access.offeringId,
+      scheduleId: null,
+      status: { not: "CANCELLED" },
+    },
+    include: {
+      hosts: {
+        include: {
+          user: {
+            select: {
+              publicId: true,
+              firstName: true,
+              lastName: true,
+              utorid: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { startsAt: "asc" },
+  });
+
+  return sessions.map((session) => ({
+    id: session.publicId,
+    title: session.title,
+    sessionTypeLabel: officeHourTypeLabel(session.type),
+    date: formatDateOnlyLocal(session.startsAt),
+    dateLabel: formatCalendarDateLabel(session.startsAt),
+    timeLabel: `${formatDateTimeLabel(session.startsAt)} - ${formatDateTimeLabel(session.endsAt)}`,
+    location: session.location ?? "TBD",
+    hostLabel:
+      session.hosts.map((host) => userDisplayName(host.user)).join(", ") ||
+      "Unassigned",
+    status: session.status,
+  }));
 }
 
 export async function updateRecurringBlock(
@@ -635,7 +701,10 @@ export async function updateRecurringBlock(
   assertOfficeHourWindow(startMinute, endMinute);
 
   const scheduleIds = group.map((row) => row.id);
-  const now = new Date();
+  const applyFrom = patch.applyFrom
+    ? parseIsoDateOnly(patch.applyFrom)
+    : new Date();
+  applyFrom.setHours(0, 0, 0, 0);
 
   if (nextStartMinute !== undefined || nextEndMinute !== undefined) {
     const termBounds = getTermBounds(anchor.offering.termCode);
@@ -659,10 +728,15 @@ export async function updateRecurringBlock(
         endMinute,
         validFrom,
         validUntil,
-        { excludeScheduleIds: scheduleIds, onlyFrom: now },
+        { excludeScheduleIds: scheduleIds, onlyFrom: applyFrom },
       );
     }
   }
+
+  const hosts =
+    patch.hostUserPublicIds !== undefined
+      ? await resolveHostRows(anchor.offeringId, patch.hostUserPublicIds)
+      : null;
 
   await prisma.$transaction(async (tx) => {
     await tx.officeHourSchedule.updateMany({
@@ -677,11 +751,28 @@ export async function updateRecurringBlock(
       },
     });
 
+    if (hosts) {
+      await tx.officeHourScheduleHost.deleteMany({
+        where: { scheduleId: { in: scheduleIds } },
+      });
+      if (hosts.length > 0) {
+        await tx.officeHourScheduleHost.createMany({
+          data: scheduleIds.flatMap((scheduleId) =>
+            hosts.map((host) => ({
+              scheduleId,
+              userId: host.userId,
+              role: host.role,
+            })),
+          ),
+        });
+      }
+    }
+
     const sessions = await tx.officeHourSession.findMany({
       where: {
         scheduleId: { in: scheduleIds },
         status: "SCHEDULED",
-        startsAt: { gte: now },
+        startsAt: { gte: applyFrom },
       },
     });
 
@@ -697,6 +788,21 @@ export async function updateRecurringBlock(
           endsAt: combineDateAndMinutes(day, endMinute),
         },
       });
+
+      if (hosts) {
+        await tx.officeHourSessionHost.deleteMany({
+          where: { sessionId: session.id },
+        });
+        if (hosts.length > 0) {
+          await tx.officeHourSessionHost.createMany({
+            data: hosts.map((host) => ({
+              sessionId: session.id,
+              userId: host.userId,
+              role: host.role,
+            })),
+          });
+        }
+      }
     }
   });
 
@@ -878,6 +984,7 @@ export async function getInstructorSchedulePage(
       calendarDays: [],
       sessions: [],
       rules: [],
+      oneTimeSessions: [],
       staff: [],
       canEdit: false,
       currentUserPublicId,
@@ -893,6 +1000,10 @@ export async function getInstructorSchedulePage(
     selected.offeringPublicId,
     weekStart,
   );
+  const oneTimeSessions = await listOneTimeSessions(
+    userId,
+    selected.offeringPublicId,
+  );
 
   return {
     offering: {
@@ -907,6 +1018,7 @@ export async function getInstructorSchedulePage(
     calendarDays: week.calendarDays,
     sessions: week.sessions,
     rules: week.rules,
+    oneTimeSessions,
     staff: week.staff,
     canEdit: selected.canEdit,
     currentUserPublicId,

@@ -31,11 +31,12 @@ export async function getScheduleAccess(
       id: true,
       publicId: true,
       termCode: true,
+      archivedAt: true,
       course: { select: { code: true } },
     },
   });
 
-  if (!offering) {
+  if (!offering || offering.archivedAt) {
     return null;
   }
 
@@ -96,6 +97,7 @@ export async function listViewableOfferings(userId: number) {
     where: {
       userId,
       role: { in: ["INSTRUCTOR", "TA"] },
+      offering: { archivedAt: null },
     },
     include: {
       offering: {

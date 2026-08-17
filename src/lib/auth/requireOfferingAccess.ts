@@ -22,8 +22,8 @@ export type OfferingContext = {
 };
 
 export async function getOfferingByPublicId(offeringPublicId: string) {
-  return prisma.courseOffering.findUnique({
-    where: { publicId: offeringPublicId },
+  return prisma.courseOffering.findFirst({
+    where: { publicId: offeringPublicId, archivedAt: null },
     select: {
       id: true,
       publicId: true,

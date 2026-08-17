@@ -4,8 +4,8 @@ import {
   combineDateAndMinutes,
   datesForDayOfWeek,
   endOfLocalDay,
+  formatCalendarDateLabel,
   formatMinutesAsLabel,
-  formatSessionDateLabel,
   getTermBounds,
 } from "./time";
 
@@ -51,9 +51,10 @@ function overlapErrorMessage(
   startMinute: number,
   endMinute: number,
 ) {
-  const dayLabel = formatSessionDateLabel(day);
+  const dayLabel = formatCalendarDateLabel(day);
+  const weekday = DOW_NAMES[day.getDay()];
   const timeLabel = `${formatMinutesAsLabel(startMinute)} - ${formatMinutesAsLabel(endMinute)}`;
-  return `This time (${timeLabel}) overlaps with an existing office hour on ${dayLabel}.`;
+  return `That time (${timeLabel}) overlaps another office hour on ${weekday}, ${dayLabel}. Pick a different time or date, or edit/cancel the existing session first.`;
 }
 
 type OverlapSessionQueryOptions = {
@@ -154,7 +155,7 @@ export async function assertNoOverlappingRecurringSchedule(
     const scheduleUntil = schedule.validUntil ?? termBounds.validUntil;
     if (dateRangesOverlap(validFrom, validUntil, scheduleFrom, scheduleUntil)) {
       throw new Error(
-        `This recurring block overlaps with another recurring block on ${DOW_NAMES[dayOfWeek]} (${formatMinutesAsLabel(startMinute)} - ${formatMinutesAsLabel(endMinute)}).`,
+        `That recurring block overlaps another recurring block on ${DOW_NAMES[dayOfWeek]} (${formatMinutesAsLabel(startMinute)} - ${formatMinutesAsLabel(endMinute)}). Adjust the days, times, or date range so they no longer conflict.`,
       );
     }
   }
