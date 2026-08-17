@@ -2,14 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  CalendarClock,
-  Clock,
-  MapPin,
-  RefreshCw,
-  Users,
-} from "lucide-react";
+import { CalendarClock, Clock, MapPin, RefreshCw, Users } from "lucide-react";
 
 import { Navbar } from "../Navbar";
 import { getSessionStatsDetailAction } from "@/actions/course_stats/session-detail";
@@ -124,21 +117,12 @@ export default function SessionStatsDetailPage({
         />
 
         <main className="mt-10 space-y-8">
-          <div className="flex flex-wrap items-center gap-4">
-            <Link
-              href="/admin"
-              className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Admin
-            </Link>
-            <Link
-              href={`/instructor/course-stats/sessions?offering=${detail.offeringPublicId}`}
-              className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-[#071f41]"
-            >
-              Back to per-session data
-            </Link>
-          </div>
+          <Link
+            href={`/course/stats/sessions?offering=${detail.offeringPublicId}`}
+            className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-[#071f41]"
+          >
+            Back to per-session data
+          </Link>
 
           <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">

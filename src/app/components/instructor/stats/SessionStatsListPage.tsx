@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft,
   CalendarClock,
   ChevronRight,
   LayoutGrid,
@@ -81,7 +80,7 @@ function StatsCard({ session }: { session: CourseStatsSessionDto }) {
       </div>
 
       <Link
-        href={`/instructor/course-stats/${session.sessionPublicId}`}
+        href={`/course/stats/session?session=${session.sessionPublicId}`}
         className="mt-5 inline-flex items-center gap-1 rounded-full bg-[#071f41] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
       >
         View details <ChevronRight className="h-4 w-4" />
@@ -128,21 +127,12 @@ export default function SessionStatsListPage({
         />
 
         <main className="mt-10 space-y-8">
-          <div className="flex flex-wrap items-center gap-4">
-            <Link
-              href="/admin"
-              className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Admin
-            </Link>
-            <Link
-              href="/course/stats"
-              className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-[#071f41]"
-            >
-              Choose another course
-            </Link>
-          </div>
+          <Link
+            href="/course/stats"
+            className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-[#071f41]"
+          >
+            Choose another course
+          </Link>
 
           <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
