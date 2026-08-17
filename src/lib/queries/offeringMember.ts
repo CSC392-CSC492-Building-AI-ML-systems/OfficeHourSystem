@@ -1,4 +1,4 @@
-import { type CourseRole, type Prisma } from "@prisma/client";
+import { type CourseRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -37,59 +37,12 @@ function normalizeUtorid(utorid: string) {
   return utorid.trim().toLowerCase();
 }
 
-function isStaffMemberInput(ref: StaffUserRef): ref is StaffMemberInput {
-  return "utorid" in ref;
-}
-
 /** Convert a staff/user reference into a Prisma where condition */
 function userWhere(id: StaffUserRef) {
   if ("utorid" in id) return { utorid: normalizeUtorid(id.utorid) };
   if ("email" in id) return { email: id.email };
   if ("studentNumber" in id) return { studentNumber: id.studentNumber };
   return { publicId: id.publicId };
-}
-
-function buildStaffProfileUpdateData(
-  ref: StaffMemberInput,
-): Prisma.UserUpdateInput {
-  const data: Prisma.UserUpdateInput = {};
-
-  const email = ref.email?.trim();
-  if (email) {
-    data.email = email;
-  }
-  const firstName = ref.firstName?.trim();
-  if (firstName) {
-    data.firstName = firstName;
-  }
-  const lastName = ref.lastName?.trim();
-  if (lastName) {
-    data.lastName = lastName;
-  }
-
-  return data;
-}
-
-function buildStaffUserCreateData(
-  utorid: string,
-  ref: StaffMemberInput,
-): Prisma.UserUncheckedCreateInput {
-  const data = { utorid } as Prisma.UserUncheckedCreateInput;
-
-  const email = ref.email?.trim();
-  if (email) {
-    data.email = email;
-  }
-  const firstName = ref.firstName?.trim();
-  if (firstName) {
-    data.firstName = firstName;
-  }
-  const lastName = ref.lastName?.trim();
-  if (lastName) {
-    data.lastName = lastName;
-  }
-
-  return data;
 }
 
 /** Convert an OfferingIdentifier into a Prisma where condition */
@@ -157,8 +110,7 @@ export async function getMemberRole(
 //Add or update a staff member in an offering
 
 /**
- * Add a user to an offering or update their role.
- *
+ * Add a user to an offering or update their staff role.
  *
  * Add an INSTRUCTOR / TA role to an offering.
  * The STUDENT role can only be assigned via importClasslist() from a CSV file,
@@ -167,10 +119,10 @@ export async function getMemberRole(
  * Behaviour:
  *   - Offering does not exist -> throw error
  *   - Attempting to set STUDENT role -> throw error
- *   - UTORid reference with no existing user -> create a minimal User row
- *   - Non-UTORid reference with no existing user -> throw error
+ *   - User does not exist -> throw error (must have signed in via Shibboleth first)
+ *   - User already enrolled as STUDENT on this offering -> throw error
  *   - User not yet in the offering -> create a new OfferingMember
- *   - User already in the offering (including as STUDENT) -> update role
+ *   - User already staff on the offering -> update role
  *
  * Example:
  *   const result = await addOrUpdateStaffMember(
@@ -196,34 +148,16 @@ export async function addOrUpdateStaffMember(
     );
   }
 
-  // 1. Find or create user
-  let user = await prisma.user.findFirst({
+  // 1. Require an existing user (created via Shibboleth / auth session — never invent staff).
+  const user = await prisma.user.findFirst({
     where: userWhere(userRef),
     select: { id: true },
   });
 
   if (!user) {
-    if (!isStaffMemberInput(userRef)) {
-      throw new Error("User not found");
-    }
-
-    const utorid = normalizeUtorid(userRef.utorid);
-    if (!utorid) {
-      throw new Error("UTORid is required");
-    }
-
-    user = await prisma.user.create({
-      data: buildStaffUserCreateData(utorid, userRef),
-      select: { id: true },
-    });
-  } else if (isStaffMemberInput(userRef)) {
-    const profilePatch = buildStaffProfileUpdateData(userRef);
-    if (Object.keys(profilePatch).length > 0) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: profilePatch,
-      });
-    }
+    throw new Error(
+      "User not found. They must sign in to the app at least once before they can be added as staff.",
+    );
   }
 
   // 2. Find offering (also throw if not found)
@@ -244,8 +178,14 @@ export async function addOrUpdateStaffMember(
         offeringId: offering.id,
       },
     },
-    select: { id: true },
+    select: { id: true, role: true },
   });
+
+  if (existing?.role === "STUDENT") {
+    throw new Error(
+      "This person is enrolled as a student in this course and cannot be added as staff. Remove them from the classlist first.",
+    );
+  }
 
   // 4. Upsert: create or update role
   const member = await prisma.offeringMember.upsert({
@@ -390,6 +330,104 @@ export async function removeOfferingStaffMember(
 
   if (member.role !== "TA") {
     throw new Error("Only teaching assistants can be removed from this page.");
+  }
+
+  await prisma.offeringMember.delete({
+    where: {
+      userId_offeringId: {
+        userId: user.id,
+        offeringId: offering.id,
+      },
+    },
+  });
+}
+
+export type OfferingStudentMember = {
+  id: string;
+  utorid: string;
+  name: string;
+  email: string;
+};
+
+/** List students enrolled in an offering. */
+export async function getOfferingStudentMembers(
+  offeringPublicId: string,
+): Promise<OfferingStudentMember[]> {
+  const offering = await prisma.courseOffering.findUnique({
+    where: { publicId: offeringPublicId },
+    select: { id: true },
+  });
+
+  if (!offering) {
+    return [];
+  }
+
+  const members = await prisma.offeringMember.findMany({
+    where: {
+      offeringId: offering.id,
+      role: "STUDENT",
+    },
+    include: {
+      user: {
+        select: {
+          publicId: true,
+          utorid: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
+    },
+    orderBy: [{ user: { lastName: "asc" } }, { user: { firstName: "asc" } }],
+  });
+
+  return members.map((member) => ({
+    id: member.user.publicId,
+    utorid: member.user.utorid,
+    name: formatStaffName(member.user),
+    email: member.user.email ?? "",
+  }));
+}
+
+/** Remove a student from an offering roster. */
+export async function removeOfferingStudentMember(
+  offeringPublicId: string,
+  userPublicId: string,
+): Promise<void> {
+  const offering = await prisma.courseOffering.findUnique({
+    where: { publicId: offeringPublicId },
+    select: { id: true },
+  });
+
+  if (!offering) {
+    throw new Error("Course offering not found");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { publicId: userPublicId },
+    select: { id: true },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const member = await prisma.offeringMember.findUnique({
+    where: {
+      userId_offeringId: {
+        userId: user.id,
+        offeringId: offering.id,
+      },
+    },
+    select: { role: true },
+  });
+
+  if (!member) {
+    throw new Error("Student not found in this course");
+  }
+
+  if (member.role !== "STUDENT") {
+    throw new Error("Only enrolled students can be removed from this list.");
   }
 
   await prisma.offeringMember.delete({

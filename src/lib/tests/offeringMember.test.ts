@@ -18,13 +18,13 @@
  *
  * ── addOrUpdateStaffMember scenarios ────────────────────────────────────────
  *   9.  Attempt to set STUDENT role          → throws (safety restriction)
- *  10.  User does not exist                  → throws
+ *  10.  User does not exist (including unknown UTORid) → throws
  *  11.  Offering does not exist              → throws
  *  12.  Add INSTRUCTOR (user not yet in offering) → created=true, correct role
  *  13.  Add TA                               → created=true, correct role
- *  14.  Add ADMIN                            → created=true, correct role
+ *  14.  Add another INSTRUCTOR               → created=true, correct role
  *  15.  Update existing member role (TA → INSTRUCTOR) → created=false, role updated
- *  16.  User is STUDENT, can be promoted to TA via this function → role updated (normal upgrade flow)
+ *  16.  User is STUDENT → cannot be promoted to TA
  */
 
 // Must be the first import to ensure DATABASE_URL is injected before the prisma.ts module loads
@@ -231,28 +231,24 @@ async function main() {
     },
   );
 
-  // ── Test 10b: unknown UTORid → creates user and membership ───────────────
+  // ── Test 10b: unknown UTORid → throws (must sign in first) ───────────────
   await runTest(
-    "addOrUpdateStaffMember: unknown UTORid → creates user and membership",
+    "addOrUpdateStaffMember: unknown UTORid → throws User not found",
     async () => {
-      const utorid = `${TEST_PREFIX}utoridonly`;
-      const result = await addOrUpdateStaffMember(
-        { utorid },
-        { publicId: offering.publicId },
-        "TA",
+      let errorMsg = "";
+      try {
+        await addOrUpdateStaffMember(
+          { utorid: `${TEST_PREFIX}utoridonly` },
+          { publicId: offering.publicId },
+          "TA",
+        );
+      } catch (e) {
+        errorMsg = (e as Error).message;
+      }
+      assert(
+        errorMsg.includes("User not found"),
+        `Should contain 'User not found', got: ${errorMsg}`,
       );
-
-      assertEqual(result.role, "TA", "role should be TA");
-      assertEqual(result.created, true, "membership should be newly created");
-
-      const createdUser = await prisma.user.findUnique({
-        where: { utorid },
-        select: { email: true, firstName: true, lastName: true },
-      });
-      assert(createdUser !== null, "user row should exist");
-      assertEqual(createdUser?.email, null, "email should be unset");
-      assertEqual(createdUser?.firstName, null, "firstName should be unset");
-      assertEqual(createdUser?.lastName, null, "lastName should be unset");
     },
   );
 
@@ -388,9 +384,9 @@ async function main() {
     },
   );
 
-  // ── Test 16: user is STUDENT, can be promoted to TA ─────────────────────
+  // ── Test 16: user is STUDENT → cannot be promoted to TA ─────────────────
   await runTest(
-    "addOrUpdateStaffMember: STUDENT can be promoted to TA (upgrade flow)",
+    "addOrUpdateStaffMember: STUDENT cannot be promoted to TA",
     async () => {
       // Simulate a student imported via classlist
       const studentUser = await prisma.user.create({
@@ -417,28 +413,29 @@ async function main() {
       assertEqual(
         before?.role,
         "STUDENT",
-        "role should be STUDENT before promotion",
+        "role should be STUDENT before promotion attempt",
       );
 
-      // Promote to TA
-      const result = await addOrUpdateStaffMember(
-        { utorid: studentUser.utorid },
-        { publicId: offering.publicId },
-        "TA",
-      );
-      assertEqual(result.role, "TA", "role should be TA after promotion");
-      assertEqual(
-        result.created,
-        false,
-        "should be an update (not a new creation)",
+      let errorMsg = "";
+      try {
+        await addOrUpdateStaffMember(
+          { utorid: studentUser.utorid },
+          { publicId: offering.publicId },
+          "TA",
+        );
+      } catch (e) {
+        errorMsg = (e as Error).message;
+      }
+      assert(
+        errorMsg.includes("enrolled as a student"),
+        `Should reject student promotion, got: ${errorMsg}`,
       );
 
-      // Confirm with getMemberRole again
       const after = await getMemberRole(
         { utorid: studentUser.utorid },
         { publicId: offering.publicId },
       );
-      assertEqual(after?.role, "TA", "getMemberRole should return TA");
+      assertEqual(after?.role, "STUDENT", "role should remain STUDENT");
     },
   );
 

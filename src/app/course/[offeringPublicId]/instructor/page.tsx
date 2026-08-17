@@ -23,7 +23,7 @@ export default async function InstructorPage({ params }: PageProps) {
     return <OfferingAccessMessage error={offeringAccessFromUnknown(error)} />;
   }
 
-  const { staff, weeklySlotCount } = await getInstructorStaffPageData(
+  const { staff, students } = await getInstructorStaffPageData(
     pageContext.offeringPublicId,
   );
 
@@ -34,7 +34,7 @@ export default async function InstructorPage({ params }: PageProps) {
         courseLabel={pageContext.courseLabel}
         canEdit={pageContext.canEdit}
         initialStaff={staff}
-        weeklySlotCount={weeklySlotCount}
+        initialStudents={students}
       />
     </main>
   );

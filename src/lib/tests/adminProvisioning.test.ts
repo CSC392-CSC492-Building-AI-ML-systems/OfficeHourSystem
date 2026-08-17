@@ -102,10 +102,29 @@ async function main() {
   );
 
   await runTest(
-    "addOrUpdateStaffMember (per-offering) → creates minimal user without isInstructor",
+    "addOrUpdateStaffMember (per-offering) → requires existing user, no invent",
     async () => {
       const { offering } = await setupOffering();
       const utorid = `${TEST_PREFIX}per_course_new`;
+
+      let missingError = "";
+      try {
+        await addOrUpdateStaffMember(
+          { utorid },
+          { publicId: offering.publicId },
+          "INSTRUCTOR",
+        );
+      } catch (e) {
+        missingError = (e as Error).message;
+      }
+      assert(
+        missingError.includes("User not found"),
+        `unknown utorid should fail, got: ${missingError}`,
+      );
+
+      const user = await prisma.user.create({
+        data: { utorid, isInstructor: false },
+      });
 
       const result = await addOrUpdateStaffMember(
         { utorid },
@@ -114,11 +133,8 @@ async function main() {
       );
 
       assertEqual(result.created, true, "membership created");
-
-      const user = await prisma.user.findUnique({ where: { utorid } });
-      assert(user !== null, "user should be created");
       assertEqual(
-        user!.isInstructor,
+        user.isInstructor,
         false,
         "should not set platform instructor flag",
       );
@@ -126,7 +142,7 @@ async function main() {
       const membership = await prisma.offeringMember.findUnique({
         where: {
           userId_offeringId: {
-            userId: user!.id,
+            userId: user.id,
             offeringId: offering.id,
           },
         },

@@ -8,16 +8,18 @@ import { requireOfferingTeachingStaff } from "@/lib/auth/requireOfferingAccess";
 import { instructorDashboardHref } from "@/lib/offeringUrls";
 import {
   addOrUpdateStaffMember,
-  getActiveWeeklySlotCount,
   getOfferingStaffMembers,
+  getOfferingStudentMembers,
   removeOfferingStaffMember,
+  removeOfferingStudentMember,
   type OfferingStaffMember,
+  type OfferingStudentMember,
 } from "@/lib/queries/offeringMember";
 import { requireScheduleMutate } from "@/lib/scheduling/auth";
 
 export type InstructorStaffPageData = {
   staff: OfferingStaffMember[];
-  weeklySlotCount: number;
+  students: OfferingStudentMember[];
 };
 
 export type StaffActionResult =
@@ -34,20 +36,17 @@ export async function getInstructorStaffPageData(
   const userId = await requireSessionUserId();
   await requireOfferingTeachingStaff(userId, offeringPublicId);
 
-  const [staff, weeklySlotCount] = await Promise.all([
+  const [staff, students] = await Promise.all([
     getOfferingStaffMembers(offeringPublicId),
-    getActiveWeeklySlotCount(offeringPublicId),
+    getOfferingStudentMembers(offeringPublicId),
   ]);
 
-  return { staff, weeklySlotCount };
+  return { staff, students };
 }
 
 export async function addOfferingTaAction(input: {
   offeringPublicId: string;
   utorid: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
 }): Promise<StaffActionResult> {
   try {
     const userId = await requireSessionUserId();
@@ -59,12 +58,7 @@ export async function addOfferingTaAction(input: {
     }
 
     await addOrUpdateStaffMember(
-      {
-        utorid,
-        firstName: input.firstName?.trim() || undefined,
-        lastName: input.lastName?.trim() || undefined,
-        email: input.email?.trim() || undefined,
-      },
+      { utorid },
       { publicId: input.offeringPublicId },
       "TA",
     );
@@ -145,6 +139,31 @@ export async function removeOfferingTaAction(input: {
         error instanceof Error
           ? error.message
           : "Failed to remove teaching assistant",
+    };
+  }
+}
+
+export async function removeOfferingStudentAction(input: {
+  offeringPublicId: string;
+  userPublicId: string;
+}): Promise<StaffActionResult> {
+  try {
+    const userId = await requireSessionUserId();
+    await requireScheduleMutate(userId, input.offeringPublicId);
+
+    await removeOfferingStudentMember(
+      input.offeringPublicId,
+      input.userPublicId,
+    );
+
+    revalidatePath(instructorDashboardHref(input.offeringPublicId));
+
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Failed to remove student",
     };
   }
 }
