@@ -92,7 +92,7 @@ export function StudentPortal({
                         {offering.courseLabel}
                       </p>
                       <p className="mt-1 text-sm text-slate-500">
-                        {offering.courseCode} · Term {offering.termCode}
+                        {offering.termCode} · {offering.courseCode}
                       </p>
                     </div>
                   </div>

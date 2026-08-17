@@ -15,7 +15,7 @@
  *     6.  utorid not in DB → student_not_found
  *     7.  barcode not in mock map → student_not_found
  *     8.  Student exists but not enrolled in offering → not_enrolled
- *     9.  Student enrolled as TA (not STUDENT role) → not_enrolled
+ *     9.  Student enrolled as TA (not STUDENT role) → staff_member
  *     10. Student already in queue → already_in_queue (P2002 handled)
  *   Re-join:
  *     11. Student checked in, then resolved to AttendanceRecord, then checks
@@ -282,9 +282,9 @@ async function main() {
     assertEqual(result.outcome, "not_enrolled", "outcome");
   });
 
-  // ── 9. Student enrolled as TA → not_enrolled ─────────────────────────────
+  // ── 9. Student enrolled as TA → staff_member ─────────────────────────────
   await runTest(
-    "student enrolled as TA (not STUDENT role) → not_enrolled",
+    "student enrolled as TA (not STUDENT role) → staff_member",
     async () => {
       await cleanupAll();
       const offering = await makeOffering("109");
@@ -298,7 +298,7 @@ async function main() {
         ta.utorid,
       );
 
-      assertEqual(result.outcome, "not_enrolled", "outcome");
+      assertEqual(result.outcome, "staff_member", "outcome");
     },
   );
 

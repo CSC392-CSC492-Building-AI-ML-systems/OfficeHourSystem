@@ -13,6 +13,8 @@ function CourseCard({ course }: { course: CoursePickerItem }) {
     course.instructorNames.length > 0
       ? course.instructorNames.join(", ")
       : "No instructors listed";
+  // termCode stores the user-facing course name (no separate DB column).
+  const courseName = course.termCode;
 
   return (
     <Link
@@ -20,17 +22,17 @@ function CourseCard({ course }: { course: CoursePickerItem }) {
       className="group flex flex-col overflow-hidden rounded-lg bg-white shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,23,42,0.16)]"
     >
       <div className="flex min-h-36 items-center justify-center bg-[#5b9ed0] px-4 py-8">
-        <p className="text-center text-4xl font-black tracking-tight text-[#0a3d66] sm:text-5xl">
-          {course.courseCode}
+        <p className="text-center text-2xl font-black leading-tight tracking-tight text-[#0a3d66] sm:text-3xl">
+          {courseName}
         </p>
       </div>
       <div className="flex flex-1 flex-col gap-1 px-4 py-4">
         <p className="truncate text-sm font-semibold text-[#0b5cab] group-hover:underline">
-          {course.courseCode}
+          {courseName}
         </p>
         <p className="text-sm text-slate-700">{course.roleLabel}</p>
         <p className="text-sm text-slate-500">{instructors}</p>
-        <p className="mt-1 text-xs text-slate-400">Term {course.termCode}</p>
+        <p className="mt-1 text-xs text-slate-400">Code {course.courseCode}</p>
       </div>
     </Link>
   );

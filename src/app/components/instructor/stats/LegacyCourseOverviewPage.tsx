@@ -149,7 +149,7 @@ export default function LegacyCourseOverviewPage({
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <Navbar courseLabel={`${data.courseCode} · Term ${data.termCode}`} />
+        <Navbar courseLabel={`${data.termCode} · ${data.courseCode}`} />
 
         <main className="mt-10 space-y-8">
           <div className="flex flex-wrap items-center gap-4">
@@ -171,10 +171,10 @@ export default function LegacyCourseOverviewPage({
           <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#c8102e]">
-                Term {data.termCode}
+                {data.courseCode}
               </p>
               <h1 className="text-3xl font-semibold tracking-tight text-[#071f41]">
-                {data.courseCode}
+                {data.termCode}
               </h1>
               <p className="text-sm text-slate-500">
                 Based on {data.endedSessionCount} ended session

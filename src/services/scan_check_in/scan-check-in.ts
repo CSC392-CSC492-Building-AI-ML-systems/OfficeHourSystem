@@ -48,7 +48,7 @@ export async function scanCheckInService(
         await getMcsAdminClient().lookupUtoridByCsn(identifierValue);
       if (!utorid) {
         logMcs?.("no match in MCS", { csn: identifierValue });
-        return { outcome: "student_not_found" };
+        return { outcome: "mcs_not_found" };
       }
 
       logMcs?.("MCS match", { csn: identifierValue, utorid });
@@ -57,6 +57,7 @@ export async function scanCheckInService(
         ohSession.offeringId,
         "utorid",
         utorid,
+        { fromMcsLookup: true },
       );
       logMcs?.("check-in result after MCS match", {
         csn: identifierValue,

@@ -94,10 +94,10 @@ export default async function CourseOverviewRoute({ searchParams }: PageProps) {
                       </span>
                       <div>
                         <p className="text-lg font-semibold text-[#071f41]">
-                          {o.courseCode}
+                          {o.termCode}
                         </p>
                         <p className="text-sm text-slate-500">
-                          Term {o.termCode}
+                          Code {o.courseCode}
                         </p>
                       </div>
                     </div>

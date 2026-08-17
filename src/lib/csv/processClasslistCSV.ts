@@ -38,7 +38,7 @@ async function readCsvTextFromFormData(formData: FormData): Promise<string> {
 function readTermCodeFromFormData(formData: FormData): string {
   const termCode = formData.get("termCode");
   if (typeof termCode !== "string" || termCode.trim().length === 0) {
-    throw new Error('Missing term code. Expected form field "termCode".');
+    throw new Error('Missing course name. Expected form field "termCode".');
   }
 
   return termCode.trim();

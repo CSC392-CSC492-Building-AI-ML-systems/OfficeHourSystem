@@ -122,7 +122,7 @@ export default function SessionStatsListPage({
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <Navbar courseLabel={`${courseCode} · Term ${termCode}`} />
+        <Navbar courseLabel={`${termCode} · ${courseCode}`} />
 
         <main className="mt-10 space-y-8">
           <div className="flex flex-wrap items-center gap-4">
@@ -144,10 +144,10 @@ export default function SessionStatsListPage({
           <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#c8102e]">
-                Term {termCode}
+                {courseCode}
               </p>
               <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
-                {courseCode}
+                {termCode}
               </h1>
               <p className="text-base text-slate-600">
                 Per-session Help Centre office-hour stats.
