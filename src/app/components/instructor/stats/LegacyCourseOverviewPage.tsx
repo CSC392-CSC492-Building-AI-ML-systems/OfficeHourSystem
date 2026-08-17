@@ -227,7 +227,7 @@ export default function LegacyCourseOverviewPage({
               <Metric
                 label="Interested"
                 value={num(data.studentsInterested)}
-                hint={`${pct(data.interestedRatio)} of class · ${data.interestRecords} marks`}
+                hint={`${pct(data.interestedRatio)} of class · ${data.interestRecords} students`}
               />
               <Metric label="Checked in" value={num(data.studentsCheckedIn)} />
               <Metric

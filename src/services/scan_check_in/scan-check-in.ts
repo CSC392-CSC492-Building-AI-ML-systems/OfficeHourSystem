@@ -35,13 +35,40 @@ export async function scanCheckInService(
 
   // Step 5: Resolve an NFC CSN through MCS without storing it locally.
   if (identifierType === "csn") {
+    const logMcs =
+      process.env.NODE_ENV === "development"
+        ? (message: string, details?: Record<string, unknown>) => {
+            console.log(`[MCS CSN lookup] ${message}`, details ?? "");
+          }
+        : null;
+
     try {
+      logMcs?.("looking up CSN", { csn: identifierValue });
       const utorid =
         await getMcsAdminClient().lookupUtoridByCsn(identifierValue);
-      if (!utorid) return { outcome: "student_not_found" };
+      if (!utorid) {
+        logMcs?.("no match in MCS", { csn: identifierValue });
+        return { outcome: "student_not_found" };
+      }
 
-      return scanCheckIn(ohSession.id, ohSession.offeringId, "utorid", utorid);
-    } catch {
+      logMcs?.("MCS match", { csn: identifierValue, utorid });
+      const result = await scanCheckIn(
+        ohSession.id,
+        ohSession.offeringId,
+        "utorid",
+        utorid,
+      );
+      logMcs?.("check-in result after MCS match", {
+        csn: identifierValue,
+        utorid,
+        outcome: result.outcome,
+      });
+      return result;
+    } catch (error) {
+      logMcs?.("MCS lookup failed", {
+        csn: identifierValue,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return { outcome: "csn_lookup_unavailable" };
     }
   }

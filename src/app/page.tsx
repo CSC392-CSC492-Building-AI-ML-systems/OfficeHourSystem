@@ -176,9 +176,9 @@ export default function Home() {
               <span className="text-[#f8b4bf]">SYSTEM</span>
             </h1>
             <p className="mt-8 max-w-md text-lg leading-8 text-slate-300">
-              Track your office hours, with live queues and student marks of
-              interest. Prevent students from crowding teaching staff with a
-              digital queue.
+              Track your office hours, with live queues and student “I’m
+              interested” presses. Prevent students from crowding teaching staff
+              with a digital queue.
             </p>
             <Link
               href="/course"

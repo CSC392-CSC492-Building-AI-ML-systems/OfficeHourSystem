@@ -435,10 +435,16 @@ export function formatWeekRangeLabel(weekStart: Date): string {
   const weekEnd = addDays(weekStart, WEEK_ORDER.length - 1);
   const startMonth = weekStart.toLocaleString("en-US", { month: "short" });
   const endMonth = weekEnd.toLocaleString("en-US", { month: "short" });
-  if (startMonth === endMonth) {
-    return `Week of ${startMonth} ${weekStart.getDate()} - ${weekEnd.getDate()}`;
+  const startYear = weekStart.getFullYear();
+  const endYear = weekEnd.getFullYear();
+
+  if (startYear !== endYear) {
+    return `Week of ${startMonth} ${weekStart.getDate()}, ${startYear} - ${endMonth} ${weekEnd.getDate()}, ${endYear}`;
   }
-  return `Week of ${startMonth} ${weekStart.getDate()} - ${endMonth} ${weekEnd.getDate()}`;
+  if (startMonth === endMonth) {
+    return `Week of ${startMonth} ${weekStart.getDate()} - ${weekEnd.getDate()}, ${startYear}`;
+  }
+  return `Week of ${startMonth} ${weekStart.getDate()} - ${endMonth} ${weekEnd.getDate()}, ${startYear}`;
 }
 
 export function buildWeekCalendarDays(weekStart: Date) {
