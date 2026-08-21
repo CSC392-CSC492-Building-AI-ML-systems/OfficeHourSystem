@@ -9,6 +9,11 @@ import {
 
 const STUDENT_NAV: AppNavItem[] = [
   { key: "courses", label: "Courses", href: "/course" },
+  {
+    key: "interested",
+    label: "My Interested Office Hours",
+    href: "/course/my-interested-office-hours",
+  },
   { key: "queue", label: "My Queue", href: "/course/my-queue" },
 ];
 
