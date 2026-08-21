@@ -60,7 +60,12 @@ export async function sendDueOhReminders(opts?: {
             title: true,
             startsAt: true,
             location: true,
-            offering: { select: { course: { select: { code: true } } } },
+            offering: {
+              select: {
+                termCode: true,
+                course: { select: { code: true } },
+              },
+            },
           },
         },
       },
@@ -91,6 +96,7 @@ export async function sendDueOhReminders(opts?: {
         const { subject, html } = buildReminderEmail({
           firstName: interest.user.firstName,
           courseCode: interest.session.offering.course.code,
+          termCode: interest.session.offering.termCode,
           title: interest.session.title,
           startsAt: interest.session.startsAt,
           location: interest.session.location,

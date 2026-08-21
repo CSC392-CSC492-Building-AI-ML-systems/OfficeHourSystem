@@ -10,6 +10,7 @@ import type {
   SessionStatsDetailDto,
   SessionStatsStudentDto,
 } from "@/lib/types/queue";
+import { formatCourseLabel } from "@/lib/courseLabel";
 
 // Show a number, or "NA" when it couldn't be computed.
 function na(value: number | null): string {
@@ -113,7 +114,7 @@ export default function SessionStatsDetailPage({
       <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <Navbar
           offeringPublicId={detail.offeringPublicId}
-          courseLabel={detail.courseCode}
+          courseLabel={formatCourseLabel(detail.courseCode, detail.termCode)}
         />
 
         <main className="mt-10 space-y-8">
@@ -127,7 +128,7 @@ export default function SessionStatsDetailPage({
           <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#c8102e]">
-                {detail.courseCode}
+                {formatCourseLabel(detail.courseCode, detail.termCode)}
               </p>
               <h1 className="text-3xl font-semibold tracking-tight text-[#071f41]">
                 {detail.title}

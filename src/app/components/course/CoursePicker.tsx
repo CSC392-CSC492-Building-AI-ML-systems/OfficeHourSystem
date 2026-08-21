@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 
 import { AdminClasslistUploadSection } from "@/app/components/admin/AdminClasslistUploadSection";
+import { formatCourseLabel } from "@/lib/courseLabel";
 import type { CoursePickerItem } from "@/lib/queries/course/offerings";
 
 function CourseCard({ course }: { course: CoursePickerItem }) {
@@ -13,8 +14,7 @@ function CourseCard({ course }: { course: CoursePickerItem }) {
     course.instructorNames.length > 0
       ? course.instructorNames.join(", ")
       : "No instructors listed";
-  // termCode stores the user-facing course name (no separate DB column).
-  const courseName = course.termCode;
+  const courseName = formatCourseLabel(course.courseCode, course.termCode);
 
   return (
     <Link
@@ -31,8 +31,7 @@ function CourseCard({ course }: { course: CoursePickerItem }) {
           {courseName}
         </p>
         <p className="text-sm text-slate-700">{course.roleLabel}</p>
-        <p className="text-sm text-slate-500">{instructors}</p>
-        <p className="mt-1 text-xs text-slate-400">Code {course.courseCode}</p>
+        <p className="break-words text-sm text-slate-500">{instructors}</p>
       </div>
     </Link>
   );

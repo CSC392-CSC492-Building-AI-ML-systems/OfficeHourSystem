@@ -14,6 +14,7 @@ import {
 import { Navbar } from "../Navbar";
 import { getOfferingSessionStatsAction } from "@/actions/course_stats/course-stats";
 import type { CourseStatsSessionDto } from "@/lib/types/queue";
+import { formatCourseLabel } from "@/lib/courseLabel";
 
 function na(value: number | null): string {
   return value === null ? "NA" : String(value);
@@ -43,11 +44,17 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function StatsCard({ session }: { session: CourseStatsSessionDto }) {
+function StatsCard({
+  session,
+  termCode,
+}: {
+  session: CourseStatsSessionDto;
+  termCode: string;
+}) {
   return (
     <article className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-[0_16px_44px_-32px_rgba(15,41,66,0.35)]">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#c8102e]">
-        {session.courseCode}
+        {formatCourseLabel(session.courseCode, termCode)}
       </p>
       <h3 className="mt-2 text-xl font-semibold text-[#071f41]">
         {session.title}
@@ -123,7 +130,7 @@ export default function SessionStatsListPage({
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <Navbar
           offeringPublicId={offeringPublicId}
-          courseLabel={`${termCode} · ${courseCode}`}
+          courseLabel={formatCourseLabel(courseCode, termCode)}
         />
 
         <main className="mt-10 space-y-8">
@@ -137,10 +144,10 @@ export default function SessionStatsListPage({
           <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#c8102e]">
-                {courseCode}
+                {formatCourseLabel(courseCode, termCode)}
               </p>
               <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
-                {termCode}
+                Per-session data
               </h1>
               <p className="text-base text-slate-600">
                 Per-session Help Centre office-hour stats.
@@ -182,7 +189,11 @@ export default function SessionStatsListPage({
           ) : (
             <section className="grid gap-5 lg:grid-cols-2">
               {sessions.map((s) => (
-                <StatsCard key={s.sessionPublicId} session={s} />
+                <StatsCard
+                  key={s.sessionPublicId}
+                  session={s}
+                  termCode={termCode}
+                />
               ))}
             </section>
           )}

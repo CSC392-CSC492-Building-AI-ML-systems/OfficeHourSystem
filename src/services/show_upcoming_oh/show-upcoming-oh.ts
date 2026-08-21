@@ -5,6 +5,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { getTodaySessionsForTeachingTeam } from "@/lib/queries/show_upcoming_oh/show-upcoming-oh";
 import type { UpcomingSessionDto } from "@/lib/types/queue";
+import { formatCourseLabel } from "@/lib/courseLabel";
 
 export async function showUpcomingOhService(
   offeringPublicId?: string,
@@ -62,7 +63,10 @@ export async function showUpcomingOhService(
   // Step 4: Map DB rows to DTO
   return sessions.map((session) => ({
     sessionPublicId: session.publicId,
-    courseCode: session.offering.course.code,
+    courseLabel: formatCourseLabel(
+      session.offering.course.code,
+      session.offering.termCode,
+    ),
     title: session.title,
     startsAt: session.startsAt.toISOString(),
     endsAt: session.endsAt.toISOString(),

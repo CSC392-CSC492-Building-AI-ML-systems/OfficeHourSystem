@@ -8,6 +8,7 @@ import {
   type OfferingContext,
   requireOfferingStudent,
 } from "@/lib/auth/requireOfferingAccess";
+import { formatCourseLabel } from "@/lib/courseLabel";
 
 export type StudentOfferingPageContext = {
   offeringPublicId: string;
@@ -35,7 +36,7 @@ export async function resolveStudentOfferingPage(
     offeringPublicId: context.offeringPublicId,
     courseCode: context.courseCode,
     termCode: context.termCode,
-    courseLabel: `${context.termCode} · ${context.courseCode}`,
+    courseLabel: formatCourseLabel(context.courseCode, context.termCode),
     firstName: session.firstName,
     lastName: session.lastName,
     role: context.role,
