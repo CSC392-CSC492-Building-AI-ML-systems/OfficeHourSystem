@@ -7,7 +7,7 @@ interface DropInCardProps {
   title: string;
   time: string;
   location?: string;
-  courseCode: string;
+  courseLabel: string;
   isInterested?: boolean;
 }
 
@@ -16,7 +16,7 @@ export function DropInCard({
   title,
   time,
   location,
-  courseCode,
+  courseLabel,
   isInterested = false,
 }: DropInCardProps) {
   return (
@@ -24,7 +24,7 @@ export function DropInCard({
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#1e4fa1]">
-            {courseCode}
+            {courseLabel}
           </p>
           <h3 className="text-base font-semibold text-[#071f41]">{title}</h3>
           <div className="space-y-2 text-sm text-slate-600">
