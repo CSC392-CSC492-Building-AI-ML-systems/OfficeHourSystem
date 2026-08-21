@@ -23,7 +23,7 @@ export async function scanCheckIn(
   // ── Barcode: use mock map, never hit the real DB for user lookup ──
   if (identifierType === "barcode") {
     const mockName = MOCK_BARCODE_MAP[identifierValue];
-    if (!mockName) return { outcome: "student_not_found" };
+    if (!mockName) return { outcome: "barcode_not_found" };
     return { outcome: "mock_user", studentName: mockName };
   }
 
