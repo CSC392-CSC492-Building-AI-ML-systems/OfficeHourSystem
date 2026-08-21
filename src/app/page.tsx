@@ -4,19 +4,19 @@ import {
   Bug,
   CalendarRange,
   Clock,
-  Clock3,
   MapPin,
   Users,
 } from "lucide-react";
+import { HomeHeroCards } from "@/app/components/home/HomeHeroCards";
 import { QueuePreviewHeader } from "@/app/components/student/QueuePreviewHeader";
 import { SessionRow } from "@/app/components/student/cards/SessionRow";
+import { getHomeHeroStatsService } from "@/services/home_stats/home-stats";
 
 const NAV_LINKS = [
   { label: "How it works", href: "#how-it-works" },
   // { label: "Interest", href: "#mark-interest" },
   // { label: "Sessions", href: "#session-types" },
   { label: "Queue", href: "#debugging-queue" },
-  { label: "Students", href: "#for-students" },
 ];
 
 const HOW_IT_WORKS = [
@@ -34,11 +34,6 @@ const HOW_IT_WORKS = [
     step: "03",
     title: "Mark that you are interested",
     body: "Tap I'm interested on a session you plan to attend.",
-  },
-  {
-    step: "04",
-    title: "Join the queue",
-    body: "When office hours are live, tap your T Card to check in. Check on My Queue to see your position in line until a TA or instructor helps you.",
   },
 ];
 
@@ -70,11 +65,11 @@ const INTEREST_POINTS = [
   },
   {
     title: "Tap “I'm interested”",
-    body: "One click records that you plan to attend. The button updates to Already interested so you know it was saved.",
+    body: "One click records that you plan to attend. The button updates to I'm not interested now so you know it was saved.",
   },
   {
     title: "Change your response anytime",
-    body: "Tap Already interested if you no longer plan to attend.",
+    body: "Tap I'm not interested now if you no longer plan to attend.",
   },
 ];
 
@@ -96,26 +91,9 @@ const DEBUGGING_STEPS = [
   },
 ];
 
-const STUDENT_FEATURES = [
-  {
-    title: "Course list & weekly schedule",
-    body: "See every course you are enrolled in, then open a dashboard of upcoming office hours for the next week.",
-  },
-  {
-    title: "Mark interest before you go",
-    body: "Signal which sessions you plan to attend so teaching staff know who is coming.",
-  },
-  {
-    title: "My Queue across courses",
-    body: "When a Help Centre is live, check your position from one place — even if you are waiting in more than one course.",
-  },
-  {
-    title: "Clear session details",
-    body: "Time, location, and session type (Professor Office Hours, Help Centre, or Custom) are shown up front before you commit.",
-  },
-];
+export default async function Home() {
+  const heroStats = await getHomeHeroStatsService();
 
-export default function Home() {
   return (
     <main className="min-h-screen bg-[#f0ebe3] text-slate-900">
       <nav
@@ -132,12 +110,12 @@ export default function Home() {
           className="mx-0.5 hidden h-5 w-px bg-[#071f41]/15 sm:block"
           aria-hidden
         />
-        <div className="flex items-center gap-0.5 overflow-x-auto sm:gap-1">
+        <div className="hidden items-center gap-1 sm:flex">
           {NAV_LINKS.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="shrink-0 rounded-full px-2.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-[#071f41] sm:px-3 sm:text-sm"
+              className="shrink-0 rounded-full px-2.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-[#c8102e] hover:text-white sm:px-3 sm:text-sm"
             >
               {link.label}
             </a>
@@ -189,25 +167,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 self-center pb-12 lg:pb-0">
-            <div className="col-span-2 rounded-3xl bg-[#c8102e] p-6">
-              <p className="text-xs font-bold uppercase tracking-widest text-white/70">
-                This week
-              </p>
-              <p className="mt-2 text-3xl font-black">12</p>
-              <p className="text-sm text-white/80">upcoming sessions</p>
-            </div>
-            <div className="rounded-3xl bg-white/10 p-5 backdrop-blur-sm">
-              <Clock3 className="h-5 w-5 text-[#f8b4bf]" />
-              <p className="mt-4 text-sm font-semibold">Professor</p>
-              <p className="mt-1 text-xs text-slate-300">Quick questions</p>
-            </div>
-            <div className="rounded-3xl bg-[#1e4fa1] p-5">
-              <Users className="h-5 w-5 text-white" />
-              <p className="mt-4 text-sm font-semibold">My Queue</p>
-              <p className="mt-1 text-xs text-blue-100">Position #3</p>
-            </div>
-          </div>
+          <HomeHeroCards stats={heroStats} />
         </div>
       </section>
 
@@ -222,7 +182,7 @@ export default function Home() {
           <p className="max-w-sm text-base text-slate-600"></p>
         </div>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {HOW_IT_WORKS.map((item) => (
             <article
               key={item.step}
@@ -273,7 +233,7 @@ export default function Home() {
             <SessionRow
               sessionId={0}
               type="REGULAR"
-              courseCode="CSC108"
+              courseLabel="CSC108 · 20265"
               title="Morning Professor Office Hours"
               time="2:00 – 3:00 PM"
               location="DH 2014"
@@ -364,7 +324,7 @@ export default function Home() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-widest text-[#c8102e]">
-                      CSC108
+                      CSC108 · 20265
                     </p>
                     <h3 className="text-lg font-semibold text-[#071f41]">
                       Help Centre
@@ -397,46 +357,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section
-        id="for-students"
-        className="mx-auto w-full max-w-6xl scroll-mt-24 px-6 py-20 lg:px-10"
-      >
-        <h2 className="text-4xl font-black text-[#071f41]">For students</h2>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2">
-          {STUDENT_FEATURES.map((feature, i) => (
-            <article
-              key={feature.title}
-              className={`rounded-[28px] p-7 ${
-                i % 3 === 0
-                  ? "bg-[#071f41] text-white sm:col-span-2 lg:col-span-1"
-                  : "bg-white shadow-lg"
-              }`}
-            >
-              <h3
-                className={`text-lg font-bold ${i % 3 === 0 ? "text-white" : "text-[#071f41]"}`}
-              >
-                {feature.title}
-              </h3>
-              <p
-                className={`mt-2 text-sm leading-6 ${i % 3 === 0 ? "text-slate-300" : "text-slate-600"}`}
-              >
-                {feature.body}
-              </p>
-            </article>
-          ))}
-        </div>
-
-        <div className="mt-16 flex justify-center">
-          <Link
-            href="/course"
-            className="inline-flex items-center gap-3 rounded-full bg-[#c8102e] px-10 py-4 text-sm font-bold uppercase tracking-wider text-white transition hover:bg-[#a50d25]"
-          >
-            Login to HourSpace
-            <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
       </section>
     </main>
