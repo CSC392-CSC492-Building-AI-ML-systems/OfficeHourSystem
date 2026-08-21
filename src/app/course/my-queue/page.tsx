@@ -2,16 +2,17 @@ import { redirect } from "next/navigation";
 
 import {
   COURSE_NAV_ITEMS,
+  STUDENT_COURSE_NAV_ITEMS,
   courseNavEndItems,
 } from "@/app/components/course/courseNav";
 import { StudentMyQueuePage } from "@/app/components/student/StudentMyQueuePage";
 import { Navbar } from "@/app/components/shared/Navbar";
 import { isAdmin } from "@/lib/adminList";
+import { getUserAudienceProfile } from "@/lib/auth/userAudience";
 import {
   getRequestSession,
   parseSessionUserId,
 } from "@/lib/auth/getRequestSession";
-import { prisma } from "@/lib/prisma";
 import { getStudentQueueService } from "@/services/student_queue/student-queue";
 
 export default async function CourseMyQueueRoute() {
@@ -21,12 +22,9 @@ export default async function CourseMyQueueRoute() {
   }
 
   const userId = parseSessionUserId(session);
-  const [tickets, user] = await Promise.all([
+  const [tickets, profile] = await Promise.all([
     getStudentQueueService(),
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { isInstructor: true },
-    }),
+    getUserAudienceProfile(userId, session.utorid),
   ]);
 
   return (
@@ -34,10 +32,14 @@ export default async function CourseMyQueueRoute() {
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <Navbar
           brandHref="/course"
-          items={COURSE_NAV_ITEMS}
+          items={
+            profile?.kind === "student"
+              ? STUDENT_COURSE_NAV_ITEMS
+              : COURSE_NAV_ITEMS
+          }
           endItems={courseNavEndItems(
             isAdmin(session.utorid),
-            user?.isInstructor === true,
+            profile?.isInstructor === true,
           )}
           activeKey="queue"
         />

@@ -5,7 +5,6 @@ import {
 import { assertSessionOperator } from "@/lib/auth/sessionOperator";
 import { prisma } from "@/lib/prisma";
 import { startSession } from "@/lib/queries/start_session/start-session";
-import { recomputeWaitStats } from "@/lib/waitStats";
 
 type StartSessionResult =
   | { outcome: "started" }
@@ -32,13 +31,6 @@ export async function startSessionService(
 
   // Step 4: Transition the session status
   const result = await startSession(ohSession.id);
-
-  // Step 5: Recompute wait-time stats in the background (fire and forget)
-  if (result === "started") {
-    recomputeWaitStats().catch((e) =>
-      console.error("[waitStats] recompute failed:", e),
-    );
-  }
 
   return { outcome: result };
 }

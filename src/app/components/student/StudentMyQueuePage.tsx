@@ -56,7 +56,7 @@ function QueueTicket({ ticket }: { ticket: StudentQueueTicketDto }) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#c8102e]">
-            {ticket.courseCode}
+            {ticket.courseLabel}
           </p>
           <h3 className="text-lg font-semibold text-[#071f41]">
             {ticket.sessionTitle}
@@ -73,7 +73,7 @@ function QueueTicket({ ticket }: { ticket: StudentQueueTicketDto }) {
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col items-end gap-2">
+        <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
           {isHelping ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-3 py-1 text-xs font-semibold text-[#16a34a]">
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#16a34a]" />
@@ -85,17 +85,24 @@ function QueueTicket({ ticket }: { ticket: StudentQueueTicketDto }) {
                 <Users className="h-5 w-5 text-slate-400" />#{ticket.position}
               </span>
               {ticket.estimatedWaitMinutes !== null && (
-                <WaitBadge
-                  minutes={ticket.estimatedWaitMinutes}
-                  margin={ticket.estimatedWaitMargin}
-                />
+                <>
+                  <WaitBadge
+                    minutes={ticket.estimatedWaitMinutes}
+                    margin={ticket.estimatedWaitMargin}
+                  />
+                  <span className="text-left text-[11px] leading-4 text-slate-400 sm:text-right">
+                    {ticket.waitEstimateAverageMinutes} min average
+                    <br />
+                    {ticket.waitEstimateSampleSize} completed-help samples
+                  </span>
+                </>
               )}
             </>
           )}
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
+      <div className="mt-4 flex flex-col gap-1 border-t border-slate-100 pt-3 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
         <span>Checked in at {formatTime(ticket.checkedInAt)}</span>
         <span>Waited {ticket.waitedMinutes} min</span>
       </div>
@@ -166,7 +173,7 @@ export function StudentMyQueuePage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-[#071f41]">
             My Queue
@@ -186,7 +193,7 @@ export function StudentMyQueuePage({
           type="button"
           onClick={manualRefresh}
           disabled={cooldown || refreshing}
-          className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-[#071f41] disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-[#071f41] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
         >
           <RefreshCw
             className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
