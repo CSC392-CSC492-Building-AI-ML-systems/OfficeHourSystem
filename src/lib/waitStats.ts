@@ -1,4 +1,7 @@
+import { unstable_cache } from "next/cache";
+
 export const WAIT_STATS_MIN_SAMPLE = 10;
+export const WAIT_STATS_CACHE_SECONDS = 300;
 
 const TRIM_PERCENT = 0.05;
 const Z_85 = 1.44; // 85% prediction interval
@@ -23,6 +26,10 @@ type CompletedHelpRecord = {
 export type WaitStatsRecordSource = {
   listCompletedHelpRecords(courseIds: number[]): Promise<CompletedHelpRecord[]>;
 };
+
+export function waitStatsCacheTag(courseId: number) {
+  return `wait-stats:${courseId}`;
+}
 
 const prismaWaitStatsSource: WaitStatsRecordSource = {
   async listCompletedHelpRecords(courseIds) {
@@ -92,15 +99,49 @@ export async function getWaitStatsForCourses(
   source: WaitStatsRecordSource = prismaWaitStatsSource,
 ): Promise<Map<number, WaitStats>> {
   const uniqueCourseIds = [...new Set(courseIds)];
+  if (uniqueCourseIds.length === 0) return new Map();
+
+  if (source === prismaWaitStatsSource) {
+    const entries = await Promise.all(
+      uniqueCourseIds.map(
+        async (courseId) =>
+          [courseId, await getCachedWaitStatsForCourse(courseId)] as const,
+      ),
+    );
+    return new Map(entries);
+  }
+
+  const records = await source.listCompletedHelpRecords(uniqueCourseIds);
+  return calculateWaitStatsForCourses(uniqueCourseIds, records);
+}
+
+function getCachedWaitStatsForCourse(courseId: number) {
+  return unstable_cache(
+    async () => {
+      const records = await prismaWaitStatsSource.listCompletedHelpRecords([
+        courseId,
+      ]);
+      return (
+        calculateWaitStatsForCourses([courseId], records).get(courseId) ?? null
+      );
+    },
+    ["wait-stats", String(courseId)],
+    {
+      revalidate: WAIT_STATS_CACHE_SECONDS,
+      tags: [waitStatsCacheTag(courseId)],
+    },
+  )();
+}
+
+function calculateWaitStatsForCourses(
+  courseIds: number[],
+  records: CompletedHelpRecord[],
+): Map<number, WaitStats> {
   const statsByCourseId = new Map<number, WaitStats>();
 
-  if (uniqueCourseIds.length === 0) return statsByCourseId;
-
   const durationsByCourseId = new Map<number, number[]>(
-    uniqueCourseIds.map((courseId) => [courseId, []]),
+    courseIds.map((courseId) => [courseId, []]),
   );
-  const records = await source.listCompletedHelpRecords(uniqueCourseIds);
-
   for (const record of records) {
     if (!record.helpStartedAt || !record.helpEndedAt) continue;
 
@@ -113,7 +154,7 @@ export async function getWaitStatsForCourses(
     }
   }
 
-  for (const courseId of uniqueCourseIds) {
+  for (const courseId of courseIds) {
     statsByCourseId.set(
       courseId,
       calculateWaitStats(durationsByCourseId.get(courseId) ?? []),

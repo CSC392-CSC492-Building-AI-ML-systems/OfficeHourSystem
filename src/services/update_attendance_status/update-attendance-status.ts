@@ -8,6 +8,8 @@ import {
 } from "@/lib/auth/sessionOperator";
 import { prisma } from "@/lib/prisma";
 import { updateAttendanceStatus } from "@/lib/queries/update_attendance_status/update-attendance-status";
+import { revalidateTag } from "next/cache";
+import { waitStatsCacheTag } from "@/lib/waitStats";
 
 type UpdateAction = "end" | "no_show";
 
@@ -29,7 +31,11 @@ export async function updateAttendanceStatusService(
   // Step 2: Find the office hour session
   const ohSession = await prisma.officeHourSession.findUnique({
     where: { publicId: sessionPublicId },
-    select: { id: true, offeringId: true },
+    select: {
+      id: true,
+      offeringId: true,
+      offering: { select: { courseId: true } },
+    },
   });
   if (!ohSession) throw new Error("Session not found");
 
@@ -66,6 +72,10 @@ export async function updateAttendanceStatusService(
 
   if (recordPublicId === null) {
     return { outcome: "not_in_help" };
+  }
+
+  if (action === "end") {
+    revalidateTag(waitStatsCacheTag(ohSession.offering.courseId), "max");
   }
 
   return { outcome: "updated", recordPublicId };
