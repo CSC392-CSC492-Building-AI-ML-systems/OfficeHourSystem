@@ -12,7 +12,7 @@ export async function cleanupAll(): Promise<void> {
       interest: {
         OR: [
           { user: { utorid: { startsWith: TEST_PREFIX } } },
-          { session: { offering: { termCode: TEST_TERM } } },
+          { session: { offering: { termCode: { startsWith: TEST_TERM } } } },
         ],
       },
     },
@@ -22,49 +22,49 @@ export async function cleanupAll(): Promise<void> {
     where: {
       OR: [
         { user: { utorid: { startsWith: TEST_PREFIX } } },
-        { session: { offering: { termCode: TEST_TERM } } },
+        { session: { offering: { termCode: { startsWith: TEST_TERM } } } },
       ],
     },
   });
 
   await prisma.officeHourAttendance.deleteMany({
-    where: { session: { offering: { termCode: TEST_TERM } } },
+    where: { session: { offering: { termCode: { startsWith: TEST_TERM } } } },
   });
 
   await prisma.officeHourAttendanceRecord.deleteMany({
-    where: { session: { offering: { termCode: TEST_TERM } } },
+    where: { session: { offering: { termCode: { startsWith: TEST_TERM } } } },
   });
 
   await prisma.officeHourSessionHost.deleteMany({
-    where: { session: { offering: { termCode: TEST_TERM } } },
+    where: { session: { offering: { termCode: { startsWith: TEST_TERM } } } },
   });
 
   // 2. Delete sessions (depend on offering and optionally on schedule)
   await prisma.officeHourSession.deleteMany({
-    where: { offering: { termCode: TEST_TERM } },
+    where: { offering: { termCode: { startsWith: TEST_TERM } } },
   });
 
   // 3. Delete schedule-related records
   await prisma.officeHourScheduleHost.deleteMany({
-    where: { schedule: { offering: { termCode: TEST_TERM } } },
+    where: { schedule: { offering: { termCode: { startsWith: TEST_TERM } } } },
   });
 
   await prisma.officeHourSchedule.deleteMany({
-    where: { offering: { termCode: TEST_TERM } },
+    where: { offering: { termCode: { startsWith: TEST_TERM } } },
   });
 
   // 4. Delete offering members and the offering itself
   await prisma.offeringMember.deleteMany({
     where: {
       OR: [
-        { offering: { termCode: TEST_TERM } },
+        { offering: { termCode: { startsWith: TEST_TERM } } },
         { user: { utorid: { startsWith: TEST_PREFIX } } },
       ],
     },
   });
 
   await prisma.courseOffering.deleteMany({
-    where: { termCode: TEST_TERM },
+    where: { termCode: { startsWith: TEST_TERM } },
   });
 
   // 5. Delete courses (those whose code starts with __test__)
