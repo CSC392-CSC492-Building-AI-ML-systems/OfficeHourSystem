@@ -333,7 +333,7 @@ export default function Home() {
                 The Queue
               </p>
               <h2 className="mt-4 text-4xl font-black leading-tight text-[#071f41]">
-                How The Queue Works
+                Help Centre Explained
               </h2>
               <p className="mt-6 text-base leading-7 text-slate-600">
                 Scan your T-Card on site, then track position and wait time in
