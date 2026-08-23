@@ -19,6 +19,11 @@ export type ImportClasslistClient = {
   ): Promise<T>;
 };
 
+export type ImportClasslistForOfferingInput = {
+  offeringPublicId: string;
+  rows: ClasslistRow[];
+};
+
 export type ImportClasslistTransaction = {
   course: {
     upsert(args: unknown): Promise<{ id: number }>;
@@ -29,6 +34,7 @@ export type ImportClasslistTransaction = {
   offeringMember: {
     count(args: unknown): Promise<number>;
     deleteMany(args: unknown): Promise<{ count: number }>;
+    findUnique(args: unknown): Promise<{ role: string } | null>;
     upsert(args: unknown): Promise<unknown>;
   };
   user: {
@@ -197,9 +203,22 @@ async function importClasslistInTransaction(
           });
 
     // 7. Add this user to this offering as a student.
-    // Since we may have cleared old student members above,
-    // this usually creates a new OfferingMember.
-    // But we still use upsert to avoid duplicate error if the CSV has repeated rows.
+    // Skip anyone who is already staff — a classlist row must not demote a TA
+    // or instructor. Upsert still handles duplicate CSV rows for students.
+    const existingMember = await tx.offeringMember.findUnique({
+      where: {
+        userId_offeringId: {
+          userId: user.id,
+          offeringId: offering.id,
+        },
+      },
+      select: { role: true },
+    });
+
+    if (existingMember && existingMember.role !== "STUDENT") {
+      continue;
+    }
+
     await tx.offeringMember.upsert({
       where: {
         userId_offeringId: {
@@ -256,4 +275,42 @@ export async function importClasslist(input: ImportClasslistInput) {
       maxWait: 10_000,
     },
   );
+}
+
+/**
+ * Replace the student roster for an existing offering.
+ * Course code in the CSV must match this offering's course.
+ */
+export async function importClasslistForOffering(
+  input: ImportClasslistForOfferingInput,
+) {
+  const { prisma } = await import("../prisma");
+
+  if (!input.rows || input.rows.length === 0) {
+    throw new Error("Cannot import an empty classlist");
+  }
+
+  const offering = await prisma.courseOffering.findUnique({
+    where: { publicId: input.offeringPublicId },
+    select: {
+      termCode: true,
+      course: { select: { code: true } },
+    },
+  });
+
+  if (!offering) {
+    throw new Error("Course offering not found");
+  }
+
+  const csvCourseCode = input.rows[0].Acad_act.trim();
+  if (csvCourseCode !== offering.course.code) {
+    throw new Error(
+      `This CSV is for ${csvCourseCode}, but this course is ${offering.course.code}.`,
+    );
+  }
+
+  return importClasslist({
+    termCode: offering.termCode,
+    rows: input.rows,
+  });
 }

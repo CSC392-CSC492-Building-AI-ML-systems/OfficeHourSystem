@@ -5,7 +5,9 @@ import { revalidatePath } from "next/cache";
 import { parseAdminList } from "@/lib/adminList";
 import { requireSessionUserId } from "@/lib/auth/getRequestSession";
 import { requireOfferingTeachingStaff } from "@/lib/auth/requireOfferingAccess";
+import { parseClasslistCSVText } from "@/lib/csv/parseCSV";
 import { instructorDashboardHref } from "@/lib/offeringUrls";
+import { importClasslistForOffering } from "@/lib/queries/classlist";
 import {
   addOrUpdateStaffMember,
   getOfferingStaffMembers,
@@ -28,6 +30,15 @@ export type StaffActionResult =
 
 export type BulkStaffActionResult =
   | { ok: true; added: number; staff: OfferingStaffMember[] }
+  | { ok: false; error: string };
+
+export type ReuploadClasslistResult =
+  | {
+      ok: true;
+      imported: number;
+      cleared: number;
+      students: OfferingStudentMember[];
+    }
   | { ok: false; error: string };
 
 export async function getInstructorStaffPageData(
@@ -139,6 +150,52 @@ export async function removeOfferingTaAction(input: {
         error instanceof Error
           ? error.message
           : "Failed to remove teaching assistant",
+    };
+  }
+}
+
+export async function reuploadOfferingClasslistAction(
+  offeringPublicId: string,
+  formData: FormData,
+): Promise<ReuploadClasslistResult> {
+  try {
+    const userId = await requireSessionUserId();
+    await requireScheduleMutate(userId, offeringPublicId);
+
+    const file = formData.get("file");
+    if (!(file instanceof File)) {
+      throw new Error('Missing CSV file. Expected form field "file".');
+    }
+
+    if (!file.name.toLowerCase().endsWith(".csv") && file.type !== "text/csv") {
+      throw new Error("Upload must be a .csv file");
+    }
+
+    const rows = parseClasslistCSVText(await file.text());
+    if (rows.length === 0) {
+      throw new Error("CSV file contains no student rows");
+    }
+
+    const result = await importClasslistForOffering({
+      offeringPublicId,
+      rows,
+    });
+
+    revalidatePath(instructorDashboardHref(offeringPublicId));
+
+    const students = await getOfferingStudentMembers(offeringPublicId);
+
+    return {
+      ok: true,
+      imported: result.imported,
+      cleared: result.cleared,
+      students,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Failed to reupload classlist",
     };
   }
 }
