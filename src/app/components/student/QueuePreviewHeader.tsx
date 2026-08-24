@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { RefreshCw } from "lucide-react";
 
 const COOLDOWN_MS = 5_000;
@@ -13,7 +13,14 @@ function formatUpdatedAt(date: Date) {
   });
 }
 
+const subscribe = () => () => {};
+
 export function QueuePreviewHeader() {
+  const isClient = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
   const [updatedAt, setUpdatedAt] = useState(() => new Date());
   const [cooldown, setCooldown] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,7 +50,8 @@ export function QueuePreviewHeader() {
           My Queue
         </p>
         <p className="mt-0.5 text-sm text-slate-500">
-          Updated at {formatUpdatedAt(updatedAt)} · auto-refreshes every 15 s
+          Updated at {isClient ? formatUpdatedAt(updatedAt) : "—"} ·
+          auto-refreshes every 15 s
         </p>
       </div>
       <button

@@ -153,6 +153,9 @@ export async function unarchiveOffering(
   });
 }
 
+/** Remote DB deletes can exceed Prisma's default 5s interactive tx limit. */
+const OFFERING_DELETE_TX_TIMEOUT_MS = 60_000;
+
 /** Hard-delete an offering and all dependent scheduling/queue data. */
 export async function deleteOffering(offeringPublicId: string): Promise<void> {
   const offering = await prisma.courseOffering.findUnique({
@@ -164,43 +167,76 @@ export async function deleteOffering(offeringPublicId: string): Promise<void> {
     throw new Error("Course offering not found");
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.officeHourReminder.deleteMany({
-      where: { interest: { session: { offeringId: offering.id } } },
-    });
-    await tx.officeHourInterest.deleteMany({
-      where: { session: { offeringId: offering.id } },
-    });
-    await tx.officeHourAttendance.deleteMany({
-      where: { session: { offeringId: offering.id } },
-    });
-    await tx.officeHourAttendanceRecord.deleteMany({
-      where: { session: { offeringId: offering.id } },
-    });
-    await tx.officeHourSessionHost.deleteMany({
-      where: { session: { offeringId: offering.id } },
-    });
-    await tx.officeHourSession.deleteMany({
-      where: { offeringId: offering.id },
-    });
-    await tx.officeHourScheduleHost.deleteMany({
-      where: { schedule: { offeringId: offering.id } },
-    });
-    await tx.officeHourSchedule.deleteMany({
-      where: { offeringId: offering.id },
-    });
-    await tx.offeringMember.deleteMany({
-      where: { offeringId: offering.id },
-    });
-    await tx.courseOffering.delete({
-      where: { id: offering.id },
-    });
+  await prisma.$transaction(
+    async (tx) => {
+      const sessions = await tx.officeHourSession.findMany({
+        where: { offeringId: offering.id },
+        select: { id: true },
+      });
+      const sessionIds = sessions.map((session) => session.id);
 
-    const remaining = await tx.courseOffering.count({
-      where: { courseId: offering.courseId },
-    });
-    if (remaining === 0) {
-      await tx.course.delete({ where: { id: offering.courseId } });
-    }
-  });
+      if (sessionIds.length > 0) {
+        const interests = await tx.officeHourInterest.findMany({
+          where: { sessionId: { in: sessionIds } },
+          select: { id: true },
+        });
+        const interestIds = interests.map((interest) => interest.id);
+
+        if (interestIds.length > 0) {
+          await tx.officeHourReminder.deleteMany({
+            where: { interestId: { in: interestIds } },
+          });
+          await tx.officeHourInterest.deleteMany({
+            where: { id: { in: interestIds } },
+          });
+        }
+
+        await tx.officeHourAttendance.deleteMany({
+          where: { sessionId: { in: sessionIds } },
+        });
+        await tx.officeHourAttendanceRecord.deleteMany({
+          where: { sessionId: { in: sessionIds } },
+        });
+        await tx.officeHourSessionHost.deleteMany({
+          where: { sessionId: { in: sessionIds } },
+        });
+        await tx.officeHourSession.deleteMany({
+          where: { id: { in: sessionIds } },
+        });
+      }
+
+      const schedules = await tx.officeHourSchedule.findMany({
+        where: { offeringId: offering.id },
+        select: { id: true },
+      });
+      const scheduleIds = schedules.map((schedule) => schedule.id);
+
+      if (scheduleIds.length > 0) {
+        await tx.officeHourScheduleHost.deleteMany({
+          where: { scheduleId: { in: scheduleIds } },
+        });
+        await tx.officeHourSchedule.deleteMany({
+          where: { id: { in: scheduleIds } },
+        });
+      }
+
+      await tx.offeringMember.deleteMany({
+        where: { offeringId: offering.id },
+      });
+      await tx.courseOffering.delete({
+        where: { id: offering.id },
+      });
+
+      const remaining = await tx.courseOffering.count({
+        where: { courseId: offering.courseId },
+      });
+      if (remaining === 0) {
+        await tx.course.delete({ where: { id: offering.courseId } });
+      }
+    },
+    {
+      timeout: OFFERING_DELETE_TX_TIMEOUT_MS,
+      maxWait: 10_000,
+    },
+  );
 }

@@ -19,7 +19,11 @@
 import "dotenv/config";
 
 import { prisma } from "@/lib/prisma";
-import { importClasslist, type ClasslistRow } from "@/lib/queries/classlist";
+import {
+  importClasslist,
+  importClasslistForOffering,
+  type ClasslistRow,
+} from "@/lib/queries/classlist";
 import {
   TEST_PREFIX,
   TEST_TERM,
@@ -255,6 +259,112 @@ async function main() {
         utorids.includes(`${TEST_PREFIX}charlie`),
         "charlie should be in members",
       );
+    },
+  );
+
+  await runTest(
+    "importClasslistForOffering → replaces roster on the pinned offering",
+    async () => {
+      await cleanupAll();
+
+      const first = await importClasslist({
+        termCode: TEST_TERM,
+        rows: [makeRow("dana"), makeRow("eli")],
+      });
+
+      const second = await importClasslistForOffering({
+        offeringPublicId: first.offeringPublicId,
+        rows: [makeRow("eli"), makeRow("fay")],
+      });
+
+      assertEqual(
+        second.offeringPublicId,
+        first.offeringPublicId,
+        "same offering",
+      );
+      assertEqual(second.imported, 2, "imported count");
+      assertEqual(second.cleared, 2, "cleared previous students");
+
+      const members = await prisma.offeringMember.findMany({
+        where: { offeringId: first.offeringId, role: "STUDENT" },
+        include: { user: true },
+      });
+      const utorids = members.map((member) => member.user.utorid).sort();
+      assertEqual(members.length, 2, "two students remain");
+      assert(utorids.includes(`${TEST_PREFIX}eli`), "eli kept");
+      assert(utorids.includes(`${TEST_PREFIX}fay`), "fay added");
+    },
+  );
+
+  await runTest(
+    "importClasslistForOffering → rejects CSV for a different course",
+    async () => {
+      await cleanupAll();
+
+      const first = await importClasslist({
+        termCode: TEST_TERM,
+        rows: [makeRow("gina")],
+      });
+
+      let errorMsg = "";
+      try {
+        await importClasslistForOffering({
+          offeringPublicId: first.offeringPublicId,
+          rows: [makeRow("gina", { Acad_act: `${TEST_PREFIX}CSC999H5` })],
+        });
+      } catch (error) {
+        errorMsg = (error as Error).message;
+      }
+
+      assert(
+        errorMsg.includes("This CSV is for"),
+        `expected course mismatch error, got: ${errorMsg}`,
+      );
+    },
+  );
+
+  await runTest(
+    "Re-import does not demote an existing TA who appears in the CSV",
+    async () => {
+      await cleanupAll();
+
+      const first = await importClasslist({
+        termCode: TEST_TERM,
+        rows: [makeRow("hugo")],
+      });
+
+      const ta = await prisma.user.create({
+        data: {
+          utorid: `${TEST_PREFIX}staffta`,
+          studentNumber: makeStudentNumber("staffta"),
+        },
+      });
+      await prisma.offeringMember.create({
+        data: {
+          userId: ta.id,
+          offeringId: first.offeringId,
+          role: "TA",
+        },
+      });
+
+      await importClasslistForOffering({
+        offeringPublicId: first.offeringPublicId,
+        rows: [
+          makeRow("hugo"),
+          makeRow("staffta", { "Person ID": makeStudentNumber("staffta") }),
+        ],
+      });
+
+      const taMember = await prisma.offeringMember.findUnique({
+        where: {
+          userId_offeringId: {
+            userId: ta.id,
+            offeringId: first.offeringId,
+          },
+        },
+      });
+      assert(taMember !== null, "TA membership remains");
+      assertEqual(taMember!.role, "TA", "TA is not demoted to student");
     },
   );
 

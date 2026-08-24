@@ -6,8 +6,8 @@ export type RecordInterestResult = {
   sessionId: number;
 };
 
-export type RemoveInterestResult = {
-  removed: boolean;
+export type RetractInterestResult = {
+  retracted: boolean;
   userId: number;
   sessionId: number;
 };
@@ -84,16 +84,69 @@ export async function recordSessionInterest(
   };
 }
 
-/** Remove only the current student's interest row. Repeating is a no-op. */
-export async function removeSessionInterest(
+/**
+ * Remove a user's interest in an office hour session.
+ *
+ * The user must be a member of the session's course offering.
+ * If no interest row exists, this is a no-op.
+ */
+export async function retractSessionInterest(
   userId: number,
   sessionId: number,
-  client?: InterestClient,
-): Promise<RemoveInterestResult> {
-  const db = client ?? (prisma as unknown as InterestClient);
-  const result = await db.officeHourInterest.deleteMany({
-    where: { userId, sessionId },
+): Promise<RetractInterestResult> {
+  const session = await prisma.officeHourSession.findUnique({
+    where: { id: sessionId },
+    select: { id: true, offeringId: true },
   });
 
-  return { removed: result.count > 0, userId, sessionId };
+  if (!session) {
+    throw new Error("Office hour session not found");
+  }
+
+  const membership = await prisma.offeringMember.findUnique({
+    where: {
+      userId_offeringId: {
+        userId,
+        offeringId: session.offeringId,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (!membership) {
+    throw new Error("You are not a member of this course offering");
+  }
+
+  const interest = await prisma.officeHourInterest.findUnique({
+    where: {
+      userId_sessionId: {
+        userId,
+        sessionId: session.id,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (!interest) {
+    return {
+      retracted: false,
+      userId,
+      sessionId: session.id,
+    };
+  }
+
+  await prisma.$transaction([
+    prisma.officeHourReminder.deleteMany({
+      where: { interestId: interest.id },
+    }),
+    prisma.officeHourInterest.delete({
+      where: { id: interest.id },
+    }),
+  ]);
+
+  return {
+    retracted: true,
+    userId,
+    sessionId: session.id,
+  };
 }

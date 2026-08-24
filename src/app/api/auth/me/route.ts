@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isAdmin } from "@/lib/adminList";
 import { getRequestSession } from "@/lib/auth/getRequestSession";
 
 export async function GET() {
@@ -15,5 +16,6 @@ export async function GET() {
     email: session.email,
     impersonating: Boolean(session.impersonator),
     realUtorid: session.impersonator?.utorid ?? null,
+    isAdmin: isAdmin(session.utorid),
   });
 }

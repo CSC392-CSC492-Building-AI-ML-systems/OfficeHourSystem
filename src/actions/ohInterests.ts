@@ -5,9 +5,9 @@ import { revalidatePath } from "next/cache";
 import { requireSessionUserId } from "@/lib/auth/getRequestSession";
 import {
   recordSessionInterest,
-  removeSessionInterest,
+  retractSessionInterest,
   type RecordInterestResult,
-  type RemoveInterestResult,
+  type RetractInterestResult,
 } from "@/lib/ohInterests";
 
 function revalidateInterestViews() {
@@ -26,11 +26,11 @@ export async function recordInterest(
   return result;
 }
 
-export async function removeInterest(
+export async function retractInterest(
   sessionId: number,
-): Promise<RemoveInterestResult> {
+): Promise<RetractInterestResult> {
   const userId = await requireSessionUserId();
-  const result = await removeSessionInterest(userId, sessionId);
+  const result = await retractSessionInterest(userId, sessionId);
   revalidateInterestViews();
   return result;
 }

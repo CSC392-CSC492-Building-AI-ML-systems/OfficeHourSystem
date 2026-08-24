@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { recordInterest, removeInterest } from "@/actions/ohInterests";
+import { recordInterest, retractInterest } from "@/actions/ohInterests";
 
 type InterestedButtonProps = {
   sessionId: number;
@@ -38,7 +38,7 @@ export function InterestedButton({
     startTransition(async () => {
       try {
         if (next) await recordInterest(sessionId);
-        else await removeInterest(sessionId);
+        else await retractInterest(sessionId);
         router.refresh();
       } catch {
         setIsInterested(previous);
@@ -48,11 +48,20 @@ export function InterestedButton({
     });
   };
 
+  const label = isPending
+    ? isInterested
+      ? "Saving…"
+      : "Updating…"
+    : isInterested
+      ? "Already interested"
+      : "I'm interested";
+
   return (
     <div className="w-full shrink-0 text-left sm:w-auto sm:text-right">
       <button
         type="button"
         aria-pressed={isInterested}
+        aria-label={isInterested ? "Retract interest" : "I'm interested"}
         disabled={isPending}
         onClick={handleClick}
         className={`w-full rounded-full border px-3.5 py-2 text-sm font-medium transition disabled:cursor-wait disabled:opacity-70 sm:w-auto ${
@@ -61,13 +70,7 @@ export function InterestedButton({
             : "border-slate-200 bg-white text-[#071f41] hover:border-slate-300 hover:bg-slate-50"
         }`}
       >
-        {isPending
-          ? isInterested
-            ? "Saving…"
-            : "Removing…"
-          : isInterested
-            ? "I'm not interested now"
-            : "I'm interested"}
+        {label}
       </button>
       {error ? (
         <p

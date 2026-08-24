@@ -24,6 +24,10 @@ import {
   getSessionInterestCount,
 } from "@/lib/queries/officehourInterest";
 import {
+  recordSessionInterest,
+  retractSessionInterest,
+} from "@/lib/ohInterests";
+import {
   TEST_PREFIX,
   TEST_TERM,
   cleanupAll,
@@ -227,6 +231,60 @@ async function main() {
         session.id,
         "returned sessionId should match",
       );
+    },
+  );
+
+  await runTest("retractSessionInterest → removes interest", async () => {
+    await recordSessionInterest(student.id, session.id);
+    const retracted = await retractSessionInterest(student.id, session.id);
+
+    assertEqual(retracted.retracted, true, "retracted flag");
+    assertEqual(retracted.userId, student.id, "userId");
+    assertEqual(retracted.sessionId, session.id, "sessionId");
+
+    const remaining = await prisma.officeHourInterest.findUnique({
+      where: {
+        userId_sessionId: { userId: student.id, sessionId: session.id },
+      },
+    });
+    assert(remaining === null, "interest row should be gone");
+  });
+
+  await runTest(
+    "retractSessionInterest → idempotent when already retracted",
+    async () => {
+      const result = await retractSessionInterest(student.id, session.id);
+      assertEqual(result.retracted, false, "nothing to retract");
+    },
+  );
+
+  await runTest("retractSessionInterest → outsider is rejected", async () => {
+    let errorMsg = "";
+    try {
+      await retractSessionInterest(outsider.id, session.id);
+    } catch (error) {
+      errorMsg = (error as Error).message;
+    }
+    assert(
+      errorMsg.includes("You are not a member of this course offering"),
+      `expected membership error, got: ${errorMsg}`,
+    );
+  });
+
+  await runTest(
+    "retractSessionInterest → deletes reminder rows for that interest",
+    async () => {
+      const marked = await recordSessionInterest(student2.id, session.id);
+      await prisma.officeHourReminder.create({
+        data: { interestId: marked.interestId, minutesBefore: 60 },
+      });
+
+      await retractSessionInterest(student2.id, session.id);
+
+      const reminders = await prisma.officeHourReminder.count({
+        where: { interestId: marked.interestId },
+      });
+      assertEqual(reminders, 0, "reminders removed with interest");
     },
   );
 

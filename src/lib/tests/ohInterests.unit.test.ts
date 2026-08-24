@@ -2,16 +2,12 @@ import "dotenv/config";
 
 import assert from "node:assert/strict";
 
-import {
-  recordSessionInterest,
-  removeSessionInterest,
-} from "@/lib/ohInterests";
+import { recordSessionInterest } from "@/lib/ohInterests";
 
 type InterestClient = NonNullable<Parameters<typeof recordSessionInterest>[2]>;
 
-function clientForRole(role: string, deletedCount = 1) {
+function clientForRole(role: string) {
   let upserted = false;
-  let deleteWhere: unknown;
   const client: InterestClient = {
     officeHourSession: {
       findUnique: async () => ({ id: 9, offeringId: 3 }),
@@ -24,16 +20,12 @@ function clientForRole(role: string, deletedCount = 1) {
         upserted = true;
         return { id: 12 };
       },
-      deleteMany: async (args) => {
-        deleteWhere = args;
-        return { count: deletedCount };
-      },
+      deleteMany: async () => ({ count: 0 }),
     },
   };
   return {
     client,
     wasUpserted: () => upserted,
-    deleteArgs: () => deleteWhere,
   };
 }
 
@@ -52,23 +44,6 @@ async function main() {
     /Only enrolled students/,
   );
   assert.equal(ta.wasUpserted(), false);
-
-  const removal = clientForRole("STUDENT");
-  assert.deepEqual(await removeSessionInterest(42, 9, removal.client), {
-    removed: true,
-    userId: 42,
-    sessionId: 9,
-  });
-  assert.deepEqual(removal.deleteArgs(), {
-    where: { userId: 42, sessionId: 9 },
-  });
-
-  const repeatedRemoval = clientForRole("STUDENT", 0);
-  assert.deepEqual(await removeSessionInterest(42, 9, repeatedRemoval.client), {
-    removed: false,
-    userId: 42,
-    sessionId: 9,
-  });
 
   console.log("ohInterests.unit.test.ts: all assertions passed");
 }

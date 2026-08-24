@@ -65,11 +65,11 @@ const INTEREST_POINTS = [
   },
   {
     title: "Tap “I'm interested”",
-    body: "One click records that you plan to attend. The button updates to I'm not interested now so you know it was saved.",
+    body: "One click records that you plan to attend. The button updates to Already interested so you know it was saved.",
   },
   {
     title: "Change your response anytime",
-    body: "Tap I'm not interested now if you no longer plan to attend.",
+    body: "Tap Already interested if you no longer plan to attend.",
   },
 ];
 
@@ -293,7 +293,7 @@ export default async function Home() {
                 The Queue
               </p>
               <h2 className="mt-4 text-4xl font-black leading-tight text-[#071f41]">
-                How The Queue Works
+                Help Centre Explained
               </h2>
               <p className="mt-6 text-base leading-7 text-slate-600">
                 Scan your T-Card on site, then track position and wait time in

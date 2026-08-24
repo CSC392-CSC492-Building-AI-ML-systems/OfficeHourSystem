@@ -14,13 +14,13 @@
     "db:setup": "docker compose up -d postgres --wait && prisma migrate deploy",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "pnpm dlx tsx scripts/seed-demo.ts",
-    "test": "pnpm dlx tsx src/lib/tests/offeringUrls.test.ts && pnpm dlx tsx src/lib/tests/resolveHomeRedirect.test.ts && pnpm dlx tsx src/lib/tests/adminAccess.test.ts && pnpm dlx tsx src/lib/tests/requireOfferingAccess.test.ts && pnpm dlx tsx src/lib/tests/adminOfferings.test.ts && pnpm dlx tsx src/lib/tests/adminProvisioning.test.ts && pnpm dlx tsx src/lib/tests/classlist.test.ts && pnpm dlx tsx src/lib/tests/offeringMember.test.ts",
+    "test": "pnpm dlx tsx src/lib/tests/offeringUrls.test.ts && pnpm dlx tsx src/lib/tests/resolveHomeRedirect.test.ts && pnpm dlx tsx src/lib/tests/adminAccess.test.ts && pnpm dlx tsx src/lib/tests/requireOfferingAccess.test.ts && pnpm dlx tsx src/lib/tests/adminOfferings.test.ts && pnpm dlx tsx src/lib/tests/adminProvisioning.test.ts && pnpm dlx tsx src/lib/tests/classlist.test.ts && pnpm dlx tsx src/lib/tests/offeringMember.test.ts && pnpm dlx tsx src/lib/tests/interest.test.ts",
     "test:unit": "pnpm dlx tsx src/lib/tests/offeringUrls.test.ts && pnpm dlx tsx src/lib/tests/time/toronto.test.ts && pnpm dlx tsx src/lib/tests/resolveHomeRedirect.test.ts && pnpm dlx tsx src/lib/tests/scan_check_in/parse-identifier.test.ts && pnpm dlx tsx src/lib/tests/scan_check_in/mcs-admin-client.test.ts",
     "test:jacky-final-fix": "pnpm dlx tsx src/lib/tests/courseLabel.test.ts && pnpm dlx tsx src/lib/tests/home_stats/home-stats.test.ts && pnpm dlx tsx src/lib/tests/proxy-home-auth.test.ts && pnpm dlx tsx src/lib/tests/student-interest.test.ts && pnpm dlx tsx src/lib/tests/ohInterests.unit.test.ts && pnpm dlx tsx src/lib/tests/waitStats.test.ts",
     "demo:jacky-final:seed": "pnpm dlx tsx scripts/jacky-final-fix-demo.ts",
     "demo:jacky-final:verify": "pnpm dlx tsx scripts/jacky-final-fix-demo.ts --verify",
     "demo:jacky-final:cleanup": "pnpm dlx tsx scripts/jacky-final-fix-demo.ts --cleanup",
-    "test:integration": "pnpm dlx tsx src/lib/tests/adminAccess.test.ts && pnpm dlx tsx src/lib/tests/requireOfferingAccess.test.ts && pnpm dlx tsx src/lib/tests/adminOfferings.test.ts && pnpm dlx tsx src/lib/tests/adminProvisioning.test.ts && pnpm dlx tsx src/lib/tests/classlist.test.ts && pnpm dlx tsx src/lib/tests/offeringMember.test.ts"
+    "test:integration": "pnpm dlx tsx src/lib/tests/adminAccess.test.ts && pnpm dlx tsx src/lib/tests/requireOfferingAccess.test.ts && pnpm dlx tsx src/lib/tests/adminOfferings.test.ts && pnpm dlx tsx src/lib/tests/adminProvisioning.test.ts && pnpm dlx tsx src/lib/tests/classlist.test.ts && pnpm dlx tsx src/lib/tests/offeringMember.test.ts && pnpm dlx tsx src/lib/tests/interest.test.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
