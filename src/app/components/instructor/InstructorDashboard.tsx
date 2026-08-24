@@ -242,7 +242,7 @@ export default function InstructorDashboard({
       </div>
 
       <ReuploadClasslistModal
-        key={reuploadModalKey}
+        key={`reupload-${reuploadModalKey}`}
         isOpen={isReuploadModalOpen}
         courseLabel={courseLabel}
         onClose={() => {
@@ -257,7 +257,7 @@ export default function InstructorDashboard({
       />
 
       <AddTaModal
-        key={addTaModalKey}
+        key={`add-ta-${addTaModalKey}`}
         isOpen={isAddTaModalOpen}
         onClose={() => {
           if (!isAddingStaff) {

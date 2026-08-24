@@ -2,11 +2,6 @@ import type { AppNavItem } from "@/app/components/shared/Navbar";
 
 export const COURSE_NAV_ITEMS: AppNavItem[] = [
   { key: "courses", label: "Courses", href: "/course" },
-  { key: "queue", label: "My Queue", href: "/course/my-queue" },
-];
-
-export const STUDENT_COURSE_NAV_ITEMS: AppNavItem[] = [
-  { key: "courses", label: "Courses", href: "/course" },
   {
     key: "interested",
     label: "My Interested Office Hours",
@@ -21,7 +16,7 @@ export const COURSE_STATS_NAV_ITEM: AppNavItem = {
   href: "/course/stats",
 };
 
-const ADMIN_NAV_ITEM: AppNavItem = {
+export const ADMIN_NAV_ITEM: AppNavItem = {
   key: "admin",
   label: "Admin",
   href: "/admin",

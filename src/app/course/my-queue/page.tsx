@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 
 import {
   COURSE_NAV_ITEMS,
-  STUDENT_COURSE_NAV_ITEMS,
   courseNavEndItems,
 } from "@/app/components/course/courseNav";
 import { StudentMyQueuePage } from "@/app/components/student/StudentMyQueuePage";
@@ -32,11 +31,7 @@ export default async function CourseMyQueueRoute() {
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <Navbar
           brandHref="/course"
-          items={
-            profile?.kind === "student"
-              ? STUDENT_COURSE_NAV_ITEMS
-              : COURSE_NAV_ITEMS
-          }
+          items={COURSE_NAV_ITEMS}
           endItems={courseNavEndItems(
             isAdmin(session.utorid),
             profile?.isInstructor === true,

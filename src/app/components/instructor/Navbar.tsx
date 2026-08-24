@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+
+import { ADMIN_NAV_ITEM } from "@/app/components/course/courseNav";
 import {
   Navbar as AppNavbar,
   type AppNavItem,
@@ -39,13 +42,37 @@ export function Navbar({
     href: courseRouteHref(path, offeringPublicId),
   }));
 
-  const endItems: AppNavItem[] = [
-    {
+  const statsItem = useMemo<AppNavItem>(
+    () => ({
       key: "stats",
       label: "Course Stats",
       href: `/course/stats?offering=${encodeURIComponent(offeringPublicId)}`,
-    },
-  ];
+    }),
+    [offeringPublicId],
+  );
+  const [endItems, setEndItems] = useState<AppNavItem[]>([statsItem]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAdminNav() {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { isAdmin?: boolean };
+        if (!cancelled) {
+          setEndItems(data.isAdmin ? [ADMIN_NAV_ITEM, statsItem] : [statsItem]);
+        }
+      } catch {
+        if (!cancelled) setEndItems([statsItem]);
+      }
+    }
+
+    void loadAdminNav();
+    return () => {
+      cancelled = true;
+    };
+  }, [statsItem]);
 
   return (
     <AppNavbar
