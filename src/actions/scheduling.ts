@@ -11,6 +11,10 @@ import {
   studentDashboardHref,
 } from "@/lib/offeringUrls";
 import {
+  getSessionInterestedStudents,
+  type SessionInterestedStudentDto,
+} from "@/lib/queries/officehourInterest";
+import {
   cancelSession,
   createOneTimeSession,
   createRecurringBlock,
@@ -21,6 +25,8 @@ import {
   updateSession,
 } from "@/lib/queries/officeHourScheduling";
 import { requireOfferingStudent } from "@/lib/auth/requireOfferingAccess";
+import { prisma } from "@/lib/prisma";
+import { requireScheduleView } from "@/lib/scheduling/auth";
 import type {
   CreateOneTimeSessionInput,
   CreateRecurringBlockInput,
@@ -114,4 +120,22 @@ export async function cancelSessionAction(publicId: string): Promise<void> {
   const userId = await requireSessionUserId();
   const result = await cancelSession(userId, publicId);
   revalidateSchedulingPaths(result.offeringPublicId);
+}
+
+export async function getSessionInterestedStudentsAction(
+  sessionPublicId: string,
+): Promise<SessionInterestedStudentDto[]> {
+  const userId = await requireSessionUserId();
+  const session = await prisma.officeHourSession.findUnique({
+    where: { publicId: sessionPublicId },
+    select: {
+      id: true,
+      offering: { select: { publicId: true } },
+    },
+  });
+  if (!session) {
+    throw new Error("Session not found");
+  }
+  await requireScheduleView(userId, session.offering.publicId);
+  return getSessionInterestedStudents(session.id);
 }

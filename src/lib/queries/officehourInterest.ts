@@ -102,3 +102,64 @@ export async function getSessionInterestCount(sessionId: number) {
     interestCount: count,
   };
 }
+
+export type SessionInterestedStudentDto = {
+  name: string;
+  utorid: string;
+  email: string;
+  interestedAt: string;
+};
+
+function studentDisplayName(user: {
+  utorid: string;
+  firstName: string | null;
+  lastName: string | null;
+}): string {
+  return (
+    [user.firstName, user.lastName].filter(Boolean).join(" ") || user.utorid
+  );
+}
+
+export async function getSessionInterestedStudents(
+  sessionId: number,
+  client?: {
+    officeHourInterest: {
+      findMany(args: unknown): Promise<
+        Array<{
+          createdAt: Date;
+          user: {
+            utorid: string;
+            email: string | null;
+            firstName: string | null;
+            lastName: string | null;
+          };
+        }>
+      >;
+    };
+  },
+): Promise<SessionInterestedStudentDto[]> {
+  const db = client ?? (await import("../prisma")).prisma;
+
+  const interests = await db.officeHourInterest.findMany({
+    where: { sessionId },
+    select: {
+      createdAt: true,
+      user: {
+        select: {
+          utorid: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return interests.map(({ createdAt, user }) => ({
+    name: studentDisplayName(user),
+    utorid: user.utorid,
+    email: user.email ?? "",
+    interestedAt: createdAt.toISOString(),
+  }));
+}
