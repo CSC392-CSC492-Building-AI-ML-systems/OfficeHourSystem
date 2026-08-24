@@ -32,6 +32,7 @@ import "dotenv/config";
 
 import { prisma } from "@/lib/prisma";
 import {
+  addOfferingStudent,
   getMemberRole,
   addOrUpdateStaffMember,
 } from "@/lib/queries/offeringMember";
@@ -438,6 +439,170 @@ async function main() {
       assertEqual(after?.role, "STUDENT", "role should remain STUDENT");
     },
   );
+
+  await runTest(
+    "addOfferingStudent: creates a minimal normalized user and membership",
+    async () => {
+      const result = await addOfferingStudent(
+        offering.publicId,
+        `  ${TEST_PREFIX}QuickNew  `,
+      );
+
+      assertEqual(
+        result.utorid,
+        `${TEST_PREFIX}quicknew`,
+        "UTORid should be trimmed and lowercased",
+      );
+      assertEqual(result.name, result.utorid, "minimal user name uses UTORid");
+      assertEqual(result.email, "", "minimal user has no invented email");
+
+      const createdUser = await prisma.user.findUnique({
+        where: { utorid: result.utorid },
+      });
+      assert(createdUser !== null, "global user should be created");
+      assertEqual(createdUser!.email, null, "email should remain null");
+
+      const membership = await prisma.offeringMember.findUnique({
+        where: {
+          userId_offeringId: {
+            userId: createdUser!.id,
+            offeringId: offering.id,
+          },
+        },
+      });
+      assertEqual(membership?.role, "STUDENT", "student membership is created");
+    },
+  );
+
+  await runTest(
+    "addOfferingStudent: enrolls an existing global user",
+    async () => {
+      const existingUser = await prisma.user.create({
+        data: {
+          utorid: `${TEST_PREFIX}existing_student`,
+          firstName: "Existing",
+          lastName: "Student",
+        },
+      });
+
+      const result = await addOfferingStudent(
+        offering.publicId,
+        existingUser.utorid,
+      );
+      assertEqual(
+        result.id,
+        existingUser.publicId,
+        "returns existing user DTO",
+      );
+
+      const role = await getMemberRole(
+        { utorid: existingUser.utorid },
+        { publicId: offering.publicId },
+      );
+      assertEqual(role?.role, "STUDENT", "existing user should be enrolled");
+    },
+  );
+
+  await runTest(
+    "addOfferingStudent: existing STUDENT membership is idempotent",
+    async () => {
+      const student = await prisma.user.create({
+        data: { utorid: `${TEST_PREFIX}already_student` },
+      });
+      await prisma.offeringMember.create({
+        data: {
+          userId: student.id,
+          offeringId: offering.id,
+          role: "STUDENT",
+        },
+      });
+
+      const first = await addOfferingStudent(offering.publicId, student.utorid);
+      const second = await addOfferingStudent(
+        offering.publicId,
+        student.utorid,
+      );
+      assertEqual(first.id, second.id, "idempotent call returns same student");
+
+      const count = await prisma.offeringMember.count({
+        where: { userId: student.id, offeringId: offering.id },
+      });
+      assertEqual(count, 1, "should not create duplicate memberships");
+    },
+  );
+
+  for (const role of ["TA", "INSTRUCTOR"] as const) {
+    await runTest(
+      `addOfferingStudent: existing ${role} role is preserved`,
+      async () => {
+        const staffUser = await prisma.user.create({
+          data: {
+            utorid: `${TEST_PREFIX}student_conflict_${role.toLowerCase()}`,
+          },
+        });
+        await prisma.offeringMember.create({
+          data: { userId: staffUser.id, offeringId: offering.id, role },
+        });
+
+        let errorMessage = "";
+        try {
+          await addOfferingStudent(offering.publicId, staffUser.utorid);
+        } catch (error) {
+          errorMessage = (error as Error).message;
+        }
+        assert(
+          errorMessage.includes("cannot be added as a student"),
+          "staff role conflict should be explained",
+        );
+
+        const membership = await prisma.offeringMember.findUnique({
+          where: {
+            userId_offeringId: {
+              userId: staffUser.id,
+              offeringId: offering.id,
+            },
+          },
+        });
+        assertEqual(
+          membership?.role,
+          role,
+          "staff role must not be overwritten",
+        );
+      },
+    );
+  }
+
+  await runTest(
+    "addOfferingStudent: missing offering rolls back user creation",
+    async () => {
+      const missingUtorid = `${TEST_PREFIX}missing_offering_student`;
+      let errorMessage = "";
+      try {
+        await addOfferingStudent("missing-offering", missingUtorid);
+      } catch (error) {
+        errorMessage = (error as Error).message;
+      }
+      assert(
+        errorMessage.includes("Course offering not found"),
+        "missing offering should fail cleanly",
+      );
+
+      const userAfterFailure = await prisma.user.findUnique({
+        where: { utorid: missingUtorid },
+      });
+      assertEqual(userAfterFailure, null, "failed operation creates no user");
+    },
+  );
+
+  await runTest("addOfferingStudent: empty UTORid is rejected", async () => {
+    let errorMessage = "";
+    try {
+      await addOfferingStudent(offering.publicId, "   ");
+    } catch (error) {
+      errorMessage = (error as Error).message;
+    }
+    assertEqual(errorMessage, "UTORid is required", "empty UTORid error");
+  });
 
   // Cleanup
   await cleanupAll();
