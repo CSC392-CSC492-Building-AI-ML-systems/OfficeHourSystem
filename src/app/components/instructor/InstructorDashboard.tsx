@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { UserPlus } from "lucide-react";
 import {
+  addOfferingStudentAction,
   addOfferingTaAction,
   bulkAddOfferingTasAction,
   removeOfferingStudentAction,
@@ -45,6 +46,8 @@ export default function InstructorDashboard({
   const [removingStudentId, setRemovingStudentId] = useState<string | null>(
     null,
   );
+  const [isAddingStudent, setIsAddingStudent] = useState(false);
+  const [addStudentError, setAddStudentError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const handleAddStaffMember = async (input: { utorid: string }) => {
@@ -97,6 +100,34 @@ export default function InstructorDashboard({
     setStaff(result.staff);
     setAddError(null);
     return true;
+  };
+
+  const handleAddStudent = async (utorid: string) => {
+    setIsAddingStudent(true);
+    setAddStudentError(null);
+
+    try {
+      const result = await addOfferingStudentAction({
+        offeringPublicId,
+        utorid,
+      });
+
+      if (!result.ok) {
+        setAddStudentError(result.error);
+        return false;
+      }
+
+      setStudents((current) => [
+        result.student,
+        ...current.filter((member) => member.id !== result.student.id),
+      ]);
+      return true;
+    } catch {
+      setAddStudentError("Failed to add student. Please try again.");
+      return false;
+    } finally {
+      setIsAddingStudent(false);
+    }
   };
 
   const handleRemoveStaffMember = async (staffMemberId: string) => {
@@ -191,6 +222,9 @@ export default function InstructorDashboard({
           <StudentTable
             students={students}
             canEdit={canEdit}
+            onAddStudent={handleAddStudent}
+            isAddingStudent={isAddingStudent}
+            addStudentError={addStudentError}
             onRemoveStudent={handleRemoveStudent}
             removingStudentId={removingStudentId}
           />
