@@ -12,6 +12,7 @@ import {
 import { uploadAdminClasslistAction } from "@/actions/admin/uploadClasslist";
 import { CLASSLIST_CSV_HEADERS } from "@/lib/csv/parseCSV";
 import { instructorDashboardHref } from "@/lib/offeringUrls";
+import { formatCourseLabel } from "@/lib/courseLabel";
 
 type AdminClasslistUploadSectionProps = {
   onSuccess?: () => void;
@@ -87,7 +88,7 @@ export function AdminClasslistUploadSection({
           : "";
 
       setSuccess(
-        `Created ${result.termCode} (${result.courseCode}) with ${result.imported} student${result.imported === 1 ? "" : "s"}.${clearedNote} You were added as an instructor.`,
+        `Created ${formatCourseLabel(result.courseCode, result.termCode)} with ${result.imported} student${result.imported === 1 ? "" : "s"}.${clearedNote} You were added as an instructor.`,
       );
       setCreatedOfferingHref(instructorDashboardHref(result.offeringPublicId));
       resetSelection();

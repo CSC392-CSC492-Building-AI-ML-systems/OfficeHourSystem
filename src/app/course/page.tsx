@@ -3,16 +3,17 @@ import { redirect } from "next/navigation";
 import { CoursePicker } from "@/app/components/course/CoursePicker";
 import {
   COURSE_NAV_ITEMS,
+  STUDENT_COURSE_NAV_ITEMS,
   courseNavEndItems,
 } from "@/app/components/course/courseNav";
 import { Navbar } from "@/app/components/shared/Navbar";
 import { isAdmin } from "@/lib/adminList";
+import { getUserAudienceProfile } from "@/lib/auth/userAudience";
 import {
   getRequestSession,
   parseSessionUserId,
 } from "@/lib/auth/getRequestSession";
 import { listCoursePickerOfferings } from "@/lib/queries/course/offerings";
-import { prisma } from "@/lib/prisma";
 
 export default async function CoursePage() {
   const session = await getRequestSession();
@@ -21,12 +22,9 @@ export default async function CoursePage() {
   }
 
   const userId = parseSessionUserId(session);
-  const [courses, user] = await Promise.all([
+  const [courses, profile] = await Promise.all([
     listCoursePickerOfferings(userId),
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { isInstructor: true },
-    }),
+    getUserAudienceProfile(userId, session.utorid),
   ]);
 
   return (
@@ -35,10 +33,14 @@ export default async function CoursePage() {
         <Navbar
           brandHref="/"
           activeKey="courses"
-          items={COURSE_NAV_ITEMS}
+          items={
+            profile?.kind === "student"
+              ? STUDENT_COURSE_NAV_ITEMS
+              : COURSE_NAV_ITEMS
+          }
           endItems={courseNavEndItems(
             isAdmin(session.utorid),
-            user?.isInstructor === true,
+            profile?.isInstructor === true,
           )}
         />
 
@@ -54,7 +56,7 @@ export default async function CoursePage() {
 
         <CoursePicker
           courses={courses}
-          canAddCourse={user?.isInstructor === true}
+          canAddCourse={profile?.isInstructor === true}
         />
       </div>
     </main>

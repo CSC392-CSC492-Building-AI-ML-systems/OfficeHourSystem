@@ -25,6 +25,7 @@ export type SessionStatsMeta = {
   offeringId: number;
   offeringPublicId: string;
   courseCode: string;
+  termCode: string;
   title: string;
   startsAt: string;
   endsAt: string;
@@ -54,6 +55,7 @@ export async function getSessionStatsMeta(
     offeringId: s.offeringId,
     offeringPublicId: s.offering.publicId,
     courseCode: s.offering.course.code,
+    termCode: s.offering.termCode,
     title: s.title,
     startsAt: s.startsAt.toISOString(),
     endsAt: s.endsAt.toISOString(),

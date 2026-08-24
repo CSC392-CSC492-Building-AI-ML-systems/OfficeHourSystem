@@ -18,7 +18,11 @@ export async function getActiveTicketsForStudent(userId: number) {
           startsAt: true,
           endsAt: true,
           offering: {
-            select: { course: { select: { code: true } } },
+            select: {
+              courseId: true,
+              termCode: true,
+              course: { select: { code: true } },
+            },
           },
         },
       },

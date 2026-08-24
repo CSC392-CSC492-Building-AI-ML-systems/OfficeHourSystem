@@ -32,7 +32,12 @@ export async function getUpcomingSessionsForStudent(
       startsAt: true,
       endsAt: true,
       status: true,
-      offering: { select: { course: { select: { code: true } } } },
+      offering: {
+        select: {
+          termCode: true,
+          course: { select: { code: true } },
+        },
+      },
       interests: {
         where: { userId },
         select: { id: true },

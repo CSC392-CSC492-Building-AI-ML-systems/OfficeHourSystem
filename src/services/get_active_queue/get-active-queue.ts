@@ -4,6 +4,7 @@ import { assertSessionOperator } from "@/lib/auth/sessionOperator";
 import { prisma } from "@/lib/prisma";
 import { getActiveQueue } from "@/lib/queries/get_active_queue/get-active-queue";
 import type { ActiveQueueDto } from "@/lib/types/queue";
+import { formatCourseLabel } from "@/lib/courseLabel";
 
 export async function getActiveQueueService(
   sessionPublicId: string,
@@ -25,7 +26,12 @@ export async function getActiveQueueService(
       status: true,
       endsAt: true,
       title: true,
-      offering: { select: { course: { select: { code: true } } } },
+      offering: {
+        select: {
+          termCode: true,
+          course: { select: { code: true } },
+        },
+      },
     },
   });
 
@@ -41,7 +47,10 @@ export async function getActiveQueueService(
     ohSession.id,
     ohSession.status,
     ohSession.endsAt,
-    ohSession.offering.course.code,
+    formatCourseLabel(
+      ohSession.offering.course.code,
+      ohSession.offering.termCode,
+    ),
     ohSession.title,
   );
 }

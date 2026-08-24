@@ -1,5 +1,6 @@
 // Build the reminder email copy. Times are stored as UTC in the DB, so we
 // format to America/Toronto for display.
+import { formatCourseLabel } from "@/lib/courseLabel";
 
 function formatToronto(d: Date): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -24,6 +25,7 @@ function leadTimeLabel(minutesBefore: number): string {
 export function buildReminderEmail(input: {
   firstName: string | null;
   courseCode: string;
+  termCode: string;
   title: string;
   startsAt: Date;
   location: string | null;
@@ -33,15 +35,16 @@ export function buildReminderEmail(input: {
   const lead = leadTimeLabel(input.minutesBefore);
   const greeting = input.firstName ? `Hi ${input.firstName},` : "Hi,";
   const place = input.location ?? "TBD";
+  const courseLabel = formatCourseLabel(input.courseCode, input.termCode);
 
-  const subject = `Reminder: ${input.courseCode} office hours ${lead}`;
+  const subject = `Reminder: ${courseLabel} office hours ${lead}`;
 
   const html = `
     <div style="font-family: system-ui, -apple-system, Segoe UI, sans-serif; color: #111; line-height: 1.5;">
       <p>${greeting}</p>
       <p>This is a reminder that an office hour session you're interested in starts <strong>${lead}</strong>:</p>
       <table style="border-collapse: collapse; margin: 12px 0;">
-        <tr><td style="padding: 2px 12px 2px 0; color: #555;">Course</td><td><strong>${input.courseCode}</strong></td></tr>
+        <tr><td style="padding: 2px 12px 2px 0; color: #555;">Course</td><td><strong>${courseLabel}</strong></td></tr>
         <tr><td style="padding: 2px 12px 2px 0; color: #555;">Session</td><td>${input.title}</td></tr>
         <tr><td style="padding: 2px 12px 2px 0; color: #555;">Starts</td><td>${when} (Toronto)</td></tr>
         <tr><td style="padding: 2px 12px 2px 0; color: #555;">Location</td><td>${place}</td></tr>

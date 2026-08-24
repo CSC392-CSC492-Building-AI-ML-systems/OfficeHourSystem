@@ -37,7 +37,7 @@ function NavLinks({
   if (items.length === 0) return null;
 
   return (
-    <nav className="flex flex-wrap items-center gap-6 text-base font-medium">
+    <nav className="flex max-w-full min-w-0 flex-nowrap items-center gap-5 overflow-x-auto whitespace-nowrap pb-1 text-sm font-medium [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-6 sm:text-base">
       {items.map((link) => {
         const isActive = link.key === activeKey;
         return (
@@ -72,8 +72,8 @@ export function Navbar({
 }: NavbarProps) {
   return (
     <header className="rounded-[28px] border-2 border-[#c8102e] bg-white px-5 py-4 shadow-[0_16px_40px_-32px_rgba(15,41,66,0.35)] sm:px-6">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-10">
+      <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-center md:gap-10">
           <Link
             href={brandHref}
             className="text-2xl font-black tracking-[0.22em] text-[#071f41]"
@@ -84,7 +84,7 @@ export function Navbar({
           <NavLinks items={items} activeKey={activeKey} />
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:self-end xl:self-auto">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:self-end xl:self-auto">
           {showSearch ? (
             <label className="relative block min-w-0 sm:w-64">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -96,7 +96,7 @@ export function Navbar({
             </label>
           ) : null}
 
-          <div className="flex items-center gap-6">
+          <div className="flex min-w-0 items-center gap-5 sm:gap-6">
             <NavLinks items={endItems} activeKey={activeKey} />
             {trailing ?? <ProfileMenu courseLabel={courseLabel} />}
           </div>

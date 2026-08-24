@@ -19,6 +19,7 @@ import {
 } from "@/actions/admin/manageOffering";
 import { impersonateUserAction } from "@/actions/admin/impersonate";
 import type { AdminOfferingListItem } from "@/lib/queries/admin/offerings";
+import { formatCourseLabel } from "@/lib/courseLabel";
 
 import { AddOfferingInstructorModal } from "./AddOfferingInstructorModal";
 import { AdminClasslistUploadSection } from "./AdminClasslistUploadSection";
@@ -96,7 +97,7 @@ export function AdminDashboard({
 
   const handleDelete = async (offering: AdminOfferingListItem) => {
     const confirmed = window.confirm(
-      `Permanently delete ${offering.termCode} (${offering.courseCode})? This removes schedules, sessions, attendance, and memberships for this offering.`,
+      `Permanently delete ${formatCourseLabel(offering.courseCode, offering.termCode)}? This removes schedules, sessions, attendance, and memberships for this offering.`,
     );
     if (!confirmed) {
       return;
@@ -233,7 +234,10 @@ export function AdminDashboard({
           ) : (
             <ul className="divide-y divide-slate-200">
               {initialOfferings.map((offering) => {
-                const label = `${offering.termCode} · ${offering.courseCode}`;
+                const label = formatCourseLabel(
+                  offering.courseCode,
+                  offering.termCode,
+                );
                 const isArchived = offering.archivedAt !== null;
                 const busy = managingOfferingId === offering.offeringPublicId;
 
@@ -355,7 +359,10 @@ export function AdminDashboard({
         <AddOfferingInstructorModal
           isOpen
           offeringPublicId={addInstructorTarget.offeringPublicId}
-          courseLabel={`${addInstructorTarget.termCode} · ${addInstructorTarget.courseCode}`}
+          courseLabel={formatCourseLabel(
+            addInstructorTarget.courseCode,
+            addInstructorTarget.termCode,
+          )}
           onClose={() => setAddInstructorTarget(null)}
           onSuccess={refresh}
         />

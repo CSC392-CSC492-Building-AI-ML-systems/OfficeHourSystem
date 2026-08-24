@@ -11,7 +11,7 @@ export async function getActiveQueue(
   sessionId: number,
   sessionStatus: ActiveQueueDto["sessionStatus"],
   endsAt: Date,
-  courseCode: string,
+  courseLabel: string,
   title: string,
 ): Promise<ActiveQueueDto> {
   // Fetch WAITING and IN_HELP attendances in one query, ordered by check-in
@@ -72,7 +72,7 @@ export async function getActiveQueue(
   return {
     sessionStatus,
     endsAt: endsAt.toISOString(),
-    courseCode,
+    courseLabel,
     title,
     lastCheckInName,
     waiting,

@@ -7,7 +7,7 @@ interface QueueCardProps {
   title: string;
   time: string;
   location: string;
-  courseCode: string;
+  courseLabel: string;
   isOnline?: boolean;
   isInterested?: boolean;
 }
@@ -17,7 +17,7 @@ export function QueueCard({
   title,
   time,
   location,
-  courseCode,
+  courseLabel,
   isOnline = false,
   isInterested = false,
 }: QueueCardProps) {
@@ -26,7 +26,7 @@ export function QueueCard({
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#c8102e]">
-            {courseCode}
+            {courseLabel}
           </p>
           <h3 className="flex items-center gap-2 text-base font-semibold text-[#071f41]">
             <UserRound className="h-4 w-4 text-slate-400" />

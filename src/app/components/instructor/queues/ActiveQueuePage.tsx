@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ActivitySquare, RefreshCw, ScanLine } from "lucide-react";
+import { ActivitySquare, ExternalLink, ScanLine } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "../Navbar";
-import { instructorRouteHref } from "@/lib/offeringUrls";
+import { ScanInputPanel } from "../scan/ScanInputPanel";
 import { CurrentlyHelpingCard } from "./CurrentlyHelpingCard";
 import type { QueueStudent } from "./types";
 import { WaitingRoom } from "./WaitingRoom";
@@ -13,6 +13,7 @@ import { startHelpingAction } from "@/actions/start_helping/start-helping";
 import { revertToWaitingAction } from "@/actions/revert_to_waiting/revert-to-waiting";
 import { updateAttendanceStatusAction } from "@/actions/update_attendance_status/update-attendance-status";
 import { endSessionAction } from "@/actions/end_session/end-session";
+import { instructorRouteHref } from "@/lib/offeringUrls";
 
 // Compute initials from a full name e.g. "Alice Chen" → "AC"
 function getInitials(name: string): string {
@@ -40,10 +41,6 @@ export default function ActiveQueuePage({
   sessionId?: string;
 }) {
   const router = useRouter();
-
-  // Confirmation state for entering scan mode (kiosk lock means no easy back)
-  const [scanState, setScanState] = useState<"idle" | "confirming">("idle");
-
   const [waitingStudents, setWaitingStudents] = useState<QueueStudent[]>([]);
 
   // Multiple students can be helped at the same time
@@ -52,6 +49,13 @@ export default function ActiveQueuePage({
   const [loading, setLoading] = useState(true);
   const [sessionEnded, setSessionEnded] = useState(false);
   const [endsAt, setEndsAt] = useState<string | null>(null);
+  const [supportsInlineScanner, setSupportsInlineScanner] = useState(false);
+  const [scannerCapabilityResolved, setScannerCapabilityResolved] =
+    useState(false);
+  const [scanFocusEnabled, setScanFocusEnabled] = useState(false);
+  const [scannerConfirmation, setScannerConfirmation] = useState<
+    "focus" | "page" | null
+  >(null);
 
   // Real session meta from the server (was previously hardcoded dummy data)
   const [subtitle, setSubtitle] = useState("");
@@ -65,6 +69,28 @@ export default function ActiveQueuePage({
   // Track which student IDs are currently being started to prevent double-click race
   const startingRef = useRef<Set<string>>(new Set());
 
+  // Phones do not use the hardware scanner. Do not mount its focus-locking
+  // input there, including on wide landscape phone screens.
+  useEffect(() => {
+    const scannerMedia = window.matchMedia(
+      "(min-width: 768px) and (pointer: fine)",
+    );
+    const syncScannerSupport = () => {
+      setSupportsInlineScanner(scannerMedia.matches);
+      if (!scannerMedia.matches) {
+        setScanFocusEnabled(false);
+        setScannerConfirmation(null);
+      }
+      setScannerCapabilityResolved(true);
+    };
+
+    syncScannerSupport();
+    scannerMedia.addEventListener("change", syncScannerSupport);
+    return () => {
+      scannerMedia.removeEventListener("change", syncScannerSupport);
+    };
+  }, []);
+
   // Load queue data from the server when the page opens
   useEffect(() => {
     if (!sessionId) return;
@@ -75,9 +101,12 @@ export default function ActiveQueuePage({
         const data = await getActiveQueueAction(sessionId);
 
         setEndsAt(data.endsAt);
-        setSubtitle(`${data.courseCode}: ${data.title}`);
+        setSubtitle(`${data.courseLabel}: ${data.title}`);
         setLastScanName(data.lastCheckInName);
-        if (data.sessionStatus === "COMPLETED") {
+        if (
+          data.sessionStatus === "COMPLETED" ||
+          data.sessionStatus === "CANCELLED"
+        ) {
           setSessionEnded(true);
         }
 
@@ -241,6 +270,34 @@ export default function ActiveQueuePage({
     })();
   };
 
+  const handleScanFocusClick = () => {
+    if (!supportsInlineScanner) return;
+    if (scanFocusEnabled) {
+      setScanFocusEnabled(false);
+      setScannerConfirmation(null);
+      return;
+    }
+    setScannerConfirmation("focus");
+  };
+
+  const handleConfirmScannerAction = () => {
+    if (!supportsInlineScanner || !scannerConfirmation || !sessionId) {
+      setScannerConfirmation(null);
+      return;
+    }
+
+    if (scannerConfirmation === "focus") {
+      setScanFocusEnabled(true);
+    } else {
+      router.push(
+        instructorRouteHref("/instructor/scan", offeringPublicId, {
+          sessionId,
+        }),
+      );
+    }
+    setScannerConfirmation(null);
+  };
+
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
@@ -253,7 +310,7 @@ export default function ActiveQueuePage({
         <main className="mt-10 space-y-8">
           {!sessionId ? (
             <p className="text-sm text-slate-500">
-              Missing session ID. Start a session from Today&apos;s Sessions.
+              Missing session ID. Start a session from Help Centre.
             </p>
           ) : null}
 
@@ -274,53 +331,53 @@ export default function ActiveQueuePage({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d7e7ff] bg-[#eef5ff] px-4 py-2 text-sm font-medium text-[#071f41]">
-                    <RefreshCw className="h-4 w-4" />
-                    Last scan: {lastScanName ?? "No check-ins yet"}
-                  </span>
+                  {!sessionEnded && supportsInlineScanner ? (
+                    <button
+                      type="button"
+                      disabled={!supportsInlineScanner || loading}
+                      aria-pressed={scanFocusEnabled}
+                      onClick={handleScanFocusClick}
+                      title={
+                        supportsInlineScanner
+                          ? "Keep the scan input focused automatically"
+                          : "Scan Focus is available on laptops only"
+                      }
+                      className={`inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-400 ${
+                        scanFocusEnabled
+                          ? "border-[#071f41] bg-[#071f41] text-white hover:bg-[#0f2942]"
+                          : "border-[#071f41] text-[#071f41] hover:bg-[#eef5ff]"
+                      }`}
+                    >
+                      <ScanLine className="h-4 w-4" />
+                      Scan Focus (Laptop Only):{" "}
+                      {scanFocusEnabled ? "On" : "Off"}
+                    </button>
+                  ) : null}
 
-                  {/* Scan mode entry — hidden once the session has ended */}
+                  {!sessionEnded && supportsInlineScanner ? (
+                    <button
+                      type="button"
+                      disabled={!supportsInlineScanner || loading}
+                      onClick={() => setScannerConfirmation("page")}
+                      title={
+                        supportsInlineScanner
+                          ? "Open the dedicated scanner page"
+                          : "The dedicated scanner page is available on laptops only"
+                      }
+                      className="inline-flex items-center gap-2 rounded-full border border-[#071f41] px-5 py-2 text-sm font-semibold text-[#071f41] transition hover:bg-[#eef5ff] disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-400"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Open Scan Page (Laptop Only)
+                    </button>
+                  ) : null}
+
                   {!sessionEnded &&
-                    (scanState === "confirming" ? (
-                      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-                        <p className="text-sm font-medium text-amber-800">
-                          Open scanner? You will not be able to navigate away.
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              router.replace(
-                                instructorRouteHref(
-                                  "/instructor/scan",
-                                  offeringPublicId,
-                                  { sessionId: sessionId ?? undefined },
-                                ),
-                              )
-                            }
-                            className="inline-flex items-center justify-center rounded-full bg-[#071f41] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
-                          >
-                            Confirm
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setScanState("idle")}
-                            className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setScanState("confirming")}
-                        className="inline-flex items-center gap-2 rounded-full border border-[#071f41] px-5 py-2 text-sm font-semibold text-[#071f41] transition hover:bg-[#eef5ff]"
-                      >
-                        <ScanLine className="h-4 w-4" />
-                        Start Scanning
-                      </button>
-                    ))}
+                  scannerCapabilityResolved &&
+                  !supportsInlineScanner ? (
+                    <p className="text-sm text-slate-500">
+                      Scanner controls are available on laptops only.
+                    </p>
+                  ) : null}
 
                   {sessionEnded ? (
                     <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-500">
@@ -364,6 +421,61 @@ export default function ActiveQueuePage({
                   )}
                 </div>
               </section>
+
+              {scannerConfirmation ? (
+                <section
+                  role="alert"
+                  className="flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="space-y-1">
+                    <p className="font-semibold text-amber-900">
+                      {scannerConfirmation === "focus"
+                        ? "Enable Scan Focus?"
+                        : "Open the dedicated Scan Page?"}
+                    </p>
+                    <p className="text-sm text-amber-800">
+                      {scannerConfirmation === "focus"
+                        ? "While enabled, the scan input automatically takes focus after every page click and completed scan."
+                        : "This page keeps the scanner input focused and blocks normal back navigation. Use it only on the scanning laptop."}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={handleConfirmScannerAction}
+                      className="rounded-full bg-[#071f41] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
+                    >
+                      {scannerConfirmation === "focus"
+                        ? "Enable Scan Focus"
+                        : "Open Scan Page"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setScannerConfirmation(null)}
+                      className="rounded-full border border-amber-300 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-100"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </section>
+              ) : null}
+
+              {!loading && !sessionEnded && supportsInlineScanner ? (
+                <ScanInputPanel
+                  sessionPublicId={sessionId}
+                  lastScanName={lastScanName}
+                  keepFocus={scanFocusEnabled}
+                  onResult={async (result) => {
+                    if (
+                      result.outcome === "checked_in" ||
+                      result.outcome === "mock_user" ||
+                      result.outcome === "already_in_queue"
+                    ) {
+                      await refreshQueue();
+                    }
+                  }}
+                />
+              ) : null}
 
               <section className="space-y-2">
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">

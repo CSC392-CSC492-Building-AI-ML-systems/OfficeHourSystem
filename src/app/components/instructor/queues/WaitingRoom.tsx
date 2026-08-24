@@ -17,7 +17,7 @@ export function WaitingRoom({
       <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold text-[#071f41]">
-            Virtual Queue (Waiting Room)
+            Queue (Waiting Room)
           </h2>
           <p className="mt-1 text-sm text-slate-500">
             Start the next student when you are ready for the next help session.

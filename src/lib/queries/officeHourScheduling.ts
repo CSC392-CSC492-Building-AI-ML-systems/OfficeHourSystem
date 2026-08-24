@@ -1,6 +1,7 @@
 import type { CourseRole, OfficeHourType, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { formatCourseLabel } from "@/lib/courseLabel";
 import { expandOfficeHourSchedule } from "@/lib/scheduling/expandSchedule";
 import {
   assertNoOverlappingRecurringSchedule,
@@ -251,7 +252,6 @@ function sameNumericIds(a: number[], b: number[]): boolean {
 
 function mapSessionToDto(
   session: SessionWithRelations,
-  courseCode: string,
   now = new Date(),
 ): ScheduleSessionDto {
   const defaultLocation = session.schedule?.location ?? session.location ?? "";
@@ -293,8 +293,11 @@ function mapSessionToDto(
 
   return {
     id: session.publicId,
-    courseCode,
-    courseName: undefined,
+    courseCode: session.offering.course.code,
+    courseName: formatCourseLabel(
+      session.offering.course.code,
+      session.offering.termCode,
+    ),
     sessionTypeLabel,
     calendarLabel: sessionTypeLabel,
     title: session.title,
@@ -522,7 +525,7 @@ export async function createOneTimeSession(
   });
 
   return {
-    session: mapSessionToDto(session, access.courseCode),
+    session: mapSessionToDto(session),
   };
 }
 
@@ -555,7 +558,7 @@ export async function listScheduleWeek(
     weekStart: weekStart.toISOString().slice(0, 10),
     weekLabel: formatWeekRangeLabel(weekStart),
     calendarDays: buildWeekCalendarDays(weekStart),
-    sessions: sessions.map((s) => mapSessionToDto(s, access.courseCode)),
+    sessions: sessions.map((s) => mapSessionToDto(s)),
     rules,
     staff,
   };
@@ -938,7 +941,7 @@ export async function updateSession(
   });
 
   return {
-    session: mapSessionToDto(updated, existing.offering.course.code),
+    session: mapSessionToDto(updated),
     offeringPublicId: existing.offering.publicId,
   };
 }
@@ -1068,8 +1071,10 @@ export async function getUpcomingSessionsForHost(
 
     return {
       id: session.publicId,
-      courseLabel:
-        `${session.offering.course.code} ${session.title}`.toUpperCase(),
+      courseLabel: formatCourseLabel(
+        session.offering.course.code,
+        session.offering.termCode,
+      ),
       title:
         session.type === "DEBUGGING"
           ? "Help Centre"
@@ -1079,7 +1084,10 @@ export async function getUpcomingSessionsForHost(
       time: `${isToday ? "Today" : formatSessionDateLabel(session.startsAt)}, ${formatDateTimeLabel(session.startsAt)} - ${formatDateTimeLabel(session.endsAt)}`,
       location: session.location ?? "TBD",
       isHighlighted: index === 0 && session.type === "DEBUGGING",
-      workspaceSubtitle: `${session.offering.course.code}: ${session.title}`,
+      workspaceSubtitle: `${formatCourseLabel(
+        session.offering.course.code,
+        session.offering.termCode,
+      )}: ${session.title}`,
       lastScanLabel,
     };
   });

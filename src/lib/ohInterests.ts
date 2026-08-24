@@ -6,6 +6,27 @@ export type RecordInterestResult = {
   sessionId: number;
 };
 
+export type RetractInterestResult = {
+  retracted: boolean;
+  userId: number;
+  sessionId: number;
+};
+
+type InterestClient = {
+  officeHourSession: {
+    findUnique(
+      args: unknown,
+    ): Promise<{ id: number; offeringId: number } | null>;
+  };
+  offeringMember: {
+    findUnique(args: unknown): Promise<{ id: number; role: string } | null>;
+  };
+  officeHourInterest: {
+    upsert(args: unknown): Promise<{ id: number }>;
+    deleteMany(args: unknown): Promise<{ count: number }>;
+  };
+};
+
 /**
  * Record that a user is interested in an office hour session.
  *
@@ -15,8 +36,10 @@ export type RecordInterestResult = {
 export async function recordSessionInterest(
   userId: number,
   sessionId: number,
+  client?: InterestClient,
 ): Promise<RecordInterestResult> {
-  const session = await prisma.officeHourSession.findUnique({
+  const db = client ?? (prisma as unknown as InterestClient);
+  const session = await db.officeHourSession.findUnique({
     where: { id: sessionId },
     select: { id: true, offeringId: true },
   });
@@ -25,21 +48,21 @@ export async function recordSessionInterest(
     throw new Error("Office hour session not found");
   }
 
-  const membership = await prisma.offeringMember.findUnique({
+  const membership = await db.offeringMember.findUnique({
     where: {
       userId_offeringId: {
         userId,
         offeringId: session.offeringId,
       },
     },
-    select: { id: true },
+    select: { id: true, role: true },
   });
 
-  if (!membership) {
-    throw new Error("You are not a member of this course offering");
+  if (!membership || membership.role !== "STUDENT") {
+    throw new Error("Only enrolled students can mark interest");
   }
 
-  const interest = await prisma.officeHourInterest.upsert({
+  const interest = await db.officeHourInterest.upsert({
     where: {
       userId_sessionId: {
         userId,
@@ -60,12 +83,6 @@ export async function recordSessionInterest(
     sessionId: session.id,
   };
 }
-
-export type RetractInterestResult = {
-  retracted: boolean;
-  userId: number;
-  sessionId: number;
-};
 
 /**
  * Remove a user's interest in an office hour session.
