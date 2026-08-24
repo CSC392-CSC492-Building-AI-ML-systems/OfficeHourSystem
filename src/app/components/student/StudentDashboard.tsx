@@ -131,6 +131,7 @@ function SessionSection({
                     type={s.type}
                     courseLabel={s.courseLabel}
                     title={s.title}
+                    description={s.description}
                     time={formatTimeRange(s.startsAt, s.endsAt)}
                     location={s.location}
                     isInterested={s.isInterested}

@@ -61,6 +61,11 @@ export function OneTimeSessions({
               <h3 className="mt-4 text-lg font-semibold text-[#071f41]">
                 {session.title}
               </h3>
+              {session.description ? (
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {session.description}
+                </p>
+              ) : null}
 
               <div className="mt-4 space-y-3 text-sm text-slate-600">
                 <p className="flex items-center gap-2">

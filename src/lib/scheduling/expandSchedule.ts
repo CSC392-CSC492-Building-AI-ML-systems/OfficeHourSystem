@@ -72,6 +72,7 @@ export async function expandOfficeHourSchedule(scheduleId: number) {
           scheduleId: schedule.id,
           title: schedule.title,
           type: schedule.type,
+          description: schedule.description,
           startsAt,
           endsAt,
           location: schedule.location,

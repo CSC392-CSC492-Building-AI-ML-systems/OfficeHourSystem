@@ -29,6 +29,7 @@ type SessionRowProps = {
   type: SessionType;
   courseLabel: string;
   title: string;
+  description?: string | null;
   time: string;
   location: string;
   isInterested?: boolean;
@@ -41,6 +42,7 @@ export function SessionRow({
   type,
   courseLabel,
   title,
+  description,
   time,
   location,
   isInterested = false,
@@ -65,6 +67,9 @@ export function SessionRow({
           </span>
         </div>
         <h3 className="text-base font-semibold text-[#071f41]">{title}</h3>
+        {type === "GROUP" && description ? (
+          <p className="text-sm leading-6 text-slate-600">{description}</p>
+        ) : null}
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
           <p className="flex items-center gap-2">
             <Clock3 className="h-4 w-4 shrink-0 text-slate-400" />

@@ -6,6 +6,7 @@ export interface ScheduleSession {
   calendarLabel: string;
   title: string;
   topic: string;
+  description?: string | null;
   day: string;
   dateLabel: string;
   date: string;
@@ -38,6 +39,7 @@ export interface RecurringRule {
   courseCode: string;
   sessionTypeLabel: string;
   title: string;
+  description?: string | null;
   repeats: string;
   validFrom: string;
   validUntil: string;
@@ -56,6 +58,7 @@ export interface RecurringRule {
 export interface OneTimeSessionListItem {
   id: string;
   title: string;
+  description?: string | null;
   sessionTypeLabel: string;
   date: string;
   dateLabel: string;

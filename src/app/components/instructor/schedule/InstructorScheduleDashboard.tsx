@@ -159,6 +159,7 @@ export default function InstructorScheduleDashboard({
     validFrom: string;
     validUntil: string;
     location?: string;
+    description?: string;
     hostUserPublicIds?: string[];
   }) => {
     if (!offeringPublicId) return;
@@ -173,6 +174,7 @@ export default function InstructorScheduleDashboard({
       validFrom: input.validFrom,
       validUntil: input.validUntil,
       location: input.location,
+      description: input.description,
       hostUserPublicIds: input.hostUserPublicIds,
     });
     setActiveModal(null);
@@ -189,6 +191,7 @@ export default function InstructorScheduleDashboard({
   const handleSaveSession = async (patch: {
     title?: string;
     location?: string | null;
+    description?: string | null;
     date?: string;
     startTime?: string;
     endTime?: string;
@@ -203,6 +206,7 @@ export default function InstructorScheduleDashboard({
   const handleUpdateRecurringBlock = async (input: {
     title: string;
     location: string;
+    description?: string | null;
     startTime: string;
     endTime: string;
     applyFrom: string;
@@ -213,6 +217,9 @@ export default function InstructorScheduleDashboard({
     await updateRecurringBlockAction(editingRule.id, {
       title: input.title,
       location: input.location || null,
+      ...(editingRule.sessionTypeLabel === "Custom"
+        ? { description: input.description ?? null }
+        : {}),
       startTime: input.startTime,
       endTime: input.endTime,
       applyFrom: input.applyFrom,

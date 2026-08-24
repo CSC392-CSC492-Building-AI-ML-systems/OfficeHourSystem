@@ -106,6 +106,11 @@ export function StudentWeekCalendar({
           <h3 className="mt-1 text-base font-semibold text-[#071f41]">
             {selected.title}
           </h3>
+          {selected.sessionTypeLabel === "Custom" && selected.description ? (
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {selected.description}
+            </p>
+          ) : null}
           <p className="mt-1 text-sm text-slate-600">
             {selected.dateLabel}, {selected.startTime} – {selected.endTime}
             {selected.location ? ` · ${selected.location}` : ""}

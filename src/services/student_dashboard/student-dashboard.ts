@@ -10,6 +10,7 @@ export type StudentDashboardSessionDto = {
   sessionPublicId: string;
   type: "REGULAR" | "DEBUGGING" | "GROUP";
   title: string;
+  description?: string | null;
   location: string;
   startsAt: string;
   endsAt: string;
@@ -35,6 +36,7 @@ export async function getStudentDashboardService(
     sessionPublicId: s.publicId,
     type: s.type as "REGULAR" | "DEBUGGING" | "GROUP",
     title: s.title,
+    description: s.description,
     location: s.location ?? "TBD",
     startsAt: s.startsAt.toISOString(),
     endsAt: s.endsAt.toISOString(),
