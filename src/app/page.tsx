@@ -77,7 +77,7 @@ const DEBUGGING_STEPS = [
   {
     step: "01",
     title: "Arrive to the session",
-    body: "A computer set up with a NFC reader will be available for you to scan",
+    body: "Come to the session with your T Card ready. You can use it to check in.",
   },
   {
     step: "02",
