@@ -38,6 +38,7 @@ export async function getSessionStatsDetailService(
     sessionPublicId,
     offeringPublicId: meta.offeringPublicId,
     courseCode: meta.courseCode,
+    termCode: meta.termCode,
     title: meta.title,
     startsAt: meta.startsAt,
     endsAt: meta.endsAt,

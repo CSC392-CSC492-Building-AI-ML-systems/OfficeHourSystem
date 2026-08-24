@@ -7,7 +7,8 @@ import {
   getQueuePosition,
 } from "@/lib/queries/student_queue/student-queue";
 import type { StudentQueueTicketDto } from "@/lib/types/queue";
-import { getWaitStats } from "@/lib/waitStats";
+import { getWaitStatsForCourses } from "@/lib/waitStats";
+import { formatCourseLabel } from "@/lib/courseLabel";
 
 export async function getStudentQueueService(): Promise<
   StudentQueueTicketDto[]
@@ -21,8 +22,11 @@ export async function getStudentQueueService(): Promise<
   const tickets = await getActiveTicketsForStudent(userId);
   if (tickets.length === 0) return [];
 
-  // Step 3: Load pre-computed wait stats (from JSON file, no DB query)
-  const stats = getWaitStats();
+  // Step 3: Load one set of historical stats per course. This intentionally
+  // includes completed visits from archived offerings of the same course.
+  const statsByCourseId = await getWaitStatsForCourses(
+    tickets.map((ticket) => ticket.session.offering.courseId),
+  );
 
   const now = Date.now();
 
@@ -30,6 +34,7 @@ export async function getStudentQueueService(): Promise<
   return Promise.all(
     tickets.map(async (t) => {
       const isInHelp = t.status === "IN_HELP";
+      const stats = statsByCourseId.get(t.session.offering.courseId) ?? null;
 
       const position = isInHelp
         ? 0
@@ -50,7 +55,10 @@ export async function getStudentQueueService(): Promise<
       return {
         attendancePublicId: t.publicId,
         sessionPublicId: t.session.publicId,
-        courseCode: t.session.offering.course.code,
+        courseLabel: formatCourseLabel(
+          t.session.offering.course.code,
+          t.session.offering.termCode,
+        ),
         sessionTitle: t.session.title,
         location: t.session.location ?? "TBD",
         startsAt: t.session.startsAt.toISOString(),
@@ -61,6 +69,8 @@ export async function getStudentQueueService(): Promise<
         waitedMinutes,
         estimatedWaitMinutes,
         estimatedWaitMargin,
+        waitEstimateAverageMinutes: stats?.avgMinutes ?? null,
+        waitEstimateSampleSize: stats?.sampleSize ?? 0,
       };
     }),
   );

@@ -3,6 +3,7 @@ import {
   parseSessionUserId,
 } from "@/lib/auth/getRequestSession";
 import { getUpcomingSessionsForStudent } from "@/lib/queries/student_dashboard/student-dashboard";
+import { formatCourseLabel } from "@/lib/courseLabel";
 
 export type StudentDashboardSessionDto = {
   sessionId: number;
@@ -13,7 +14,7 @@ export type StudentDashboardSessionDto = {
   startsAt: string;
   endsAt: string;
   status: string;
-  courseCode: string;
+  courseLabel: string;
   isInterested: boolean;
 };
 
@@ -38,7 +39,7 @@ export async function getStudentDashboardService(
     startsAt: s.startsAt.toISOString(),
     endsAt: s.endsAt.toISOString(),
     status: s.status,
-    courseCode: s.offering.course.code,
+    courseLabel: formatCourseLabel(s.offering.course.code, s.offering.termCode),
     isInterested: s.interests.length > 0,
   }));
 }

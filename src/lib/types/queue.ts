@@ -1,7 +1,7 @@
 // DTO for a single upcoming office hour session shown on My Queue page
 export type UpcomingSessionDto = {
   sessionPublicId: string;
-  courseCode: string;
+  courseLabel: string;
   title: string;
   startsAt: string; // ISO string
   endsAt: string; // ISO string
@@ -35,6 +35,8 @@ export type ScanCheckInResult =
   | { outcome: "mock_user"; studentName: string } // barcode dev mock
   /** Identifier not in our DB (and for non-CSN paths, unknown student). */
   | { outcome: "student_not_found" }
+  /** Development barcode path has no configured match. */
+  | { outcome: "barcode_not_found" }
   /** NFC/CSN: MCS has no match for this card. */
   | { outcome: "mcs_not_found" }
   /** MCS (or lookup) recognized them, but they have no User row in HourSpace. */
@@ -44,13 +46,15 @@ export type ScanCheckInResult =
   /** User is a TA or instructor on this offering — cannot check in as a student. */
   | { outcome: "staff_member" }
   | { outcome: "csn_lookup_unavailable" }
-  | { outcome: "session_not_active" };
+  | { outcome: "session_not_active" }
+  /** Unexpected auth, network, database, or server failure. */
+  | { outcome: "scan_failed" };
 
 // A student's active queue ticket (shown on student My Queue page)
 export type StudentQueueTicketDto = {
   attendancePublicId: string;
   sessionPublicId: string;
-  courseCode: string;
+  courseLabel: string;
   sessionTitle: string;
   location: string;
   startsAt: string;
@@ -61,13 +65,15 @@ export type StudentQueueTicketDto = {
   waitedMinutes: number;
   estimatedWaitMinutes: number | null;
   estimatedWaitMargin: number | null; // ±margin at 85% prediction interval
+  waitEstimateAverageMinutes: number | null;
+  waitEstimateSampleSize: number;
 };
 
 // Full queue state returned when a TA opens a session
 export type ActiveQueueDto = {
   sessionStatus: "SCHEDULED" | "ACTIVE" | "DELAYED" | "COMPLETED" | "CANCELLED";
   endsAt: string; // ISO string — used by the frontend auto-end timer
-  courseCode: string;
+  courseLabel: string;
   title: string;
   lastCheckInName: string | null; // most recent check-in, null if queue empty
   waiting: WaitingStudentDto[];
@@ -126,6 +132,7 @@ export type SessionStatsDetailDto = {
   sessionPublicId: string;
   offeringPublicId: string; // for the "back to per-session data" link
   courseCode: string;
+  termCode: string;
   title: string;
   startsAt: string; // ISO string
   endsAt: string; // ISO string

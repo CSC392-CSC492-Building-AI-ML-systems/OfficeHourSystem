@@ -41,12 +41,12 @@ export default function MyQueuesPage({
         const data = await showUpcomingOhAction(offeringPublicId);
         const mapped = data.map((session) => ({
           id: session.sessionPublicId,
-          courseLabel: session.courseCode,
+          courseLabel: session.courseLabel,
           title: session.title,
           time: formatSessionTime(session.startsAt, session.endsAt),
           location: session.location,
           isHighlighted: session.status === "ACTIVE",
-          workspaceSubtitle: `${session.courseCode}: ${session.title}`,
+          workspaceSubtitle: `${session.courseLabel}: ${session.title}`,
           lastScanLabel: "No check-ins yet",
           status: session.status,
           endsAt: session.endsAt,
@@ -119,7 +119,7 @@ export default function MyQueuesPage({
         <main className="mt-10 space-y-8">
           <section className="space-y-2">
             <h1 className="text-3xl font-semibold tracking-tight text-[#071f41] sm:text-[2.1rem]">
-              Today&apos;s Sessions
+              Help Centre
             </h1>
             <p className="text-base text-slate-600">{courseLabel}</p>
             <p className="max-w-3xl text-m leading-6 text-slate-500">
@@ -155,7 +155,7 @@ export default function MyQueuesPage({
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  className={`flex-1 rounded-xl px-2 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
                     activeTab === tab
                       ? "bg-white text-[#071f41] shadow-sm"
                       : "text-slate-500 hover:text-slate-700"

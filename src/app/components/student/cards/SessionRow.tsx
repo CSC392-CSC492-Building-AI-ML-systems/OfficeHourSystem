@@ -27,29 +27,31 @@ const TYPE_STYLES: Record<
 type SessionRowProps = {
   sessionId: number;
   type: SessionType;
-  courseCode: string;
+  courseLabel: string;
   title: string;
   time: string;
   location: string;
   isInterested?: boolean;
   demo?: boolean;
+  onInterestChange?: (interested: boolean) => void;
 };
 
 export function SessionRow({
   sessionId,
   type,
-  courseCode,
+  courseLabel,
   title,
   time,
   location,
   isInterested = false,
   demo = false,
+  onInterestChange,
 }: SessionRowProps) {
   const style = TYPE_STYLES[type];
 
   return (
     <div
-      className={`flex items-start justify-between gap-4 rounded-2xl border border-[#d8e5f2] border-l-4 bg-white p-4 ${style.accent}`}
+      className={`flex flex-col items-stretch gap-4 rounded-2xl border border-[#d8e5f2] border-l-4 bg-white p-4 sm:flex-row sm:items-start sm:justify-between ${style.accent}`}
     >
       <div className="min-w-0 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -59,7 +61,7 @@ export function SessionRow({
             {style.label}
           </span>
           <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-            {courseCode}
+            {courseLabel}
           </span>
         </div>
         <h3 className="text-base font-semibold text-[#071f41]">{title}</h3>
@@ -79,6 +81,7 @@ export function SessionRow({
         sessionId={sessionId}
         initiallyInterested={isInterested}
         demo={demo}
+        onInterestChange={onInterestChange}
       />
     </div>
   );

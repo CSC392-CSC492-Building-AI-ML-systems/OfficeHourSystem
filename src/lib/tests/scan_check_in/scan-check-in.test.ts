@@ -13,7 +13,7 @@
  *   Failure cases:
  *     5.  student_number not in DB → student_not_found
  *     6.  utorid not in DB → student_not_found
- *     7.  barcode not in mock map → student_not_found
+ *     7.  barcode not in mock map → barcode_not_found
  *     8.  Student exists but not enrolled in offering → not_enrolled
  *     9.  Student enrolled as TA (not STUDENT role) → staff_member
  *     10. Student already in queue → already_in_queue (P2002 handled)
@@ -248,8 +248,8 @@ async function main() {
     assertEqual(result.outcome, "student_not_found", "outcome");
   });
 
-  // ── 7. Barcode not in mock map → student_not_found ───────────────────────
-  await runTest("barcode not in mock map → student_not_found", async () => {
+  // ── 7. Barcode not in mock map → barcode_not_found ───────────────────────
+  await runTest("barcode not in mock map → barcode_not_found", async () => {
     await cleanupAll();
     const offering = await makeOffering("107");
     const session = await makeSession(offering.id);
@@ -261,7 +261,7 @@ async function main() {
       "0000000000000000",
     );
 
-    assertEqual(result.outcome, "student_not_found", "outcome");
+    assertEqual(result.outcome, "barcode_not_found", "outcome");
   });
 
   // ── 8. Student exists but not enrolled in this offering → not_enrolled ────

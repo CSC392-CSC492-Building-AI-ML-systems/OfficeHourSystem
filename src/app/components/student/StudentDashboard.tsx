@@ -129,7 +129,7 @@ function SessionSection({
                     key={s.sessionPublicId}
                     sessionId={s.sessionId}
                     type={s.type}
-                    courseCode={s.courseCode}
+                    courseLabel={s.courseLabel}
                     title={s.title}
                     time={formatTimeRange(s.startsAt, s.endsAt)}
                     location={s.location}
