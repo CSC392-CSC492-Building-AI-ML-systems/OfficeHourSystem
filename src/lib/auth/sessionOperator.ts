@@ -21,7 +21,11 @@ export async function assertSessionOperator(
   sessionId: number,
   offeringId: number,
 ): Promise<SessionOperator> {
-  const [member, host] = await Promise.all([
+  const [session, member, host] = await Promise.all([
+    prisma.officeHourSession.findUnique({
+      where: { id: sessionId },
+      select: { offeringId: true, type: true },
+    }),
     prisma.offeringMember.findUnique({
       where: { userId_offeringId: { userId, offeringId } },
       select: { role: true },
@@ -31,6 +35,14 @@ export async function assertSessionOperator(
       select: { id: true },
     }),
   ]);
+
+  if (!session || session.offeringId !== offeringId) {
+    throw new Error("Office hour session not found");
+  }
+
+  if (session.type !== "DEBUGGING") {
+    throw new Error("Queues are only available for Help Centre sessions");
+  }
 
   const isInstructor = member?.role === "INSTRUCTOR";
   if (!isInstructor && host === null) {

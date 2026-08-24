@@ -132,7 +132,7 @@ async function main() {
       data: {
         offeringId: offering.id,
         title: "Today OH",
-        type: "REGULAR",
+        type: "DEBUGGING",
         startsAt,
         endsAt,
         status: "SCHEDULED",
@@ -158,7 +158,7 @@ async function main() {
       data: {
         offeringId: offering.id,
         title: "Normal OH",
-        type: "REGULAR",
+        type: "DEBUGGING",
         startsAt,
         endsAt,
         status: "SCHEDULED",
@@ -168,7 +168,7 @@ async function main() {
       data: {
         offeringId: offering.id,
         title: "Cancelled OH",
-        type: "REGULAR",
+        type: "DEBUGGING",
         startsAt,
         endsAt,
         status: "CANCELLED",
@@ -208,7 +208,7 @@ async function main() {
       data: {
         offeringId: offering.id,
         title: "Upcoming OH",
-        type: "REGULAR",
+        type: "DEBUGGING",
         startsAt,
         endsAt,
         status: "SCHEDULED",
@@ -218,7 +218,7 @@ async function main() {
       data: {
         offeringId: offering.id,
         title: "Ended OH",
-        type: "REGULAR",
+        type: "DEBUGGING",
         startsAt,
         endsAt,
         status: "COMPLETED",
@@ -258,7 +258,7 @@ async function main() {
       data: {
         offeringId: offering.id,
         title: "Tomorrow OH",
-        type: "REGULAR",
+        type: "DEBUGGING",
         startsAt,
         endsAt,
         status: "SCHEDULED",
@@ -285,7 +285,7 @@ async function main() {
         data: {
           offeringId: offering.id,
           title: "Today OH",
-          type: "REGULAR",
+          type: "DEBUGGING",
           startsAt,
           endsAt,
           status: "SCHEDULED",
@@ -316,7 +316,7 @@ async function main() {
         data: {
           offeringId: offering.id,
           title: "Instructor OH",
-          type: "REGULAR",
+          type: "DEBUGGING",
           startsAt,
           endsAt,
           status: "SCHEDULED",
@@ -344,7 +344,7 @@ async function main() {
         data: {
           offeringId: offering.id,
           title: "Someone else's OH",
-          type: "REGULAR",
+          type: "DEBUGGING",
           startsAt,
           endsAt,
           status: "SCHEDULED",
@@ -370,7 +370,7 @@ async function main() {
         data: {
           offeringId: offering.id,
           title: "Scoped OH",
-          type: "REGULAR",
+          type: "DEBUGGING",
           startsAt,
           endsAt,
           status: "SCHEDULED",
@@ -407,7 +407,7 @@ async function main() {
       data: {
         offeringId: offeringA.id,
         title: "A OH",
-        type: "REGULAR",
+        type: "DEBUGGING",
         startsAt,
         endsAt,
         status: "SCHEDULED",
@@ -417,7 +417,7 @@ async function main() {
       data: {
         offeringId: offeringB.id,
         title: "B OH",
-        type: "REGULAR",
+        type: "DEBUGGING",
         startsAt,
         endsAt,
         status: "SCHEDULED",
@@ -448,7 +448,7 @@ async function main() {
         data: {
           offeringId: offering.id,
           title: "Hosted",
-          type: "REGULAR",
+          type: "DEBUGGING",
           startsAt,
           endsAt,
           status: "SCHEDULED",
@@ -458,7 +458,7 @@ async function main() {
         data: {
           offeringId: offering.id,
           title: "Not hosted",
-          type: "REGULAR",
+          type: "DEBUGGING",
           startsAt,
           endsAt,
           status: "SCHEDULED",
@@ -497,7 +497,7 @@ async function main() {
         data: {
           offeringId: offeringB.id,
           title: "B hosted",
-          type: "REGULAR",
+          type: "DEBUGGING",
           startsAt,
           endsAt,
           status: "SCHEDULED",
@@ -508,7 +508,7 @@ async function main() {
         data: {
           offeringId: offeringA.id,
           title: "A OH",
-          type: "REGULAR",
+          type: "DEBUGGING",
           startsAt,
           endsAt,
           status: "SCHEDULED",
@@ -520,6 +520,47 @@ async function main() {
         isInstructor: false,
       });
       assertEqual(result.length, 0, "nothing in offering A");
+    },
+  );
+
+  await runTest(
+    "My Queues discovery excludes REGULAR and GROUP sessions",
+    async () => {
+      await cleanupAll();
+      const { offering } = await setupOffering();
+      const instructor = await setupUser(
+        "type_filter_instructor",
+        offering.id,
+        "INSTRUCTOR",
+      );
+      const { startsAt, endsAt } = makeTodaySession();
+
+      const sessions = await Promise.all(
+        (["DEBUGGING", "REGULAR", "GROUP"] as const).map((type) =>
+          prisma.officeHourSession.create({
+            data: {
+              offeringId: offering.id,
+              title: `${type} session`,
+              type,
+              startsAt,
+              endsAt,
+              status: "SCHEDULED",
+            },
+          }),
+        ),
+      );
+
+      const result = await getTodaySessionsForTeachingTeam(instructor.id, {
+        offeringId: offering.id,
+        isInstructor: true,
+      });
+      assertEqual(result.length, 1, "only Help Centre session is returned");
+      assertEqual(result[0].type, "DEBUGGING", "returned type is DEBUGGING");
+      assertEqual(
+        result[0].id,
+        sessions[0].id,
+        "returns the DEBUGGING session",
+      );
     },
   );
 
