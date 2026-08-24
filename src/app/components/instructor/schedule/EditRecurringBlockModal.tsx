@@ -253,7 +253,7 @@ function EditRecurringBlockForm({
               value={location}
               maxLength={LOCATION_MAX_LENGTH}
               onChange={(event) => setLocation(event.target.value)}
-              placeholder="Room 402 or Zoom link"
+              placeholder="Room 402 or https://zoom.us/j/..."
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
             />
             <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />

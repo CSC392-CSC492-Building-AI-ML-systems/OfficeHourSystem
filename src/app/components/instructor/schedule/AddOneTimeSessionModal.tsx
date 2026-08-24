@@ -329,7 +329,7 @@ function AddOneTimeSessionForm({
                 value={locationDetail}
                 maxLength={LOCATION_MAX_LENGTH}
                 onChange={(event) => setLocationDetail(event.target.value)}
-                placeholder="Room 402 or Zoom"
+                placeholder="Room 402 or https://zoom.us/j/..."
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
               />
               <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />

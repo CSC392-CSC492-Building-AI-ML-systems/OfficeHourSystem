@@ -1,4 +1,5 @@
 import { Clock3, MapPin, UserRound } from "lucide-react";
+import { LocationText } from "@/app/components/student/LocationText";
 import { InterestedButton } from "./InterestedButton";
 
 interface DropInCardProps {
@@ -33,9 +34,9 @@ export function DropInCard({
               <span>{time}</span>
             </p>
             {location ? (
-              <p className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-slate-400" />
-                <span>{location}</span>
+              <p className="flex min-w-0 items-start gap-2">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                <LocationText value={location} className="break-all" />
               </p>
             ) : null}
             <p className="flex items-center gap-2">
