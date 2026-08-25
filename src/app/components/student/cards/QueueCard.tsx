@@ -1,4 +1,5 @@
 import { Clock3, Globe, MapPin, UserRound } from "lucide-react";
+import { LocationText } from "@/app/components/student/LocationText";
 import { InterestedButton } from "./InterestedButton";
 
 interface QueueCardProps {
@@ -46,7 +47,11 @@ export function QueueCard({
             ) : (
               <MapPin className="h-4 w-4" />
             )}
-            <span>{location}</span>
+            <LocationText
+              value={location}
+              className="break-all"
+              linkClassName="text-[#2563eb] underline underline-offset-2 hover:text-[#1d4ed8]"
+            />
           </p>
         </div>
 

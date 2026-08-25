@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Clock, LayoutList, RefreshCw, Users } from "lucide-react";
+import { Clock, Download, LayoutList, RefreshCw, Users } from "lucide-react";
 
 import {
   getCourseOverviewAction,
@@ -168,6 +168,13 @@ export default function CourseOverviewPage({
           </Link>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <a
+            href={`/api/course-stats/attendance-export?offering=${data.offeringPublicId}`}
+            className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-[#071f41] transition hover:border-slate-300"
+          >
+            <Download className="h-4 w-4" />
+            Export attendance CSV
+          </a>
           <Link
             href={`/course/stats/sessions?offering=${data.offeringPublicId}`}
             className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-[#071f41] transition hover:border-slate-300"

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { getStudentScheduleWeekAction } from "@/actions/scheduling";
 import { TIME_SLOTS } from "@/app/components/instructor/schedule/data";
 import { WeeklyCalendar } from "@/app/components/instructor/schedule/WeeklyCalendar";
+import { LocationText } from "@/app/components/student/LocationText";
 import type {
   CalendarDay,
   ScheduleSession,
@@ -106,9 +107,19 @@ export function StudentWeekCalendar({
           <h3 className="mt-1 text-base font-semibold text-[#071f41]">
             {selected.title}
           </h3>
+          {selected.sessionTypeLabel === "Custom" && selected.description ? (
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {selected.description}
+            </p>
+          ) : null}
           <p className="mt-1 text-sm text-slate-600">
             {selected.dateLabel}, {selected.startTime} – {selected.endTime}
-            {selected.location ? ` · ${selected.location}` : ""}
+            {selected.location ? (
+              <>
+                {" · "}
+                <LocationText value={selected.location} className="break-all" />
+              </>
+            ) : null}
           </p>
         </div>
       ) : null}

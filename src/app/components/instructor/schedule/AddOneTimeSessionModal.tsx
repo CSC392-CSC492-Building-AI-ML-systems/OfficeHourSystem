@@ -23,6 +23,7 @@ import { OfficeHourHostSelect } from "./OfficeHourHostSelect";
 import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
 import {
   LOCATION_MAX_LENGTH,
+  SESSION_DESCRIPTION_MAX_LENGTH,
   SESSION_TOPIC_MAX_LENGTH,
 } from "./scheduleFieldLimits";
 import { useModalOverlay } from "./useModalOverlay";
@@ -101,6 +102,7 @@ function AddOneTimeSessionForm({
   const [submitting, setSubmitting] = useState(false);
   const [selectedType, setSelectedType] = useState<SessionType>("drop-in");
   const [courseOrTopic, setCourseOrTopic] = useState("");
+  const [description, setDescription] = useState("");
   const [date, setDate] = useState(defaultOfficeHourDateInput);
   const [startTime, setStartTime] = useState("14:00");
   const [endTime, setEndTime] = useState("16:00");
@@ -139,6 +141,10 @@ function AddOneTimeSessionForm({
         startTime,
         endTime,
         location: locationDetail.trim() || undefined,
+        description:
+          selectedType === "topic-group"
+            ? description.trim() || undefined
+            : undefined,
         hostUserPublicIds: hostPublicIds,
       });
     } catch (submitError) {
@@ -292,6 +298,25 @@ function AddOneTimeSessionForm({
               onStartTimeChange={setStartTime}
               onEndTimeChange={setEndTime}
             />
+
+            {selectedType === "topic-group" ? (
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-[#071f41]">
+                  Description
+                </span>
+                <textarea
+                  value={description}
+                  maxLength={SESSION_DESCRIPTION_MAX_LENGTH}
+                  onChange={(event) => setDescription(event.target.value)}
+                  rows={4}
+                  placeholder="What will this session cover? Who should attend?"
+                  className="w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
+                />
+                <FieldCharLimitHint
+                  maxLength={SESSION_DESCRIPTION_MAX_LENGTH}
+                />
+              </label>
+            ) : null}
           </section>
 
           <section>
@@ -304,7 +329,7 @@ function AddOneTimeSessionForm({
                 value={locationDetail}
                 maxLength={LOCATION_MAX_LENGTH}
                 onChange={(event) => setLocationDetail(event.target.value)}
-                placeholder="Room 402 or Zoom"
+                placeholder="Room 402 or https://zoom.us/j/..."
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
               />
               <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />

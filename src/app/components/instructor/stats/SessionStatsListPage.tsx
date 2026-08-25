@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   CalendarClock,
   ChevronRight,
+  Download,
   LayoutGrid,
   MapPin,
   RefreshCw,
@@ -155,6 +156,13 @@ export default function SessionStatsListPage({
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              <a
+                href={`/api/course-stats/attendance-export?offering=${offeringPublicId}`}
+                className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-[#071f41] transition hover:border-slate-300"
+              >
+                <Download className="h-4 w-4" />
+                Export attendance CSV
+              </a>
               <Link
                 href={`/course/stats?offering=${offeringPublicId}`}
                 className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-[#071f41] transition hover:border-slate-300"

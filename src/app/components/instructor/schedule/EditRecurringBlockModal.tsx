@@ -15,6 +15,7 @@ import {
   BLOCK_NAME_MAX_LENGTH,
   clampToMaxLength,
   LOCATION_MAX_LENGTH,
+  SESSION_DESCRIPTION_MAX_LENGTH,
 } from "./scheduleFieldLimits";
 import type { RecurringRule, ScheduleStaffMember } from "./types";
 import { useModalOverlay } from "./useModalOverlay";
@@ -27,6 +28,7 @@ interface EditRecurringBlockModalProps {
   onSave: (input: {
     title: string;
     location: string;
+    description?: string | null;
     startTime: string;
     endTime: string;
     applyFrom: string;
@@ -82,6 +84,7 @@ function EditRecurringBlockForm({
   const [title, setTitle] = useState(() =>
     clampToMaxLength(block.title, BLOCK_NAME_MAX_LENGTH),
   );
+  const [description, setDescription] = useState(() => block.description ?? "");
   const [location, setLocation] = useState(() =>
     clampToMaxLength(
       block.defaultLocation === "TBD" ? "" : block.defaultLocation,
@@ -104,6 +107,8 @@ function EditRecurringBlockForm({
   const [deleting, setDeleting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  const isCustomBlock = block.sessionTypeLabel === "Custom";
+
   const handleSave = async () => {
     setFormError(null);
     onError?.(null);
@@ -124,6 +129,7 @@ function EditRecurringBlockForm({
       await onSave({
         title: title.trim() || block.title,
         location: location.trim(),
+        ...(isCustomBlock ? { description: description.trim() || null } : {}),
         startTime,
         endTime,
         applyFrom,
@@ -221,6 +227,23 @@ function EditRecurringBlockForm({
             <FieldCharLimitHint maxLength={BLOCK_NAME_MAX_LENGTH} />
           </label>
 
+          {isCustomBlock ? (
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-[#071f41]">
+                Description
+              </span>
+              <textarea
+                value={description}
+                maxLength={SESSION_DESCRIPTION_MAX_LENGTH}
+                onChange={(event) => setDescription(event.target.value)}
+                rows={4}
+                placeholder="What will this session cover?"
+                className="w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
+              />
+              <FieldCharLimitHint maxLength={SESSION_DESCRIPTION_MAX_LENGTH} />
+            </label>
+          ) : null}
+
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-[#071f41]">
               Default Location
@@ -230,7 +253,7 @@ function EditRecurringBlockForm({
               value={location}
               maxLength={LOCATION_MAX_LENGTH}
               onChange={(event) => setLocation(event.target.value)}
-              placeholder="Room 402 or Zoom link"
+              placeholder="Room 402 or https://zoom.us/j/..."
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#071f41]"
             />
             <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />

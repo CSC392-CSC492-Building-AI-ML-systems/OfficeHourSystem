@@ -27,6 +27,7 @@ export async function getUpcomingSessionsForStudent(
       id: true,
       publicId: true,
       title: true,
+      description: true,
       type: true,
       location: true,
       startsAt: true,

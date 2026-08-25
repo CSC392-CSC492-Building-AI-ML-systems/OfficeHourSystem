@@ -40,6 +40,7 @@ export type CreateRecurringBlockInput = {
   /** Inclusive end date (`YYYY-MM-DD`). Defaults from term when omitted. */
   validUntil?: string;
   location?: string;
+  description?: string;
   hostUserPublicIds?: string[];
 };
 
@@ -51,12 +52,14 @@ export type CreateOneTimeSessionInput = {
   startTime: string;
   endTime: string;
   location?: string;
+  description?: string;
   hostUserPublicIds?: string[];
 };
 
 export type UpdateSessionInput = {
   title?: string;
   location?: string | null;
+  description?: string | null;
   date?: string;
   startTime?: string;
   endTime?: string;
@@ -77,6 +80,7 @@ export type ScheduleSessionDto = {
   calendarLabel: string;
   title: string;
   topic: string;
+  description?: string | null;
   day: string;
   dateLabel: string;
   startTime: string;
@@ -105,6 +109,7 @@ export type RecurringRuleDto = {
   courseCode: string;
   sessionTypeLabel: string;
   title: string;
+  description?: string | null;
   repeats: string;
   validFrom: string;
   validUntil: string;
@@ -124,6 +129,7 @@ export type RecurringRuleDto = {
 export type UpdateRecurringBlockInput = {
   title?: string;
   location?: string | null;
+  description?: string | null;
   startTime?: string;
   endTime?: string;
   /** Inclusive `YYYY-MM-DD`. Sessions before this date are left unchanged. Defaults to today. */
@@ -134,6 +140,7 @@ export type UpdateRecurringBlockInput = {
 export type OneTimeSessionListItemDto = {
   id: string;
   title: string;
+  description?: string | null;
   sessionTypeLabel: string;
   date: string;
   dateLabel: string;

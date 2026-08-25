@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Clock, MapPin, RefreshCw, Users } from "lucide-react";
 
 import { getStudentQueueAction } from "@/actions/student_queue/student-queue";
+import { LocationText } from "@/app/components/student/LocationText";
 import type { StudentQueueTicketDto } from "@/lib/types/queue";
 
 const AUTO_REFRESH_MS = 15_000;
@@ -62,9 +63,9 @@ function QueueTicket({ ticket }: { ticket: StudentQueueTicketDto }) {
             {ticket.sessionTitle}
           </h3>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" />
-              {ticket.location}
+            <span className="flex min-w-0 items-start gap-1">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <LocationText value={ticket.location} className="break-all" />
             </span>
             <span>
               {formatDate(ticket.startsAt)} · {formatTime(ticket.startsAt)}–

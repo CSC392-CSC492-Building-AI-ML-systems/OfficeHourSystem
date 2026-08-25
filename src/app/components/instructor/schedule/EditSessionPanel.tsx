@@ -8,6 +8,7 @@ import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
 import {
   clampToMaxLength,
   LOCATION_MAX_LENGTH,
+  SESSION_DESCRIPTION_MAX_LENGTH,
   SESSION_TOPIC_MAX_LENGTH,
 } from "./scheduleFieldLimits";
 import type { ScheduleSession, ScheduleStaffMember } from "./types";
@@ -20,6 +21,7 @@ interface EditSessionPanelProps {
   onSave: (patch: {
     title?: string;
     location?: string | null;
+    description?: string | null;
     date?: string;
     startTime?: string;
     endTime?: string;
@@ -40,6 +42,9 @@ export function EditSessionPanel({
   const [topic, setTopic] = useState(() =>
     clampToMaxLength(selectedSession.topic, SESSION_TOPIC_MAX_LENGTH),
   );
+  const [description, setDescription] = useState(
+    () => selectedSession.description ?? "",
+  );
   const [location, setLocation] = useState(() =>
     clampToMaxLength(selectedSession.location, LOCATION_MAX_LENGTH),
   );
@@ -51,6 +56,8 @@ export function EditSessionPanel({
   );
   const [savedMessage, setSavedMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const isCustomSession = selectedSession.sessionTypeLabel === "Custom";
 
   const handleSaveOverride = async () => {
     if (!canEdit) return;
@@ -67,6 +74,7 @@ export function EditSessionPanel({
       await onSave({
         title: topic.trim() || selectedSession.title,
         location: location.trim() || null,
+        ...(isCustomSession ? { description: description.trim() || null } : {}),
         startTime,
         endTime,
         ...(selectedSession.isRecurringOccurrence ? {} : { date }),
@@ -151,6 +159,33 @@ export function EditSessionPanel({
             </div>
           )}
         </div>
+
+        {isCustomSession ? (
+          <div>
+            <label className="mb-2 block text-sm font-medium text-[#071f41]">
+              Description
+            </label>
+            {canEdit ? (
+              <>
+                <textarea
+                  value={description}
+                  maxLength={SESSION_DESCRIPTION_MAX_LENGTH}
+                  onChange={(event) => setDescription(event.target.value)}
+                  rows={4}
+                  placeholder="What will this session cover?"
+                  className="w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
+                />
+                <FieldCharLimitHint
+                  maxLength={SESSION_DESCRIPTION_MAX_LENGTH}
+                />
+              </>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                {selectedSession.description || "No description provided."}
+              </div>
+            )}
+          </div>
+        ) : null}
 
         {!selectedSession.isRecurringOccurrence && canEdit ? (
           <label className="block">

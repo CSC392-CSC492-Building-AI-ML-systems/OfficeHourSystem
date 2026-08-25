@@ -81,6 +81,7 @@ export function InterestedSessionsPage({
               type={session.type}
               courseLabel={session.courseLabel}
               title={session.title}
+              description={session.description}
               time={formatTimeRange(session.startsAt, session.endsAt)}
               location={session.location}
               isInterested

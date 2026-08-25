@@ -76,6 +76,17 @@ type ScheduleRow = ScheduleLike & {
   blockGroupId: string | null;
 };
 
+function normalizeDescription(
+  uiType: CreateOneTimeSessionInput["uiType"],
+  description?: string,
+): string | null {
+  if (uiType !== "topic-group") {
+    return null;
+  }
+  const trimmed = description?.trim();
+  return trimmed ? trimmed : null;
+}
+
 function readBlockGroupId(schedule: ScheduleLike): string | null {
   const value = (schedule as ScheduleRow).blockGroupId;
   return typeof value === "string" ? value : null;
@@ -302,6 +313,7 @@ function mapSessionToDto(
     calendarLabel: sessionTypeLabel,
     title: session.title,
     topic: session.title,
+    description: session.description,
     day: dayOfWeekToKey(session.startsAt.getDay()),
     dateLabel: formatSessionDateLabel(session.startsAt, now),
     date: formatDateOnlyLocal(session.startsAt),
@@ -442,6 +454,7 @@ export async function createRecurringBlock(
           startMinute,
           endMinute,
           location: input.location ?? null,
+          description: normalizeDescription(input.uiType, input.description),
           validFrom: scheduleBounds.validFrom,
           validUntil: scheduleBounds.validUntil,
           isActive: true,
@@ -501,6 +514,7 @@ export async function createOneTimeSession(
         startsAt,
         endsAt,
         location: input.location ?? null,
+        description: normalizeDescription(input.uiType, input.description),
         status: "SCHEDULED",
       },
       include: sessionInclude,
@@ -616,6 +630,7 @@ export async function listRecurringRules(
       courseCode: access.courseCode,
       sessionTypeLabel: officeHourTypeLabel(first.type),
       title: first.title,
+      description: first.description,
       repeats: repeatDays,
       validFrom: formatCalendarDateLabel(validFrom),
       validUntil: formatCalendarDateLabel(validUntil),
@@ -667,6 +682,7 @@ export async function listOneTimeSessions(
   return sessions.map((session) => ({
     id: session.publicId,
     title: session.title,
+    description: session.description,
     sessionTypeLabel: officeHourTypeLabel(session.type),
     date: formatDateOnlyLocal(session.startsAt),
     dateLabel: formatCalendarDateLabel(session.startsAt),
@@ -747,6 +763,9 @@ export async function updateRecurringBlock(
       data: {
         ...(patch.title !== undefined ? { title: patch.title } : {}),
         ...(patch.location !== undefined ? { location: patch.location } : {}),
+        ...(patch.description !== undefined
+          ? { description: patch.description }
+          : {}),
         ...(nextStartMinute !== undefined
           ? { startMinute: nextStartMinute }
           : {}),
@@ -787,6 +806,9 @@ export async function updateRecurringBlock(
         data: {
           ...(patch.title !== undefined ? { title: patch.title } : {}),
           ...(patch.location !== undefined ? { location: patch.location } : {}),
+          ...(patch.description !== undefined
+            ? { description: patch.description }
+            : {}),
           startsAt: combineDateAndMinutes(day, startMinute),
           endsAt: combineDateAndMinutes(day, endMinute),
         },
@@ -906,6 +928,9 @@ export async function updateSession(
       data: {
         ...(patch.title !== undefined ? { title: patch.title } : {}),
         ...(patch.location !== undefined ? { location: patch.location } : {}),
+        ...(patch.description !== undefined
+          ? { description: patch.description }
+          : {}),
         ...(timeChanged ? { startsAt, endsAt } : {}),
       },
       include: sessionInclude,

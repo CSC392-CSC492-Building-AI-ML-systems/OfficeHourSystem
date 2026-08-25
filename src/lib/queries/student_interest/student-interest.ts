@@ -7,6 +7,7 @@ export type InterestedSessionDto = {
   type: "REGULAR" | "DEBUGGING" | "GROUP";
   courseLabel: string;
   title: string;
+  description?: string | null;
   location: string;
   startsAt: string;
   endsAt: string;
@@ -18,6 +19,7 @@ type InterestedSessionRecord = {
     publicId: string;
     type: "REGULAR" | "DEBUGGING" | "GROUP";
     title: string;
+    description: string | null;
     location: string | null;
     startsAt: Date;
     endsAt: Date;
@@ -56,6 +58,7 @@ export async function getInterestedSessionsForStudent(
           publicId: true,
           type: true,
           title: true,
+          description: true,
           location: true,
           startsAt: true,
           endsAt: true,
@@ -80,6 +83,7 @@ export async function getInterestedSessionsForStudent(
       session.offering.termCode,
     ),
     title: session.title,
+    description: session.description,
     location: session.location ?? "TBD",
     startsAt: session.startsAt.toISOString(),
     endsAt: session.endsAt.toISOString(),

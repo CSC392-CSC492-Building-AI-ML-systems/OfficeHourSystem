@@ -27,6 +27,7 @@ import type {
   ScheduleStaffMember,
 } from "./types";
 import { OneTimeSessions } from "./OneTimeSessions";
+import { SessionStatsSection } from "./SessionStatsSection";
 import type { CreateOneTimeSessionInput } from "@/lib/scheduling/types";
 import type { CreateRecurringBlockInput } from "@/lib/scheduling/types";
 import {
@@ -159,6 +160,7 @@ export default function InstructorScheduleDashboard({
     validFrom: string;
     validUntil: string;
     location?: string;
+    description?: string;
     hostUserPublicIds?: string[];
   }) => {
     if (!offeringPublicId) return;
@@ -173,6 +175,7 @@ export default function InstructorScheduleDashboard({
       validFrom: input.validFrom,
       validUntil: input.validUntil,
       location: input.location,
+      description: input.description,
       hostUserPublicIds: input.hostUserPublicIds,
     });
     setActiveModal(null);
@@ -189,6 +192,7 @@ export default function InstructorScheduleDashboard({
   const handleSaveSession = async (patch: {
     title?: string;
     location?: string | null;
+    description?: string | null;
     date?: string;
     startTime?: string;
     endTime?: string;
@@ -203,6 +207,7 @@ export default function InstructorScheduleDashboard({
   const handleUpdateRecurringBlock = async (input: {
     title: string;
     location: string;
+    description?: string | null;
     startTime: string;
     endTime: string;
     applyFrom: string;
@@ -213,6 +218,9 @@ export default function InstructorScheduleDashboard({
     await updateRecurringBlockAction(editingRule.id, {
       title: input.title,
       location: input.location || null,
+      ...(editingRule.sessionTypeLabel === "Custom"
+        ? { description: input.description ?? null }
+        : {}),
       startTime: input.startTime,
       endTime: input.endTime,
       applyFrom: input.applyFrom,
@@ -358,36 +366,10 @@ export default function InstructorScheduleDashboard({
           )}
 
           {selectedSession ? (
-            <section className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
-              <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500">
-                SESSION STATS
-              </p>
-              <h2 className="mt-1 text-xl font-semibold text-[#071f41]">
-                {selectedSession.title}
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                {selectedSession.dateLabel}, {selectedSession.startTime} –{" "}
-                {selectedSession.endTime}
-              </p>
-              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <div className="flex flex-col items-center rounded-2xl bg-[#f8fafc] px-3 py-4">
-                  <span className="text-3xl font-bold text-[#071f41]">
-                    {selectedSession.interestedCount}
-                  </span>
-                  <span className="mt-1 text-center text-xs text-slate-500">
-                    I&apos;m Interested presses
-                  </span>
-                </div>
-                <div className="flex flex-col items-center rounded-2xl bg-[#f8fafc] px-3 py-4">
-                  <span className="text-3xl font-bold text-[#071f41]">
-                    {selectedSession.checkedInCount}
-                  </span>
-                  <span className="mt-1 text-center text-xs text-slate-500">
-                    Checked in
-                  </span>
-                </div>
-              </div>
-            </section>
+            <SessionStatsSection
+              key={selectedSession.id}
+              session={selectedSession}
+            />
           ) : null}
 
           <RecurringBlocks

@@ -22,6 +22,7 @@ import { OfficeHourTimeFields } from "./OfficeHourTimeFields";
 import {
   BLOCK_NAME_MAX_LENGTH,
   LOCATION_MAX_LENGTH,
+  SESSION_DESCRIPTION_MAX_LENGTH,
 } from "./scheduleFieldLimits";
 import { useModalOverlay } from "./useModalOverlay";
 import type { ScheduleStaffMember } from "./types";
@@ -43,6 +44,7 @@ interface CreateRecurringBlockModalProps {
     validFrom: string;
     validUntil: string;
     location?: string;
+    description?: string;
     hostUserPublicIds?: string[];
   }) => Promise<void>;
   onError?: (message: string | null) => void;
@@ -136,6 +138,7 @@ function CreateRecurringBlockForm({
   const [endTime, setEndTime] = useState("16:00");
   const [locationDetail, setLocationDetail] = useState("DH 2034");
   const [blockName, setBlockName] = useState("");
+  const [description, setDescription] = useState("");
   const [hostPublicIds, setHostPublicIds] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -187,6 +190,10 @@ function CreateRecurringBlockForm({
         validFrom: validFromDate,
         validUntil: validUntilDate,
         location: locationDetail.trim() || undefined,
+        description:
+          selectedType === "topic-group"
+            ? description.trim() || undefined
+            : undefined,
         hostUserPublicIds: hostPublicIds,
       });
     } catch (submitError) {
@@ -319,6 +326,25 @@ function CreateRecurringBlockForm({
               <FieldCharLimitHint maxLength={BLOCK_NAME_MAX_LENGTH} />
             </label>
 
+            {selectedType === "topic-group" ? (
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-[#071f41]">
+                  Description
+                </span>
+                <textarea
+                  value={description}
+                  maxLength={SESSION_DESCRIPTION_MAX_LENGTH}
+                  onChange={(event) => setDescription(event.target.value)}
+                  rows={4}
+                  placeholder="What will this session cover? Who should attend?"
+                  className="w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
+                />
+                <FieldCharLimitHint
+                  maxLength={SESSION_DESCRIPTION_MAX_LENGTH}
+                />
+              </label>
+            ) : null}
+
             <div>
               <span className="mb-2 block text-sm font-medium text-[#071f41]">
                 Repeats On
@@ -394,7 +420,7 @@ function CreateRecurringBlockForm({
                 value={locationDetail}
                 maxLength={LOCATION_MAX_LENGTH}
                 onChange={(event) => setLocationDetail(event.target.value)}
-                placeholder="Room 402 or Zoom"
+                placeholder="Room 402 or https://zoom.us/j/..."
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
               />
               <FieldCharLimitHint maxLength={LOCATION_MAX_LENGTH} />
