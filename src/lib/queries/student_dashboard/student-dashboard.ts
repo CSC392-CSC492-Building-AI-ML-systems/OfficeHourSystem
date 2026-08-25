@@ -7,7 +7,7 @@ export async function getUpcomingSessionsForStudent(
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
-  end.setDate(end.getDate() + 7);
+  end.setDate(end.getDate() + 14);
   end.setHours(23, 59, 59, 999);
 
   const membership = await prisma.offeringMember.findFirst({

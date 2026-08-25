@@ -192,9 +192,9 @@ export default function StudentDashboard({
 
           <SessionSection
             title="Upcoming office hours"
-            hint="Sessions for this course over the next week."
+            hint="Sessions for this course over the next two weeks."
             sessions={sessions}
-            empty="No office hours scheduled for the next week."
+            empty="No office hours scheduled for the next two weeks."
             tall={!showCalendar}
           />
         </main>

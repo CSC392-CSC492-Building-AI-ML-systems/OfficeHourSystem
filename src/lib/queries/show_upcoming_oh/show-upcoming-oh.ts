@@ -25,6 +25,7 @@ export async function getTodaySessionsForTeachingTeam(
     // otherwise → only sessions this user hosts in it.
     where = {
       offeringId: scope.offeringId,
+      type: "DEBUGGING",
       startsAt: { gte: start, lte: end },
       ...(scope.isInstructor ? {} : { hosts: { some: { userId } } }),
     };
@@ -39,6 +40,7 @@ export async function getTodaySessionsForTeachingTeam(
       (m) => m.offeringId,
     );
     where = {
+      type: "DEBUGGING",
       startsAt: { gte: start, lte: end },
       OR: [
         { offeringId: { in: instructorOfferingIds } },

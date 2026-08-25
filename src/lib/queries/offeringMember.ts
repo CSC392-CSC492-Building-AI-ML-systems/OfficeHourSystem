@@ -37,6 +37,13 @@ function normalizeUtorid(utorid: string) {
   return utorid.trim().toLowerCase();
 }
 
+export class OfferingStudentError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OfferingStudentError";
+  }
+}
+
 /** Convert a staff/user reference into a Prisma where condition */
 function userWhere(id: StaffUserRef) {
   if ("utorid" in id) return { utorid: normalizeUtorid(id.utorid) };
@@ -348,6 +355,77 @@ export type OfferingStudentMember = {
   name: string;
   email: string;
 };
+
+/** Add one student to an offering by UTORid without changing staff roles. */
+export async function addOfferingStudent(
+  offeringPublicId: string,
+  utorid: string,
+): Promise<OfferingStudentMember> {
+  const normalizedUtorid = normalizeUtorid(utorid);
+  if (!normalizedUtorid) {
+    throw new OfferingStudentError("UTORid is required");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const offering = await tx.courseOffering.findUnique({
+      where: { publicId: offeringPublicId },
+      select: { id: true },
+    });
+
+    if (!offering) {
+      throw new OfferingStudentError("Course offering not found");
+    }
+
+    const user = await tx.user.upsert({
+      where: { utorid: normalizedUtorid },
+      update: {},
+      create: { utorid: normalizedUtorid },
+      select: {
+        id: true,
+        publicId: true,
+        utorid: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
+
+    const existing = await tx.offeringMember.findUnique({
+      where: {
+        userId_offeringId: {
+          userId: user.id,
+          offeringId: offering.id,
+        },
+      },
+      select: { role: true },
+    });
+
+    if (existing && existing.role !== "STUDENT") {
+      const roleLabel =
+        existing.role === "INSTRUCTOR" ? "an instructor" : "a TA";
+      throw new OfferingStudentError(
+        `This person is already ${roleLabel} in this course and cannot be added as a student.`,
+      );
+    }
+
+    if (!existing) {
+      await tx.offeringMember.create({
+        data: {
+          userId: user.id,
+          offeringId: offering.id,
+          role: "STUDENT",
+        },
+      });
+    }
+
+    return {
+      id: user.publicId,
+      utorid: user.utorid,
+      name: formatStaffName(user),
+      email: user.email ?? "",
+    };
+  });
+}
 
 /** List students enrolled in an offering. */
 export async function getOfferingStudentMembers(

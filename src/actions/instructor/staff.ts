@@ -10,14 +10,19 @@ import { instructorDashboardHref } from "@/lib/offeringUrls";
 import { importClasslistForOffering } from "@/lib/queries/classlist";
 import {
   addOrUpdateStaffMember,
+  addOfferingStudent,
   getOfferingStaffMembers,
   getOfferingStudentMembers,
   removeOfferingStaffMember,
   removeOfferingStudentMember,
   type OfferingStaffMember,
   type OfferingStudentMember,
+  OfferingStudentError,
 } from "@/lib/queries/offeringMember";
-import { requireScheduleMutate } from "@/lib/scheduling/auth";
+import {
+  requireScheduleMutate,
+  ScheduleAuthError,
+} from "@/lib/scheduling/auth";
 
 export type InstructorStaffPageData = {
   staff: OfferingStaffMember[];
@@ -26,6 +31,10 @@ export type InstructorStaffPageData = {
 
 export type StaffActionResult =
   | { ok: true; staffMember?: OfferingStaffMember }
+  | { ok: false; error: string };
+
+export type StudentActionResult =
+  | { ok: true; student: OfferingStudentMember }
   | { ok: false; error: string };
 
 export type BulkStaffActionResult =
@@ -89,6 +98,38 @@ export async function addOfferingTaAction(input: {
         error instanceof Error
           ? error.message
           : "Failed to add teaching assistant",
+    };
+  }
+}
+
+export async function addOfferingStudentAction(input: {
+  offeringPublicId: string;
+  utorid: string;
+}): Promise<StudentActionResult> {
+  try {
+    const userId = await requireSessionUserId();
+    await requireScheduleMutate(userId, input.offeringPublicId);
+
+    const student = await addOfferingStudent(
+      input.offeringPublicId,
+      input.utorid,
+    );
+
+    revalidatePath(instructorDashboardHref(input.offeringPublicId));
+    return { ok: true, student };
+  } catch (error) {
+    let message = "Failed to add student";
+    if (
+      error instanceof OfferingStudentError ||
+      error instanceof ScheduleAuthError ||
+      (error instanceof Error && error.message === "Unauthorized")
+    ) {
+      message = error.message;
+    }
+
+    return {
+      ok: false,
+      error: message,
     };
   }
 }
