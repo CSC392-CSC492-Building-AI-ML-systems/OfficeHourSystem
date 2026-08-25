@@ -164,10 +164,16 @@ export async function deleteOffering(offeringPublicId: string): Promise<void> {
     throw new Error("Course offering not found");
   }
 
+  const [reminderTable] = await prisma.$queryRaw<
+    Array<{ exists: boolean }>
+  >`SELECT to_regclass('public."OfficeHourReminder"') IS NOT NULL AS "exists"`;
+
   await prisma.$transaction(async (tx) => {
-    await tx.officeHourReminder.deleteMany({
-      where: { interest: { session: { offeringId: offering.id } } },
-    });
+    if (reminderTable?.exists) {
+      await tx.officeHourReminder.deleteMany({
+        where: { interest: { session: { offeringId: offering.id } } },
+      });
+    }
     await tx.officeHourInterest.deleteMany({
       where: { session: { offeringId: offering.id } },
     });
