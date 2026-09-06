@@ -18,6 +18,7 @@ interface EditSessionPanelProps {
   selectedSession: ScheduleSession;
   staff: ScheduleStaffMember[];
   canEdit: boolean;
+  onDeselect: () => void;
   onSave: (patch: {
     title?: string;
     location?: string | null;
@@ -35,6 +36,7 @@ export function EditSessionPanel({
   selectedSession,
   staff,
   canEdit,
+  onDeselect,
   onSave,
   onCancelSession,
   onError,
@@ -112,11 +114,20 @@ export function EditSessionPanel({
 
   return (
     <section className="rounded-[30px] border border-slate-200/80 bg-white p-6 shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
-      <div className="flex items-center gap-3">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#071f41]">
-          <CalendarClock className="h-5 w-5" />
-        </span>
-        <h2 className="text-xl font-semibold text-[#071f41]">Edit Session</h2>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#071f41]">
+            <CalendarClock className="h-5 w-5" />
+          </span>
+          <h2 className="text-xl font-semibold text-[#071f41]">Edit Session</h2>
+        </div>
+        <button
+          type="button"
+          onClick={onDeselect}
+          className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+        >
+          Close
+        </button>
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-[#f8fafc] p-4">
