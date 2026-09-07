@@ -37,13 +37,21 @@ export function InterestedButton({
 
     startTransition(async () => {
       try {
-        if (next) await recordInterest(sessionId);
-        else await retractInterest(sessionId);
+        const result = next
+          ? await recordInterest(sessionId)
+          : await retractInterest(sessionId);
+        if (!result.ok) {
+          throw new Error(result.error);
+        }
         router.refresh();
-      } catch {
+      } catch (error) {
         setIsInterested(previous);
         onInterestChange?.(previous);
-        setError("Could not update interest. Please try again.");
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Could not update interest. Please try again.",
+        );
       }
     });
   };

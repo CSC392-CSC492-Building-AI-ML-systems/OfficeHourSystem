@@ -165,7 +165,7 @@ export default function InstructorScheduleDashboard({
   }) => {
     if (!offeringPublicId) return;
     setActionError(null);
-    await createRecurringBlockAction({
+    const result = await createRecurringBlockAction({
       offeringPublicId,
       title: input.title,
       uiType: input.uiType,
@@ -178,13 +178,19 @@ export default function InstructorScheduleDashboard({
       description: input.description,
       hostUserPublicIds: input.hostUserPublicIds,
     });
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
     setActiveModal(null);
     await loadSchedule();
   };
 
   const handleCreateOneTime = async (input: CreateOneTimeSessionInput) => {
     setActionError(null);
-    await createOneTimeSessionAction(input);
+    const result = await createOneTimeSessionAction(input);
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
     setActiveModal(null);
     await loadSchedule();
   };
@@ -200,7 +206,10 @@ export default function InstructorScheduleDashboard({
   }) => {
     if (!selectedSession) return;
     setActionError(null);
-    await updateSessionAction(selectedSession.id, patch);
+    const result = await updateSessionAction(selectedSession.id, patch);
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
     await loadSchedule();
   };
 
@@ -215,7 +224,7 @@ export default function InstructorScheduleDashboard({
   }) => {
     if (!editingRule) return;
     setActionError(null);
-    await updateRecurringBlockAction(editingRule.id, {
+    const result = await updateRecurringBlockAction(editingRule.id, {
       title: input.title,
       location: input.location || null,
       ...(editingRule.sessionTypeLabel === "Custom"
@@ -226,6 +235,9 @@ export default function InstructorScheduleDashboard({
       applyFrom: input.applyFrom,
       hostUserPublicIds: input.hostUserPublicIds,
     });
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
     setEditingRule(null);
     await loadSchedule();
   };
@@ -233,7 +245,10 @@ export default function InstructorScheduleDashboard({
   const handleDeleteRecurringBlock = async () => {
     if (!editingRule) return;
     setActionError(null);
-    await deleteRecurringBlockAction(editingRule.id);
+    const result = await deleteRecurringBlockAction(editingRule.id);
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
     setEditingRule(null);
     await loadSchedule();
   };
@@ -241,7 +256,10 @@ export default function InstructorScheduleDashboard({
   const handleCancelSession = async () => {
     if (!selectedSession) return;
     setActionError(null);
-    await cancelSessionAction(selectedSession.id);
+    const result = await cancelSessionAction(selectedSession.id);
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
     await loadSchedule();
   };
 

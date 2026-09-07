@@ -10,6 +10,14 @@ import {
   type RetractInterestResult,
 } from "@/lib/ohInterests";
 
+type InterestActionFailure = { ok: false; error: string };
+type RecordInterestActionResult =
+  | ({ ok: true } & RecordInterestResult)
+  | InterestActionFailure;
+type RetractInterestActionResult =
+  | ({ ok: true } & RetractInterestResult)
+  | InterestActionFailure;
+
 function revalidateInterestViews() {
   revalidatePath("/");
   revalidatePath("/course");
@@ -19,18 +27,34 @@ function revalidateInterestViews() {
 
 export async function recordInterest(
   sessionId: number,
-): Promise<RecordInterestResult> {
-  const userId = await requireSessionUserId();
-  const result = await recordSessionInterest(userId, sessionId);
-  revalidateInterestViews();
-  return result;
+): Promise<RecordInterestActionResult> {
+  try {
+    const userId = await requireSessionUserId();
+    const result = await recordSessionInterest(userId, sessionId);
+    revalidateInterestViews();
+    return { ok: true, ...result };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Could not update interest.",
+    };
+  }
 }
 
 export async function retractInterest(
   sessionId: number,
-): Promise<RetractInterestResult> {
-  const userId = await requireSessionUserId();
-  const result = await retractSessionInterest(userId, sessionId);
-  revalidateInterestViews();
-  return result;
+): Promise<RetractInterestActionResult> {
+  try {
+    const userId = await requireSessionUserId();
+    const result = await retractSessionInterest(userId, sessionId);
+    revalidateInterestViews();
+    return { ok: true, ...result };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Could not update interest.",
+    };
+  }
 }
