@@ -78,6 +78,9 @@ function OfferingCard({ offering }: { offering: InstructorOfferingDto }) {
         <p className="truncate text-sm font-semibold text-[#071f41] group-hover:underline">
           {formatCourseLabel(offering.courseCode, offering.termCode)}
         </p>
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+          {offering.courseCode}
+        </p>
         <p className="text-sm text-slate-500">View course statistics</p>
       </div>
     </Link>

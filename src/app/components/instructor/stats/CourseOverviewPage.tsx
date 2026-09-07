@@ -152,6 +152,9 @@ export default function CourseOverviewPage({
           <p className="text-xs font-bold uppercase tracking-widest text-[#c8102e]">
             {formatCourseLabel(data.courseCode, data.termCode)}
           </p>
+          <p className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-500">
+            {data.courseCode}
+          </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#071f41]">
             Course overview
           </h1>
