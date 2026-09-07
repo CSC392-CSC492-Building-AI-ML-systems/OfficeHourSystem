@@ -120,7 +120,7 @@ export default function SessionStatsDetailPage({
         <main className="mt-10 space-y-8">
           <Link
             href={`/course/stats/sessions?offering=${detail.offeringPublicId}`}
-            className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-[#071f41]"
+            className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#071f41] transition hover:border-slate-300 hover:bg-slate-50"
           >
             Back to per-session data
           </Link>

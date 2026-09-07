@@ -54,6 +54,7 @@ async function makeSession(
   offeringId: number,
   title: string,
   status: "COMPLETED" | "ACTIVE" | "SCHEDULED" = "COMPLETED",
+  type: "DEBUGGING" | "REGULAR" | "GROUP" = "DEBUGGING",
 ) {
   const start = new Date();
   start.setHours(10, 0, 0, 0);
@@ -61,7 +62,7 @@ async function makeSession(
     data: {
       offeringId,
       title,
-      type: "DEBUGGING",
+      type,
       startsAt: start,
       endsAt: new Date(start.getTime() + 60 * 60_000),
       status,
@@ -368,6 +369,66 @@ async function main() {
         o.avgCheckInsPerSession,
         1,
         "1 distinct check-in per session on average",
+      );
+    },
+  );
+
+  // 8. Only Help Centre sessions count in overview + student detail queries.
+  await runTest(
+    "regular office hours are excluded from Help Centre stats",
+    async () => {
+      await cleanupAll();
+      const offering = await makeOffering("8");
+      const debugging = await makeSession(
+        offering.id,
+        "Help Centre",
+        "COMPLETED",
+        "DEBUGGING",
+      );
+      const regular = await makeSession(
+        offering.id,
+        "Professor OH",
+        "COMPLETED",
+        "REGULAR",
+      );
+      const debugHost = await makeHost(debugging.id, "debug");
+      const regularHost = await makeHost(regular.id, "regular");
+      const debugStudent = await makeStudent("debug", offering.id);
+      const regularStudent = await makeStudent("regular", offering.id);
+
+      await addRecord(debugging.id, debugStudent.id, {
+        waitMin: 2,
+        helpMin: 15,
+        hostId: debugHost.id,
+      });
+      await addRecord(regular.id, regularStudent.id, {
+        waitMin: 2,
+        helpMin: 30,
+        hostId: regularHost.id,
+      });
+
+      await prisma.officeHourInterest.createMany({
+        data: [
+          { sessionId: debugging.id, userId: debugStudent.id },
+          { sessionId: regular.id, userId: regularStudent.id },
+        ],
+      });
+
+      const overview = await getCourseOverview(offering);
+      assertEqual(overview.endedSessionCount, 1, "only debugging ended count");
+      assertEqual(overview.studentsHelped, 1, "regular session excluded");
+      assertEqual(overview.studentsCheckedIn, 1, "regular check-in excluded");
+      assertEqual(overview.interestRecords, 1, "regular interest excluded");
+      assertEqual(overview.studentsInterested, 1, "regular student excluded");
+
+      const details = await getCourseStudentDetails(offering.id);
+      assertEqual(details.length, 1, "only debugging attendee listed");
+      assertEqual(details[0].studentName, "Co debug", "debugging student kept");
+      assert(
+        details[0].visits.every(
+          (visit) => visit.sessionTitle === "Help Centre",
+        ),
+        "regular session visit excluded",
       );
     },
   );

@@ -162,7 +162,7 @@ export default function CourseOverviewPage({
           </p>
           <Link
             href="/course/stats"
-            className="mt-3 inline-block text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
+            className="mt-3 inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#071f41] transition hover:border-slate-300 hover:bg-slate-50"
           >
             Choose another course
           </Link>
