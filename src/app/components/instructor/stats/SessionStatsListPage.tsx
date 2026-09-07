@@ -52,6 +52,8 @@ function StatsCard({
   session: CourseStatsSessionDto;
   termCode: string;
 }) {
+  const queueNeverOpened = session.checkedIn === null;
+
   return (
     <article className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-[0_16px_44px_-32px_rgba(15,41,66,0.35)]">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#c8102e]">
@@ -76,6 +78,12 @@ function StatsCard({
           {session.hostNames.length > 0 ? session.hostNames.join(", ") : "NA"}
         </p>
       </div>
+
+      {queueNeverOpened ? (
+        <p className="mt-4 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+          Queue never opened
+        </p>
+      ) : null}
 
       <div className="mt-5 grid grid-cols-4 gap-2">
         <Metric label="Checked in" value={na(session.checkedIn)} />
@@ -137,7 +145,7 @@ export default function SessionStatsListPage({
         <main className="mt-10 space-y-8">
           <Link
             href="/course/stats"
-            className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-[#071f41]"
+            className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#071f41] transition hover:border-slate-300 hover:bg-slate-50"
           >
             Choose another course
           </Link>
@@ -152,6 +160,9 @@ export default function SessionStatsListPage({
               </h1>
               <p className="text-base text-slate-600">
                 Per-session Help Centre office-hour stats.
+              </p>
+              <p className="text-sm text-slate-500">
+                NA means the queue was never opened for that session.
               </p>
             </div>
 

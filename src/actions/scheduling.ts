@@ -36,12 +36,31 @@ import type {
   UpdateSessionInput,
 } from "@/lib/scheduling/types";
 
+type ScheduleActionFailure = { ok: false; error: string };
+type ScheduleVoidActionResult = { ok: true } | ScheduleActionFailure;
+type CreateRecurringBlockActionResult =
+  | { ok: true; schedulePublicIds: string[]; sessionsCreated: number }
+  | ScheduleActionFailure;
+type UpdateSessionActionResult =
+  | { ok: true; session: ScheduleSessionDto }
+  | ScheduleActionFailure;
+
 function revalidateSchedulingPaths(offeringPublicId: string) {
   revalidatePath(instructorDashboardHref(offeringPublicId));
   revalidatePath(courseInstructorSchedulePath(offeringPublicId));
   revalidatePath(courseInstructorQueuesPath(offeringPublicId));
   revalidatePath(courseInstructorActiveQueuePath(offeringPublicId));
   revalidatePath(studentDashboardHref(offeringPublicId));
+}
+
+function toScheduleActionFailure(
+  error: unknown,
+  fallback: string,
+): ScheduleActionFailure {
+  return {
+    ok: false,
+    error: error instanceof Error ? error.message : fallback,
+  };
 }
 
 export async function getSchedulePageAction(params: {
@@ -58,43 +77,62 @@ export async function getSchedulePageAction(params: {
 
 export async function createRecurringBlockAction(
   input: CreateRecurringBlockInput,
-): Promise<{ schedulePublicIds: string[]; sessionsCreated: number }> {
-  const userId = await requireSessionUserId();
-  const result = await createRecurringBlock(userId, {
-    ...input,
-    title: input.title?.trim() ? input.title.trim() : "Office Hours",
-  });
-  revalidateSchedulingPaths(input.offeringPublicId);
-  return result;
+): Promise<CreateRecurringBlockActionResult> {
+  try {
+    const userId = await requireSessionUserId();
+    const result = await createRecurringBlock(userId, {
+      ...input,
+      title: input.title?.trim() ? input.title.trim() : "Office Hours",
+    });
+    revalidateSchedulingPaths(input.offeringPublicId);
+    return { ok: true, ...result };
+  } catch (error) {
+    return toScheduleActionFailure(error, "Failed to create recurring block.");
+  }
 }
 
 export async function updateRecurringBlockAction(
   publicId: string,
   patch: UpdateRecurringBlockInput,
-): Promise<void> {
-  const userId = await requireSessionUserId();
-  const result = await updateRecurringBlock(userId, publicId, patch);
-  revalidateSchedulingPaths(result.offeringPublicId);
+): Promise<ScheduleVoidActionResult> {
+  try {
+    const userId = await requireSessionUserId();
+    const result = await updateRecurringBlock(userId, publicId, patch);
+    revalidateSchedulingPaths(result.offeringPublicId);
+    return { ok: true };
+  } catch (error) {
+    return toScheduleActionFailure(error, "Failed to update recurring block.");
+  }
 }
 
 export async function deleteRecurringBlockAction(
   publicId: string,
-): Promise<void> {
-  const userId = await requireSessionUserId();
-  const result = await deleteRecurringBlock(userId, publicId);
-  revalidateSchedulingPaths(result.offeringPublicId);
+): Promise<ScheduleVoidActionResult> {
+  try {
+    const userId = await requireSessionUserId();
+    const result = await deleteRecurringBlock(userId, publicId);
+    revalidateSchedulingPaths(result.offeringPublicId);
+    return { ok: true };
+  } catch (error) {
+    return toScheduleActionFailure(error, "Failed to delete recurring block.");
+  }
 }
 
 export async function createOneTimeSessionAction(
   input: CreateOneTimeSessionInput,
-): Promise<void> {
-  if (!input.title?.trim()) {
-    throw new Error("Title is required.");
-  }
+): Promise<ScheduleVoidActionResult> {
+  try {
+    if (!input.title?.trim()) {
+      throw new Error("Title is required.");
+    }
 
-  const userId = await requireSessionUserId();
-  await createOneTimeSession(userId, input);
-  revalidateSchedulingPaths(input.offeringPublicId);
+    const userId = await requireSessionUserId();
+    await createOneTimeSession(userId, input);
+    revalidateSchedulingPaths(input.offeringPublicId);
+    return { ok: true };
+  } catch (error) {
+    return toScheduleActionFailure(error, "Failed to add session.");
+  }
 }
 
 export async function getStudentScheduleWeekAction(params: {
@@ -109,17 +147,28 @@ export async function getStudentScheduleWeekAction(params: {
 export async function updateSessionAction(
   publicId: string,
   patch: UpdateSessionInput,
-): Promise<ScheduleSessionDto> {
-  const userId = await requireSessionUserId();
-  const result = await updateSession(userId, publicId, patch);
-  revalidateSchedulingPaths(result.offeringPublicId);
-  return result.session;
+): Promise<UpdateSessionActionResult> {
+  try {
+    const userId = await requireSessionUserId();
+    const result = await updateSession(userId, publicId, patch);
+    revalidateSchedulingPaths(result.offeringPublicId);
+    return { ok: true, session: result.session };
+  } catch (error) {
+    return toScheduleActionFailure(error, "Failed to save session.");
+  }
 }
 
-export async function cancelSessionAction(publicId: string): Promise<void> {
-  const userId = await requireSessionUserId();
-  const result = await cancelSession(userId, publicId);
-  revalidateSchedulingPaths(result.offeringPublicId);
+export async function cancelSessionAction(
+  publicId: string,
+): Promise<ScheduleVoidActionResult> {
+  try {
+    const userId = await requireSessionUserId();
+    const result = await cancelSession(userId, publicId);
+    revalidateSchedulingPaths(result.offeringPublicId);
+    return { ok: true };
+  } catch (error) {
+    return toScheduleActionFailure(error, "Failed to cancel session.");
+  }
 }
 
 export async function getSessionInterestedStudentsAction(

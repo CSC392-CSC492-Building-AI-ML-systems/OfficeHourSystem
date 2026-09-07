@@ -25,7 +25,7 @@ type NavbarProps = {
   activeItem?: InstructorNavItem;
   showSearch?: boolean;
   offeringPublicId: string;
-  /** Course-scoped label for the profile menu, e.g. "CSC108 · Term 20265". */
+  /** Course-scoped label for the profile menu, e.g. "Intro to Programming". */
   courseLabel?: string;
 };
 

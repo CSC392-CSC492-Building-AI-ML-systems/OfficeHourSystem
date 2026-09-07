@@ -36,12 +36,12 @@ export type AttendanceExportRow = {
   helpMinutes: string;
 };
 
-/** One row per attendance record, sorted by session start then check-in time. */
+/** One row per Help Centre attendance record, sorted by session start then check-in time. */
 export async function getOfferingAttendanceExportRows(
   offeringId: number,
 ): Promise<AttendanceExportRow[]> {
   const records = await prisma.officeHourAttendanceRecord.findMany({
-    where: { session: { offeringId } },
+    where: { session: { offeringId, type: "DEBUGGING" } },
     include: {
       student: {
         select: {

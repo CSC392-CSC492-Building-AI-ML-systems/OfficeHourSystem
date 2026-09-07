@@ -20,7 +20,7 @@ type NavbarProps = {
   /** Highlight matching item.key; omit to highlight none. */
   activeKey?: string;
   brandHref?: string;
-  /** Course-scoped label for the profile menu, e.g. "CSC108 · Term 20265". */
+  /** Course-scoped label for the profile menu, e.g. "Intro to Programming". */
   courseLabel?: string;
   showSearch?: boolean;
   /** Replaces the default ProfileMenu when provided. */
@@ -72,7 +72,7 @@ export function Navbar({
 }: NavbarProps) {
   return (
     <header className="rounded-[28px] border-2 border-[#c8102e] bg-white px-5 py-4 shadow-[0_16px_40px_-32px_rgba(15,41,66,0.35)] sm:px-6">
-      <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-center md:gap-10">
           <Link
             href={brandHref}
@@ -84,7 +84,7 @@ export function Navbar({
           <NavLinks items={items} activeKey={activeKey} />
         </div>
 
-        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:self-end xl:self-auto">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:self-end lg:self-auto">
           {showSearch ? (
             <label className="relative block min-w-0 sm:w-64">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

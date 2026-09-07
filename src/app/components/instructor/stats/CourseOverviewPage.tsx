@@ -152,6 +152,9 @@ export default function CourseOverviewPage({
           <p className="text-xs font-bold uppercase tracking-widest text-[#c8102e]">
             {formatCourseLabel(data.courseCode, data.termCode)}
           </p>
+          <p className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-500">
+            {data.courseCode}
+          </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#071f41]">
             Course overview
           </h1>
@@ -162,7 +165,7 @@ export default function CourseOverviewPage({
           </p>
           <Link
             href="/course/stats"
-            className="mt-3 inline-block text-sm font-semibold text-[#071f41] underline-offset-4 hover:underline"
+            className="mt-3 inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#071f41] transition hover:border-slate-300 hover:bg-slate-50"
           >
             Choose another course
           </Link>

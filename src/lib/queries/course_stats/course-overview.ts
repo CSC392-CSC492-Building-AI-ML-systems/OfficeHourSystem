@@ -50,12 +50,15 @@ export async function getOfferingByPublicId(offeringPublicId: string) {
   });
 }
 
-// Aggregate stats for one offering. Caller supplies resolved offering meta.
+// Aggregate Help Centre stats for one offering. Caller supplies resolved
+// offering meta.
 //
-// Scope rules (per the spec):
+// Scope rules:
+//  - Only DEBUGGING / Help Centre sessions are included at all.
 //  - "helped", "checked in", "avg help time", "interested → came" and ALL
-//    per-session averages count only ENDED (COMPLETED) sessions.
-//  - "interested" (record count + distinct people) spans the whole offering.
+//    per-session averages count only ENDED (COMPLETED) Help Centre sessions.
+//  - "interested" (record count + distinct people) spans all Help Centre
+//    sessions in the offering.
 //  - Ratios are over the offering's enrolled student count.
 export async function getCourseOverview(offering: {
   id: number;
@@ -64,7 +67,7 @@ export async function getCourseOverview(offering: {
   courseCode: string;
 }): Promise<CourseOverviewDto> {
   const sessions = await prisma.officeHourSession.findMany({
-    where: { offeringId: offering.id },
+    where: { offeringId: offering.id, type: "DEBUGGING" },
     select: { id: true, status: true },
   });
   const allSessionIds = sessions.map((s) => s.id);
@@ -177,13 +180,13 @@ export async function getCourseOverview(offering: {
   };
 }
 
-// Per-student detail across the whole offering, grouped and sorted by
-// visit count → helped count → total help minutes (all descending).
+// Per-student detail across Help Centre sessions in the offering, grouped and
+// sorted by visit count → helped count → total help minutes (all descending).
 export async function getCourseStudentDetails(
   offeringId: number,
 ): Promise<CourseStudentDetailDto[]> {
   const sessions = await prisma.officeHourSession.findMany({
-    where: { offeringId },
+    where: { offeringId, type: "DEBUGGING" },
     select: { id: true },
   });
   const sessionIds = sessions.map((s) => s.id);

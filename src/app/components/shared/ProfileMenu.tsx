@@ -14,7 +14,7 @@ type ProfileUser = {
 };
 
 type ProfileMenuProps = {
-  /** Shown only on course-scoped pages, e.g. "CSC108 · Term 20265". */
+  /** Shown only on course-scoped pages, e.g. "Intro to Programming". */
   courseLabel?: string;
 };
 

@@ -165,7 +165,7 @@ export default function InstructorScheduleDashboard({
   }) => {
     if (!offeringPublicId) return;
     setActionError(null);
-    await createRecurringBlockAction({
+    const result = await createRecurringBlockAction({
       offeringPublicId,
       title: input.title,
       uiType: input.uiType,
@@ -178,13 +178,19 @@ export default function InstructorScheduleDashboard({
       description: input.description,
       hostUserPublicIds: input.hostUserPublicIds,
     });
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
     setActiveModal(null);
     await loadSchedule();
   };
 
   const handleCreateOneTime = async (input: CreateOneTimeSessionInput) => {
     setActionError(null);
-    await createOneTimeSessionAction(input);
+    const result = await createOneTimeSessionAction(input);
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
     setActiveModal(null);
     await loadSchedule();
   };
@@ -200,7 +206,10 @@ export default function InstructorScheduleDashboard({
   }) => {
     if (!selectedSession) return;
     setActionError(null);
-    await updateSessionAction(selectedSession.id, patch);
+    const result = await updateSessionAction(selectedSession.id, patch);
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
     await loadSchedule();
   };
 
@@ -215,7 +224,7 @@ export default function InstructorScheduleDashboard({
   }) => {
     if (!editingRule) return;
     setActionError(null);
-    await updateRecurringBlockAction(editingRule.id, {
+    const result = await updateRecurringBlockAction(editingRule.id, {
       title: input.title,
       location: input.location || null,
       ...(editingRule.sessionTypeLabel === "Custom"
@@ -226,6 +235,9 @@ export default function InstructorScheduleDashboard({
       applyFrom: input.applyFrom,
       hostUserPublicIds: input.hostUserPublicIds,
     });
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
     setEditingRule(null);
     await loadSchedule();
   };
@@ -233,7 +245,10 @@ export default function InstructorScheduleDashboard({
   const handleDeleteRecurringBlock = async () => {
     if (!editingRule) return;
     setActionError(null);
-    await deleteRecurringBlockAction(editingRule.id);
+    const result = await deleteRecurringBlockAction(editingRule.id);
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
     setEditingRule(null);
     await loadSchedule();
   };
@@ -241,7 +256,10 @@ export default function InstructorScheduleDashboard({
   const handleCancelSession = async () => {
     if (!selectedSession) return;
     setActionError(null);
-    await cancelSessionAction(selectedSession.id);
+    const result = await cancelSessionAction(selectedSession.id);
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
     await loadSchedule();
   };
 
@@ -314,90 +332,150 @@ export default function InstructorScheduleDashboard({
               No schedule found. Add yourself as an instructor or TA to view the
               schedule.
             </p>
-          ) : (
+          ) : selectedSession ? (
             <section className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_360px]">
-              <WeeklyCalendar
-                days={
-                  calendarDays.length > 0
-                    ? calendarDays
-                    : [
-                        { key: "mon", label: "MON", date: "—" },
-                        { key: "tue", label: "TUE", date: "—" },
-                        { key: "wed", label: "WED", date: "—" },
-                        { key: "thu", label: "THU", date: "—" },
-                        { key: "fri", label: "FRI", date: "—" },
-                      ]
-                }
-                timeSlots={TIME_SLOTS}
-                sessions={sessions}
-                selectedSessionId={selectedSession?.id ?? ""}
-                currentUserPublicId={currentUserPublicId}
-                onSelectSession={setSelectedSessionId}
-                weekLabel={weekLabel}
-                weekStart={weekStart}
-                onPreviousWeek={() => shiftWeek(-1)}
-                onNextWeek={() => shiftWeek(1)}
-                onGoToThisWeek={goToThisWeek}
-                canEdit={canEdit}
-                onCreateRecurring={() => setActiveModal("recurring")}
-                onCreateOneTime={() => setActiveModal("one-time")}
-              />
+              <div className="space-y-8">
+                <WeeklyCalendar
+                  days={
+                    calendarDays.length > 0
+                      ? calendarDays
+                      : [
+                          { key: "mon", label: "MON", date: "—" },
+                          { key: "tue", label: "TUE", date: "—" },
+                          { key: "wed", label: "WED", date: "—" },
+                          { key: "thu", label: "THU", date: "—" },
+                          { key: "fri", label: "FRI", date: "—" },
+                        ]
+                  }
+                  timeSlots={TIME_SLOTS}
+                  sessions={sessions}
+                  selectedSessionId={selectedSession.id}
+                  currentUserPublicId={currentUserPublicId}
+                  onSelectSession={setSelectedSessionId}
+                  weekLabel={weekLabel}
+                  weekStart={weekStart}
+                  onPreviousWeek={() => shiftWeek(-1)}
+                  onNextWeek={() => shiftWeek(1)}
+                  onGoToThisWeek={goToThisWeek}
+                  canEdit={canEdit}
+                  onCreateRecurring={() => setActiveModal("recurring")}
+                  onCreateOneTime={() => setActiveModal("one-time")}
+                />
 
-              <div className="space-y-6">
-                {selectedSession ? (
-                  <EditSessionPanel
-                    key={selectedSession.id}
-                    selectedSession={selectedSession}
-                    staff={staff}
-                    canEdit={canEdit}
-                    onSave={handleSaveSession}
-                    onCancelSession={handleCancelSession}
-                    onError={setActionError}
-                  />
-                ) : (
-                  <p className="rounded-[30px] border border-slate-200/80 bg-white p-6 text-sm text-slate-500">
-                    {sessions.length === 0
-                      ? "Create a recurring block or add a one-time session to populate the calendar, then select a session here to view or edit it."
-                      : "Select a session on the calendar to view details."}
-                  </p>
-                )}
+                <SessionStatsSection
+                  key={selectedSession.id}
+                  session={selectedSession}
+                />
+
+                <RecurringBlocks
+                  blocks={rules}
+                  canEdit={canEdit}
+                  onEditBlock={setEditingRule}
+                  onCreateBlock={() => setActiveModal("recurring")}
+                />
+
+                <OneTimeSessions
+                  sessions={oneTimeSessions}
+                  canEdit={canEdit}
+                  onCreateSession={() => setActiveModal("one-time")}
+                  onSelectSession={(sessionId) => {
+                    const listed = oneTimeSessions.find(
+                      (session) => session.id === sessionId,
+                    );
+                    setSelectedSessionId(sessionId);
+                    if (listed) {
+                      const targetWeek = formatDateOnlyLocal(
+                        startOfWeekMonday(new Date(`${listed.date}T12:00:00`)),
+                      );
+                      if (targetWeek !== weekStart) {
+                        void loadSchedule({ weekStart: targetWeek });
+                      }
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="xl:sticky xl:top-6 xl:self-start xl:max-h-[calc(100vh-1.5rem)] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden">
+                <EditSessionPanel
+                  key={selectedSession.id}
+                  selectedSession={selectedSession}
+                  staff={staff}
+                  canEdit={canEdit}
+                  onDeselect={() => {
+                    setSelectedSessionId(null);
+                    setActionError(null);
+                  }}
+                  onSave={handleSaveSession}
+                  onCancelSession={handleCancelSession}
+                  onError={setActionError}
+                />
               </div>
             </section>
+          ) : (
+            <>
+              <section className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_360px]">
+                <WeeklyCalendar
+                  days={
+                    calendarDays.length > 0
+                      ? calendarDays
+                      : [
+                          { key: "mon", label: "MON", date: "—" },
+                          { key: "tue", label: "TUE", date: "—" },
+                          { key: "wed", label: "WED", date: "—" },
+                          { key: "thu", label: "THU", date: "—" },
+                          { key: "fri", label: "FRI", date: "—" },
+                        ]
+                  }
+                  timeSlots={TIME_SLOTS}
+                  sessions={sessions}
+                  selectedSessionId=""
+                  currentUserPublicId={currentUserPublicId}
+                  onSelectSession={setSelectedSessionId}
+                  weekLabel={weekLabel}
+                  weekStart={weekStart}
+                  onPreviousWeek={() => shiftWeek(-1)}
+                  onNextWeek={() => shiftWeek(1)}
+                  onGoToThisWeek={goToThisWeek}
+                  canEdit={canEdit}
+                  onCreateRecurring={() => setActiveModal("recurring")}
+                  onCreateOneTime={() => setActiveModal("one-time")}
+                />
+
+                <p className="rounded-[30px] border border-slate-200/80 bg-white p-6 text-sm text-slate-500">
+                  {sessions.length === 0
+                    ? "Create a recurring block or add a one-time session to populate the calendar, then select a session here to view or edit it."
+                    : "Select a session on the calendar to view details."}
+                </p>
+              </section>
+
+              <RecurringBlocks
+                blocks={rules}
+                canEdit={canEdit}
+                onEditBlock={setEditingRule}
+                onCreateBlock={() => setActiveModal("recurring")}
+              />
+
+              <OneTimeSessions
+                sessions={oneTimeSessions}
+                canEdit={canEdit}
+                onCreateSession={() => setActiveModal("one-time")}
+                onSelectSession={(sessionId) => {
+                  const listed = oneTimeSessions.find(
+                    (session) => session.id === sessionId,
+                  );
+                  setSelectedSessionId(sessionId);
+                  if (listed) {
+                    const targetWeek = formatDateOnlyLocal(
+                      startOfWeekMonday(new Date(`${listed.date}T12:00:00`)),
+                    );
+                    if (targetWeek !== weekStart) {
+                      void loadSchedule({ weekStart: targetWeek });
+                    }
+                  }
+                }}
+              />
+            </>
           )}
-
-          {selectedSession ? (
-            <SessionStatsSection
-              key={selectedSession.id}
-              session={selectedSession}
-            />
-          ) : null}
-
-          <RecurringBlocks
-            blocks={rules}
-            canEdit={canEdit}
-            onEditBlock={setEditingRule}
-            onCreateBlock={() => setActiveModal("recurring")}
-          />
-
-          <OneTimeSessions
-            sessions={oneTimeSessions}
-            canEdit={canEdit}
-            onCreateSession={() => setActiveModal("one-time")}
-            onSelectSession={(sessionId) => {
-              const listed = oneTimeSessions.find(
-                (session) => session.id === sessionId,
-              );
-              setSelectedSessionId(sessionId);
-              if (listed) {
-                const targetWeek = formatDateOnlyLocal(
-                  startOfWeekMonday(new Date(`${listed.date}T12:00:00`)),
-                );
-                if (targetWeek !== weekStart) {
-                  void loadSchedule({ weekStart: targetWeek });
-                }
-              }
-            }}
-          />
         </main>
       </div>
 
