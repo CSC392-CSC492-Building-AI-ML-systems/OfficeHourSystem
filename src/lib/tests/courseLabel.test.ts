@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { formatCourseLabel } from "@/lib/courseLabel";
 import { buildReminderEmail } from "@/lib/reminders/reminderEmail";
 
-assert.equal(formatCourseLabel("JFX101", "20991"), "JFX101 · 20991");
+assert.equal(formatCourseLabel("JFX101", "20991"), "20991");
 
 const reminder = buildReminderEmail({
   firstName: "Jacky",
@@ -15,7 +15,9 @@ const reminder = buildReminderEmail({
   minutesBefore: 60,
 });
 
-assert.match(reminder.subject, /JFX101 · 20991/);
-assert.match(reminder.html, /JFX101 · 20991/);
+assert.match(reminder.subject, /20991/);
+assert.doesNotMatch(reminder.subject, /JFX101/);
+assert.match(reminder.html, /20991/);
+assert.doesNotMatch(reminder.html, /JFX101/);
 
 console.log("courseLabel.test.ts: all assertions passed");

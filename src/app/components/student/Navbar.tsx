@@ -23,7 +23,7 @@ type NavbarProps = {
   // Queue status is a global (cross-course) view; hide its link when this
   // navbar is rendered inside a specific course dashboard.
   showQueueLink?: boolean;
-  /** Course-scoped label for the profile menu, e.g. "CSC108 · Term 20265". */
+  /** Course-scoped label for the profile menu, e.g. "Intro to Programming". */
   courseLabel?: string;
 };
 

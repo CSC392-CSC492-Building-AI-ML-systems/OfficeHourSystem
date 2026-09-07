@@ -155,8 +155,8 @@ export default async function Home() {
             </h1>
             <p className="mt-8 max-w-md text-lg leading-8 text-slate-300">
               Track your office hours, with live queues and student “I’m
-              interested” presses. Prevent students from crowding teaching staff
-              with a digital queue.
+              interested” presses. Use a digital queue to streamline Help Centre
+              sessions!
             </p>
             <Link
               href="/course"
@@ -233,7 +233,7 @@ export default async function Home() {
             <SessionRow
               sessionId={0}
               type="REGULAR"
-              courseLabel="CSC108 · 20265"
+              courseLabel="Intro to Programming"
               title="Morning Professor Office Hours"
               time="2:00 – 3:00 PM"
               location="DH 2014"
@@ -324,7 +324,7 @@ export default async function Home() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-widest text-[#c8102e]">
-                      CSC108 · 20265
+                      Intro to Programming
                     </p>
                     <h3 className="text-lg font-semibold text-[#071f41]">
                       Help Centre

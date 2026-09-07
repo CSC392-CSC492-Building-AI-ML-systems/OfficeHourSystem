@@ -20,7 +20,7 @@ type NavbarProps = {
   /** Highlight matching item.key; omit to highlight none. */
   activeKey?: string;
   brandHref?: string;
-  /** Course-scoped label for the profile menu, e.g. "CSC108 · Term 20265". */
+  /** Course-scoped label for the profile menu, e.g. "Intro to Programming". */
   courseLabel?: string;
   showSearch?: boolean;
   /** Replaces the default ProfileMenu when provided. */

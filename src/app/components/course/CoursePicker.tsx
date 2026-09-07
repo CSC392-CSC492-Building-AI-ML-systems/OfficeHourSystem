@@ -30,6 +30,9 @@ function CourseCard({ course }: { course: CoursePickerItem }) {
         <p className="truncate text-sm font-semibold text-[#0b5cab] group-hover:underline">
           {courseName}
         </p>
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+          {course.courseCode}
+        </p>
         <p className="text-sm text-slate-700">{course.roleLabel}</p>
         <p className="break-words text-sm text-slate-500">{instructors}</p>
       </div>
