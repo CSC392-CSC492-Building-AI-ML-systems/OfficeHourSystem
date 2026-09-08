@@ -1,15 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Mail, Plus, Search, Trash2 } from "lucide-react";
+import { Mail, Search, Trash2, UserPlus } from "lucide-react";
 import type { OfferingStudentMember } from "@/lib/queries/offeringMember";
 
 interface StudentTableProps {
   students: OfferingStudentMember[];
   canEdit: boolean;
-  onAddStudent: (utorid: string) => Promise<boolean>;
-  isAddingStudent: boolean;
-  addStudentError: string | null;
+  onOpenAddStudent: () => void;
   onRemoveStudent: (studentId: string) => void;
   removingStudentId: string | null;
 }
@@ -26,24 +24,11 @@ function getInitials(name: string) {
 export function StudentTable({
   students,
   canEdit,
-  onAddStudent,
-  isAddingStudent,
-  addStudentError,
+  onOpenAddStudent,
   onRemoveStudent,
   removingStudentId,
 }: StudentTableProps) {
   const [query, setQuery] = useState("");
-  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
-  const [utorid, setUtorid] = useState("");
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const added = await onAddStudent(utorid);
-    if (added) {
-      setUtorid("");
-      setIsAddFormOpen(false);
-    }
-  };
 
   const filteredStudents = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -63,90 +48,37 @@ export function StudentTable({
   return (
     <section className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white shadow-[0_18px_50px_-30px_rgba(15,41,66,0.35)]">
       <div className="flex flex-col gap-4 border-b border-slate-200 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-[#071f41]">
-            Enrolled Students
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Classlist roster for this course. Remove a student in one click.
-          </p>
-        </div>
-
-        <div className="flex w-full flex-col gap-3 lg:max-w-xl lg:items-end">
-          <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-end">
-            <label className="relative block w-full max-w-sm">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search students..."
-                className="w-full rounded-full border border-slate-200 bg-[#f8fafc] py-2.5 pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
-              />
-            </label>
-            {canEdit ? (
-              <button
-                type="button"
-                onClick={() => setIsAddFormOpen((open) => !open)}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#071f41] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0f2942]"
-              >
-                <Plus className="h-4 w-4" />
-                Add Student
-              </button>
-            ) : null}
-          </div>
-
-          {canEdit && isAddFormOpen ? (
-            <form
-              onSubmit={handleSubmit}
-              className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-end"
-            >
-              <label htmlFor="quick-add-student-utorid" className="sr-only">
-                UTORid
-              </label>
-              <input
-                id="quick-add-student-utorid"
-                type="text"
-                value={utorid}
-                onChange={(event) => setUtorid(event.target.value)}
-                placeholder="UTORid"
-                required
-                autoFocus
-                disabled={isAddingStudent}
-                className="w-full rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41] sm:max-w-xs"
-              />
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={isAddingStudent || !utorid.trim()}
-                  className="rounded-full bg-[#071f41] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0f2942] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isAddingStudent ? "Adding..." : "Add"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAddFormOpen(false);
-                    setUtorid("");
-                  }}
-                  disabled={isAddingStudent}
-                  className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : null}
-
-          {canEdit && isAddFormOpen && addStudentError ? (
-            <p
-              role="alert"
-              className="w-full text-sm text-[#9f1239] sm:text-right"
-            >
-              {addStudentError}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div>
+            <h2 className="text-lg font-semibold text-[#071f41]">
+              Enrolled Students
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Classlist roster for this course. Remove a student in one click.
             </p>
+          </div>
+          {canEdit ? (
+            <button
+              type="button"
+              onClick={onOpenAddStudent}
+              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-[#071f41] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(7,31,65,0.7)] transition hover:bg-[#0f2942] sm:self-auto"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Student
+            </button>
           ) : null}
         </div>
+
+        <label className="relative block w-full max-w-sm">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search students..."
+            className="w-full rounded-full border border-slate-200 bg-[#f8fafc] py-2.5 pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#071f41]"
+          />
+        </label>
       </div>
 
       <div className="overflow-x-auto">

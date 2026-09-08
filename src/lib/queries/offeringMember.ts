@@ -360,8 +360,11 @@ export type OfferingStudentMember = {
 export async function addOfferingStudent(
   offeringPublicId: string,
   utorid: string,
+  profile: { firstName?: string; lastName?: string } = {},
 ): Promise<OfferingStudentMember> {
   const normalizedUtorid = normalizeUtorid(utorid);
+  const normalizedFirstName = profile.firstName?.trim() || undefined;
+  const normalizedLastName = profile.lastName?.trim() || undefined;
   if (!normalizedUtorid) {
     throw new OfferingStudentError("UTORid is required");
   }
@@ -376,10 +379,14 @@ export async function addOfferingStudent(
       throw new OfferingStudentError("Course offering not found");
     }
 
-    const user = await tx.user.upsert({
+    let user = await tx.user.upsert({
       where: { utorid: normalizedUtorid },
       update: {},
-      create: { utorid: normalizedUtorid },
+      create: {
+        utorid: normalizedUtorid,
+        ...(normalizedFirstName ? { firstName: normalizedFirstName } : {}),
+        ...(normalizedLastName ? { lastName: normalizedLastName } : {}),
+      },
       select: {
         id: true,
         publicId: true,
@@ -406,6 +413,37 @@ export async function addOfferingStudent(
       throw new OfferingStudentError(
         `This person is already ${roleLabel} in this course and cannot be added as a student.`,
       );
+    }
+
+    const shouldFillFirstName = !user.firstName?.trim() && normalizedFirstName;
+    const shouldFillLastName = !user.lastName?.trim() && normalizedLastName;
+
+    if (shouldFillFirstName) {
+      await tx.user.updateMany({
+        where: { id: user.id, firstName: user.firstName },
+        data: { firstName: shouldFillFirstName },
+      });
+    }
+
+    if (shouldFillLastName) {
+      await tx.user.updateMany({
+        where: { id: user.id, lastName: user.lastName },
+        data: { lastName: shouldFillLastName },
+      });
+    }
+
+    if (shouldFillFirstName || shouldFillLastName) {
+      user = await tx.user.findUniqueOrThrow({
+        where: { id: user.id },
+        select: {
+          id: true,
+          publicId: true,
+          utorid: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+        },
+      });
     }
 
     if (!existing) {

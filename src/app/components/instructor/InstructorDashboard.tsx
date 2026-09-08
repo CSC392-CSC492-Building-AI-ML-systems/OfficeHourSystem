@@ -12,6 +12,7 @@ import {
 } from "@/actions/instructor/staff";
 import { Navbar } from "./Navbar";
 import { AddTaModal } from "./cards/AddTaModal";
+import { AddStudentModal } from "./cards/AddStudentModal";
 import { ReuploadClasslistModal } from "./cards/ReuploadClasslistModal";
 import type {
   OfferingStaffMember,
@@ -50,6 +51,7 @@ export default function InstructorDashboard({
   );
   const [isAddingStudent, setIsAddingStudent] = useState(false);
   const [addStudentError, setAddStudentError] = useState<string | null>(null);
+  const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isReuploadModalOpen, setIsReuploadModalOpen] = useState(false);
   const [reuploadModalKey, setReuploadModalKey] = useState(0);
@@ -108,14 +110,18 @@ export default function InstructorDashboard({
     return true;
   };
 
-  const handleAddStudent = async (utorid: string) => {
+  const handleAddStudent = async (input: {
+    utorid: string;
+    firstName?: string;
+    lastName?: string;
+  }) => {
     setIsAddingStudent(true);
     setAddStudentError(null);
 
     try {
       const result = await addOfferingStudentAction({
         offeringPublicId,
-        utorid,
+        ...input,
       });
 
       if (!result.ok) {
@@ -266,9 +272,10 @@ export default function InstructorDashboard({
           <StudentTable
             students={students}
             canEdit={canEdit}
-            onAddStudent={handleAddStudent}
-            isAddingStudent={isAddingStudent}
-            addStudentError={addStudentError}
+            onOpenAddStudent={() => {
+              setAddStudentError(null);
+              setIsAddStudentModalOpen(true);
+            }}
             onRemoveStudent={handleRemoveStudent}
             removingStudentId={removingStudentId}
           />
@@ -303,6 +310,14 @@ export default function InstructorDashboard({
         onBulkAddStaffMembers={handleBulkAddStaffMembers}
         isSubmitting={isAddingStaff}
         error={addError}
+      />
+
+      <AddStudentModal
+        isOpen={isAddStudentModalOpen}
+        onClose={() => setIsAddStudentModalOpen(false)}
+        onAddStudent={handleAddStudent}
+        isSubmitting={isAddingStudent}
+        error={addStudentError}
       />
     </div>
   );

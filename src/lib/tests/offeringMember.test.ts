@@ -460,6 +460,12 @@ async function main() {
         where: { utorid: result.utorid },
       });
       assert(createdUser !== null, "global user should be created");
+      assertEqual(
+        createdUser!.firstName,
+        null,
+        "first name should remain null",
+      );
+      assertEqual(createdUser!.lastName, null, "last name should remain null");
       assertEqual(createdUser!.email, null, "email should remain null");
 
       const membership = await prisma.offeringMember.findUnique({
@@ -475,24 +481,75 @@ async function main() {
   );
 
   await runTest(
-    "addOfferingStudent: enrolls an existing global user",
+    "addOfferingStudent: creates a new user with optional names",
+    async () => {
+      const result = await addOfferingStudent(
+        offering.publicId,
+        `${TEST_PREFIX}named_new_student`,
+        { firstName: "Jane", lastName: "Doe" },
+      );
+
+      assertEqual(result.name, "Jane Doe", "returned name uses supplied names");
+      assertEqual(result.email, "", "email is not invented");
+
+      const createdUser = await prisma.user.findUnique({
+        where: { utorid: result.utorid },
+      });
+      assert(createdUser !== null, "global user should be created");
+      assertEqual(createdUser!.firstName, "Jane", "first name is stored");
+      assertEqual(createdUser!.lastName, "Doe", "last name is stored");
+      assertEqual(createdUser!.email, null, "email remains null");
+
+      const membership = await prisma.offeringMember.findUnique({
+        where: {
+          userId_offeringId: {
+            userId: createdUser!.id,
+            offeringId: offering.id,
+          },
+        },
+      });
+      assertEqual(membership?.role, "STUDENT", "student membership is created");
+    },
+  );
+
+  await runTest(
+    "addOfferingStudent: preserves an existing complete profile",
     async () => {
       const existingUser = await prisma.user.create({
         data: {
           utorid: `${TEST_PREFIX}existing_student`,
-          firstName: "Existing",
+          firstName: "Test",
           lastName: "Student",
+          email: `${TEST_PREFIX}existing@example.com`,
         },
       });
 
       const result = await addOfferingStudent(
         offering.publicId,
         existingUser.utorid,
+        { firstName: "Wrong", lastName: "Name" },
       );
       assertEqual(
         result.id,
         existingUser.publicId,
         "returns existing user DTO",
+      );
+      assertEqual(result.name, "Test Student", "existing name is returned");
+      assertEqual(
+        result.email,
+        `${TEST_PREFIX}existing@example.com`,
+        "existing email is returned",
+      );
+
+      const userAfter = await prisma.user.findUnique({
+        where: { id: existingUser.id },
+      });
+      assertEqual(userAfter?.firstName, "Test", "first name is preserved");
+      assertEqual(userAfter?.lastName, "Student", "last name is preserved");
+      assertEqual(
+        userAfter?.email,
+        `${TEST_PREFIX}existing@example.com`,
+        "email is preserved",
       );
 
       const role = await getMemberRole(
@@ -504,7 +561,73 @@ async function main() {
   );
 
   await runTest(
-    "addOfferingStudent: existing STUDENT membership is idempotent",
+    "addOfferingStudent: enriches an existing minimal user",
+    async () => {
+      const student = await prisma.user.create({
+        data: { utorid: `${TEST_PREFIX}minimal_student` },
+      });
+
+      const result = await addOfferingStudent(
+        offering.publicId,
+        student.utorid,
+        { firstName: "John", lastName: "Smith" },
+      );
+      assertEqual(result.name, "John Smith", "enriched name is returned");
+
+      const userAfter = await prisma.user.findUnique({
+        where: { id: student.id },
+      });
+      assertEqual(userAfter?.firstName, "John", "missing first name is filled");
+      assertEqual(userAfter?.lastName, "Smith", "missing last name is filled");
+      assertEqual(userAfter?.email, null, "email remains untouched");
+      assertEqual(
+        await prisma.user.count({ where: { utorid: student.utorid } }),
+        1,
+        "no duplicate user is created",
+      );
+    },
+  );
+
+  await runTest(
+    "addOfferingStudent: fills only missing fields on partial profiles",
+    async () => {
+      const firstNameOnly = await prisma.user.create({
+        data: {
+          utorid: `${TEST_PREFIX}partial_first`,
+          firstName: "John",
+        },
+      });
+      const lastNameOnly = await prisma.user.create({
+        data: {
+          utorid: `${TEST_PREFIX}partial_last`,
+          lastName: "Smith",
+        },
+      });
+
+      await addOfferingStudent(offering.publicId, firstNameOnly.utorid, {
+        firstName: "Johnny",
+        lastName: "Smith",
+      });
+      await addOfferingStudent(offering.publicId, lastNameOnly.utorid, {
+        firstName: "John",
+        lastName: "Smythe",
+      });
+
+      const firstNameAfter = await prisma.user.findUnique({
+        where: { id: firstNameOnly.id },
+      });
+      const lastNameAfter = await prisma.user.findUnique({
+        where: { id: lastNameOnly.id },
+      });
+      assertEqual(firstNameAfter?.firstName, "John", "first name is preserved");
+      assertEqual(firstNameAfter?.lastName, "Smith", "last name is filled");
+      assertEqual(lastNameAfter?.firstName, "John", "first name is filled");
+      assertEqual(lastNameAfter?.lastName, "Smith", "last name is preserved");
+    },
+  );
+
+  await runTest(
+    "addOfferingStudent: existing STUDENT is idempotent and can be enriched",
     async () => {
       const student = await prisma.user.create({
         data: { utorid: `${TEST_PREFIX}already_student` },
@@ -521,13 +644,28 @@ async function main() {
       const second = await addOfferingStudent(
         offering.publicId,
         student.utorid,
+        {
+          firstName: "John",
+          lastName: "Smith",
+        },
       );
       assertEqual(first.id, second.id, "idempotent call returns same student");
+      assertEqual(
+        second.name,
+        "John Smith",
+        "repeat add returns enriched name",
+      );
 
       const count = await prisma.offeringMember.count({
         where: { userId: student.id, offeringId: offering.id },
       });
       assertEqual(count, 1, "should not create duplicate memberships");
+
+      const userAfter = await prisma.user.findUnique({
+        where: { id: student.id },
+      });
+      assertEqual(userAfter?.firstName, "John", "first name is filled");
+      assertEqual(userAfter?.lastName, "Smith", "last name is filled");
     },
   );
 
@@ -546,7 +684,10 @@ async function main() {
 
         let errorMessage = "";
         try {
-          await addOfferingStudent(offering.publicId, staffUser.utorid);
+          await addOfferingStudent(offering.publicId, staffUser.utorid, {
+            firstName: "John",
+            lastName: "Smith",
+          });
         } catch (error) {
           errorMessage = (error as Error).message;
         }
@@ -568,9 +709,64 @@ async function main() {
           role,
           "staff role must not be overwritten",
         );
+
+        const userAfter = await prisma.user.findUnique({
+          where: { id: staffUser.id },
+        });
+        assertEqual(
+          userAfter?.firstName,
+          null,
+          "rejected add must not mutate first name",
+        );
+        assertEqual(
+          userAfter?.lastName,
+          null,
+          "rejected add must not mutate last name",
+        );
       },
     );
   }
+
+  await runTest(
+    "addOfferingStudent: trims UTORid and optional names",
+    async () => {
+      const result = await addOfferingStudent(
+        offering.publicId,
+        `  ${TEST_PREFIX}WhitespaceStudent  `,
+        { firstName: "  John  ", lastName: "  Smith  " },
+      );
+      assertEqual(
+        result.utorid,
+        `${TEST_PREFIX}whitespacestudent`,
+        "UTORid is trimmed and lowercased",
+      );
+      assertEqual(result.name, "John Smith", "trimmed names are returned");
+
+      const userAfter = await prisma.user.findUnique({
+        where: { utorid: result.utorid },
+      });
+      assertEqual(userAfter?.firstName, "John", "trimmed first name is stored");
+      assertEqual(userAfter?.lastName, "Smith", "trimmed last name is stored");
+    },
+  );
+
+  await runTest(
+    "addOfferingStudent: blank optional names remain absent",
+    async () => {
+      const result = await addOfferingStudent(
+        offering.publicId,
+        `${TEST_PREFIX}blank_names`,
+        { firstName: "   ", lastName: "   " },
+      );
+      assertEqual(result.name, result.utorid, "name falls back to UTORid");
+
+      const userAfter = await prisma.user.findUnique({
+        where: { utorid: result.utorid },
+      });
+      assertEqual(userAfter?.firstName, null, "blank first name is not stored");
+      assertEqual(userAfter?.lastName, null, "blank last name is not stored");
+    },
+  );
 
   await runTest(
     "addOfferingStudent: missing offering rolls back user creation",
