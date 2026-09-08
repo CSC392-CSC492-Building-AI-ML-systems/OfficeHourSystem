@@ -105,6 +105,8 @@ export async function addOfferingTaAction(input: {
 export async function addOfferingStudentAction(input: {
   offeringPublicId: string;
   utorid: string;
+  firstName?: string;
+  lastName?: string;
 }): Promise<StudentActionResult> {
   try {
     const userId = await requireSessionUserId();
@@ -113,6 +115,10 @@ export async function addOfferingStudentAction(input: {
     const student = await addOfferingStudent(
       input.offeringPublicId,
       input.utorid,
+      {
+        firstName: input.firstName?.trim() || undefined,
+        lastName: input.lastName?.trim() || undefined,
+      },
     );
 
     revalidatePath(instructorDashboardHref(input.offeringPublicId));
