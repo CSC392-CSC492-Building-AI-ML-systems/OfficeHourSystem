@@ -5,6 +5,7 @@ import {
 import { assertSessionOperator } from "@/lib/auth/sessionOperator";
 import { prisma } from "@/lib/prisma";
 import { getMcsAdminClient } from "@/lib/mcs/get-mcs-admin-client";
+import { McsAdminApiError } from "@/lib/mcs/mcs-admin-client";
 import { scanCheckIn } from "@/lib/queries/scan_check_in/scan-check-in";
 import type { IdentifierType, ScanCheckInResult } from "@/lib/types/queue";
 
@@ -35,43 +36,36 @@ export async function scanCheckInService(
 
   // Step 5: Resolve an NFC CSN through MCS without storing it locally.
   if (identifierType === "csn") {
-    const logMcs =
-      process.env.NODE_ENV === "development"
-        ? (message: string, details?: Record<string, unknown>) => {
-            console.log(`[MCS CSN lookup] ${message}`, details ?? "");
-          }
-        : null;
-
+    let utorid: string | null;
     try {
-      logMcs?.("looking up CSN", { csn: identifierValue });
-      const utorid =
-        await getMcsAdminClient().lookupUtoridByCsn(identifierValue);
-      if (!utorid) {
-        logMcs?.("no match in MCS", { csn: identifierValue });
-        return { outcome: "mcs_not_found" };
-      }
-
-      logMcs?.("MCS match", { csn: identifierValue, utorid });
-      const result = await scanCheckIn(
-        ohSession.id,
-        ohSession.offeringId,
-        "utorid",
-        utorid,
-        { fromMcsLookup: true },
-      );
-      logMcs?.("check-in result after MCS match", {
-        csn: identifierValue,
-        utorid,
-        outcome: result.outcome,
-      });
-      return result;
+      utorid = await getMcsAdminClient().lookupUtoridByCsn(identifierValue);
     } catch (error) {
-      logMcs?.("MCS lookup failed", {
-        csn: identifierValue,
-        error: error instanceof Error ? error.message : String(error),
-      });
+      const details =
+        error instanceof McsAdminApiError
+          ? {
+              phase: error.phase,
+              status: error.status ?? null,
+              reason: error.message,
+            }
+          : {
+              phase: "configuration",
+              status: null,
+              reason:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown MCS client error",
+            };
+      console.error("[MCS CSN lookup] unavailable", details);
       return { outcome: "csn_lookup_unavailable" };
     }
+
+    if (!utorid) {
+      return { outcome: "mcs_not_found" };
+    }
+
+    return scanCheckIn(ohSession.id, ohSession.offeringId, "utorid", utorid, {
+      fromMcsLookup: true,
+    });
   }
 
   // Step 6: Look up the student and insert attendance
