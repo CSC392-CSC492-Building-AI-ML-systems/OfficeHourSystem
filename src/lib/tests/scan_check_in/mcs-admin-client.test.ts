@@ -23,7 +23,14 @@ function expect<T>(actual: T, expected: T, label = "value"): void {
   }
 }
 
-function makeClient(fetchImpl: typeof fetch): McsAdminClient {
+function makeClient(
+  fetchImpl: typeof fetch,
+  options: {
+    tokenTtlMs?: number;
+    tokenRefreshSkewMs?: number;
+    now?: () => number;
+  } = {},
+): McsAdminClient {
   return new McsAdminClient({
     baseUrl: "https://mcs.example.test/",
     apiKey: "test-api-key",
@@ -31,6 +38,7 @@ function makeClient(fetchImpl: typeof fetch): McsAdminClient {
     password: "test-password",
     timeoutMs: 100,
     fetchImpl,
+    ...options,
   });
 }
 
@@ -42,6 +50,173 @@ function loginResponse(token: string): Response {
 
 async function main(): Promise<void> {
   console.log("=== mcs-admin-client.test.ts ===\n");
+
+  await test("refreshes the token and retries once after a 403", async () => {
+    const responses = [
+      loginResponse("expired-token"),
+      new Response(null, { status: 403 }),
+      loginResponse("fresh-token"),
+      Response.json({ utorid: "fresh123" }),
+    ];
+
+    const authorizations: Array<string | undefined> = [];
+
+    const fetchImpl = (async (
+      _url: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      authorizations.push(
+        (init?.headers as Record<string, string>)?.Authorization,
+      );
+      return responses.shift()!;
+    }) as typeof fetch;
+
+    const result =
+      await makeClient(fetchImpl).lookupUtoridByCsn("57890976857137921");
+
+    expect(result, "fresh123");
+    expect(authorizations, [
+      undefined,
+      "Bearer expired-token",
+      undefined,
+      "Bearer fresh-token",
+    ]);
+  });
+
+  await test("refreshes an opaque token after the fallback TTL", async () => {
+    let now = 0;
+    const responses = [
+      loginResponse("token-1"),
+      Response.json({ utorid: "first01" }),
+      loginResponse("token-2"),
+      Response.json({ utorid: "second01" }),
+    ];
+    const authorizations: Array<string | undefined> = [];
+    const fetchImpl = (async (
+      _url: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      authorizations.push(
+        (init?.headers as Record<string, string>)?.Authorization,
+      );
+      return responses.shift()!;
+    }) as typeof fetch;
+
+    const client = makeClient(fetchImpl, {
+      tokenTtlMs: 45 * 60 * 1_000,
+      tokenRefreshSkewMs: 0,
+      now: () => now,
+    });
+
+    expect(await client.lookupUtoridByCsn("111"), "first01");
+    now = 46 * 60 * 1_000;
+    expect(await client.lookupUtoridByCsn("222"), "second01");
+    expect(authorizations, [
+      undefined,
+      "Bearer token-1",
+      undefined,
+      "Bearer token-2",
+    ]);
+  });
+
+  await test("uses a JWT expiry when it is earlier than the fallback TTL", async () => {
+    let now = 0;
+    const payload = Buffer.from(JSON.stringify({ exp: 60 }), "utf8").toString(
+      "base64url",
+    );
+    const expiringToken = `header.${payload}.signature`;
+    const responses = [
+      loginResponse(expiringToken),
+      Response.json({ utorid: "first01" }),
+      loginResponse("fresh-token"),
+      Response.json({ utorid: "second01" }),
+    ];
+    let loginCalls = 0;
+    const fetchImpl = (async (url: string | URL | Request) => {
+      if (String(url).endsWith("/api/authentication/login")) loginCalls++;
+      return responses.shift()!;
+    }) as typeof fetch;
+    const client = makeClient(fetchImpl, {
+      tokenRefreshSkewMs: 0,
+      now: () => now,
+    });
+
+    expect(await client.lookupUtoridByCsn("111"), "first01");
+    now = 61 * 1_000;
+    expect(await client.lookupUtoridByCsn("222"), "second01");
+    expect(loginCalls, 2, "login count");
+  });
+
+  await test("shares one login across concurrent lookups", async () => {
+    let loginCalls = 0;
+    const fetchImpl = (async (url: string | URL | Request) => {
+      const requestUrl = String(url);
+      if (requestUrl.endsWith("/api/authentication/login")) {
+        loginCalls++;
+        await Promise.resolve();
+        return loginResponse("shared-token");
+      }
+
+      return Response.json({
+        utorid: requestUrl.endsWith("/111") ? "first01" : "second01",
+      });
+    }) as typeof fetch;
+    const client = makeClient(fetchImpl);
+
+    expect(
+      await Promise.all([
+        client.lookupUtoridByCsn("111"),
+        client.lookupUtoridByCsn("222"),
+      ]),
+      ["first01", "second01"],
+    );
+    expect(loginCalls, 1, "login count");
+  });
+
+  await test("stops after one refresh when authorization still fails", async () => {
+    const responses = [
+      loginResponse("token-1"),
+      new Response(null, { status: 403 }),
+      loginResponse("token-2"),
+      new Response(null, { status: 403 }),
+    ];
+    let requestCount = 0;
+    const fetchImpl = (async () => {
+      requestCount++;
+      return responses.shift()!;
+    }) as typeof fetch;
+
+    try {
+      await makeClient(fetchImpl).lookupUtoridByCsn("111");
+      throw new Error("expected lookup to fail");
+    } catch (error) {
+      if (!(error instanceof McsAdminApiError)) throw error;
+      expect(error.phase, "lookup");
+      expect(error.status, 403);
+      expect(requestCount, 4, "request count");
+    }
+  });
+
+  await test("does not reauthenticate after a 429", async () => {
+    const responses = [
+      loginResponse("token-1"),
+      new Response(null, { status: 429 }),
+    ];
+    let requestCount = 0;
+    const fetchImpl = (async () => {
+      requestCount++;
+      return responses.shift()!;
+    }) as typeof fetch;
+
+    try {
+      await makeClient(fetchImpl).lookupUtoridByCsn("111");
+      throw new Error("expected lookup to fail");
+    } catch (error) {
+      if (!(error instanceof McsAdminApiError)) throw error;
+      expect(error.status, 429);
+      expect(requestCount, 2, "request count");
+    }
+  });
 
   await test("logs in, looks up UTORid, and caches the bearer token", async () => {
     const calls: Array<{ url: string; init?: RequestInit }> = [];
