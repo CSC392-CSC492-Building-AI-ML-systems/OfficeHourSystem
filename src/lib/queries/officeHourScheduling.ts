@@ -46,13 +46,16 @@ import {
   formatSessionDateLabel,
   formatWeekRangeLabel,
   getTermBounds,
+  minuteOfDay,
   minutesToTimeInput,
   parseIsoDateOnly,
   parseTimeToMinutes,
   resolveScheduleDateBounds,
+  startOfLocalDay,
   startOfWeekMonday,
   weekdayKeysToDayOfWeek,
 } from "@/lib/scheduling/time";
+import { torontoParts } from "@/lib/time/toronto";
 
 export { ScheduleAuthError, listViewableOfferings };
 
@@ -275,10 +278,8 @@ function mapSessionToDto(
     isRecurringOccurrence &&
     session.location != null &&
     session.location !== schedule.location;
-  const sessionStartMinute =
-    session.startsAt.getHours() * 60 + session.startsAt.getMinutes();
-  const sessionEndMinute =
-    session.endsAt.getHours() * 60 + session.endsAt.getMinutes();
+  const sessionStartMinute = minuteOfDay(session.startsAt);
+  const sessionEndMinute = minuteOfDay(session.endsAt);
   const hasTimeOverride =
     isRecurringOccurrence &&
     (sessionStartMinute !== schedule.startMinute ||
@@ -314,7 +315,7 @@ function mapSessionToDto(
     title: session.title,
     topic: session.title,
     description: session.description,
-    day: dayOfWeekToKey(session.startsAt.getDay()),
+    day: dayOfWeekToKey(torontoParts(session.startsAt).weekday),
     dateLabel: formatSessionDateLabel(session.startsAt, now),
     date: formatDateOnlyLocal(session.startsAt),
     startTime: formatDateTimeLabel(session.startsAt),
@@ -569,7 +570,7 @@ export async function listScheduleWeek(
 
   return {
     access,
-    weekStart: weekStart.toISOString().slice(0, 10),
+    weekStart: formatDateOnlyLocal(weekStart),
     weekLabel: formatWeekRangeLabel(weekStart),
     calendarDays: buildWeekCalendarDays(weekStart),
     sessions: sessions.map((s) => mapSessionToDto(s)),
@@ -722,8 +723,7 @@ export async function updateRecurringBlock(
   const scheduleIds = group.map((row) => row.id);
   const applyFrom = patch.applyFrom
     ? parseIsoDateOnly(patch.applyFrom)
-    : new Date();
-  applyFrom.setHours(0, 0, 0, 0);
+    : startOfLocalDay(new Date());
 
   if (nextStartMinute !== undefined || nextEndMinute !== undefined) {
     const termBounds = getTermBounds(anchor.offering.termCode);
@@ -799,8 +799,7 @@ export async function updateRecurringBlock(
     });
 
     for (const session of sessions) {
-      const day = new Date(session.startsAt);
-      day.setHours(0, 0, 0, 0);
+      const day = session.startsAt;
       await tx.officeHourSession.update({
         where: { id: session.id },
         data: {
@@ -902,7 +901,7 @@ export async function updateSession(
       assertOfficeHourWeekday(day);
       const startMinute = patch.startTime
         ? parseTimeToMinutes(patch.startTime)
-        : existing.startsAt.getHours() * 60 + existing.startsAt.getMinutes();
+        : minuteOfDay(existing.startsAt);
       startsAt = combineDateAndMinutes(day, startMinute);
     }
 
@@ -913,9 +912,7 @@ export async function updateSession(
       endsAt = combineDateAndMinutes(day, parseTimeToMinutes(patch.endTime));
     }
 
-    const startMinute = startsAt.getHours() * 60 + startsAt.getMinutes();
-    const endMinute = endsAt.getHours() * 60 + endsAt.getMinutes();
-    assertOfficeHourWindow(startMinute, endMinute);
+    assertOfficeHourWindow(minuteOfDay(startsAt), minuteOfDay(endsAt));
 
     await assertNoOverlappingSession(existing.offeringId, startsAt, endsAt, {
       excludeSessionId: existing.id,

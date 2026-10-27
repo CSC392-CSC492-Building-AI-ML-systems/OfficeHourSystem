@@ -6,6 +6,7 @@ import { Clock, Mail, Search } from "lucide-react";
 import { getSessionInterestedStudentsAction } from "@/actions/scheduling";
 import type { SessionInterestedStudentDto } from "@/lib/queries/officehourInterest";
 import type { ScheduleSession } from "./types";
+import { TORONTO_TIME_ZONE } from "@/lib/time/toronto";
 
 function getInitials(name: string) {
   return name
@@ -23,6 +24,7 @@ function formatInterestedAt(iso: string): string {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
+    timeZone: TORONTO_TIME_ZONE,
   });
 }
 

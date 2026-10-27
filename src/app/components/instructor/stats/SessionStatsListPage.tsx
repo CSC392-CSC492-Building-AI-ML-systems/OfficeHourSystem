@@ -16,6 +16,7 @@ import { Navbar } from "../Navbar";
 import { getOfferingSessionStatsAction } from "@/actions/course_stats/course-stats";
 import type { CourseStatsSessionDto } from "@/lib/types/queue";
 import { formatCourseLabel } from "@/lib/courseLabel";
+import { TORONTO_TIME_ZONE } from "@/lib/time/toronto";
 
 function na(value: number | null): string {
   return value === null ? "NA" : String(value);
@@ -26,10 +27,12 @@ function formatRange(startsAt: string, endsAt: string): string {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
+    timeZone: TORONTO_TIME_ZONE,
   };
   const date = new Date(startsAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    timeZone: TORONTO_TIME_ZONE,
   });
   const start = new Date(startsAt).toLocaleTimeString("en-US", opts);
   const end = new Date(endsAt).toLocaleTimeString("en-US", opts);

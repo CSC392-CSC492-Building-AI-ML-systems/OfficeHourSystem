@@ -7,7 +7,10 @@ import {
   formatCalendarDateLabel,
   formatMinutesAsLabel,
   getTermBounds,
+  minuteOfDay,
+  startOfLocalDay,
 } from "./time";
+import { torontoParts } from "@/lib/time/toronto";
 
 const DOW_NAMES = [
   "Sunday",
@@ -52,7 +55,7 @@ function overlapErrorMessage(
   endMinute: number,
 ) {
   const dayLabel = formatCalendarDateLabel(day);
-  const weekday = DOW_NAMES[day.getDay()];
+  const weekday = DOW_NAMES[torontoParts(day).weekday];
   const timeLabel = `${formatMinutesAsLabel(startMinute)} - ${formatMinutesAsLabel(endMinute)}`;
   return `That time (${timeLabel}) overlaps another office hour on ${weekday}, ${dayLabel}. Pick a different time or date, or edit/cancel the existing session first.`;
 }
@@ -68,8 +71,7 @@ function overlappingSessionWhere(
   endsAt: Date,
   options?: OverlapSessionQueryOptions,
 ) {
-  const dayStart = new Date(startsAt);
-  dayStart.setHours(0, 0, 0, 0);
+  const dayStart = startOfLocalDay(startsAt);
   const dayEnd = endOfLocalDay(startsAt);
 
   return {
@@ -119,9 +121,9 @@ export async function assertNoOverlappingSession(
     options,
   );
   if (conflict) {
-    const startMinute = startsAt.getHours() * 60 + startsAt.getMinutes();
-    const endMinute = endsAt.getHours() * 60 + endsAt.getMinutes();
-    throw new Error(overlapErrorMessage(startsAt, startMinute, endMinute));
+    throw new Error(
+      overlapErrorMessage(startsAt, minuteOfDay(startsAt), minuteOfDay(endsAt)),
+    );
   }
 }
 

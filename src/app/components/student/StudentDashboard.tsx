@@ -10,24 +10,25 @@ import type {
   ScheduleSession,
 } from "@/app/components/instructor/schedule/types";
 import type { StudentDashboardSessionDto } from "@/services/student_dashboard/student-dashboard";
+import { formatDateOnlyLocal, isSameCalendarDay } from "@/lib/scheduling/time";
+import { TORONTO_TIME_ZONE } from "@/lib/time/toronto";
 
 function dayKey(iso: string) {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  return formatDateOnlyLocal(new Date(iso));
 }
 
 function formatDayHeader(iso: string) {
   const date = new Date(iso);
-  const today = new Date();
-  const isToday =
-    date.getFullYear() === today.getFullYear() &&
-    date.getMonth() === today.getMonth() &&
-    date.getDate() === today.getDate();
+  const isToday = isSameCalendarDay(date, new Date());
 
-  const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
+  const weekday = date.toLocaleDateString("en-US", {
+    weekday: "short",
+    timeZone: TORONTO_TIME_ZONE,
+  });
   const monthDay = date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    timeZone: TORONTO_TIME_ZONE,
   });
 
   if (isToday) return `Today · ${weekday} ${monthDay}`;
@@ -39,6 +40,7 @@ function formatTimeRange(startsAt: string, endsAt: string) {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
+    timeZone: TORONTO_TIME_ZONE,
   };
   return `${new Date(startsAt).toLocaleTimeString("en-US", opts)} – ${new Date(endsAt).toLocaleTimeString("en-US", opts)}`;
 }
