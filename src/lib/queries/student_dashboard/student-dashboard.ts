@@ -1,14 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { addDays, endOfLocalDay } from "@/lib/scheduling/time";
+import { getTorontoTodayRange } from "@/lib/time/toronto";
 
 export async function getUpcomingSessionsForStudent(
   userId: number,
   offeringPublicId: string,
 ) {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 14);
-  end.setHours(23, 59, 59, 999);
+  const { start } = getTorontoTodayRange();
+  const end = endOfLocalDay(addDays(start, 14));
 
   const membership = await prisma.offeringMember.findFirst({
     where: { userId, offering: { publicId: offeringPublicId } },
