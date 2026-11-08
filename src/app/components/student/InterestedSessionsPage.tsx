@@ -5,6 +5,7 @@ import { CalendarHeart } from "lucide-react";
 
 import { SessionRow } from "@/app/components/student/cards/SessionRow";
 import type { InterestedSessionDto } from "@/lib/queries/student_interest/student-interest";
+import { TORONTO_TIME_ZONE } from "@/lib/time/toronto";
 
 function formatTimeRange(startsAt: string, endsAt: string) {
   const start = new Date(startsAt);
@@ -13,10 +14,12 @@ function formatTimeRange(startsAt: string, endsAt: string) {
     weekday: "short",
     month: "short",
     day: "numeric",
+    timeZone: TORONTO_TIME_ZONE,
   });
   const timeOptions: Intl.DateTimeFormatOptions = {
     hour: "numeric",
     minute: "2-digit",
+    timeZone: TORONTO_TIME_ZONE,
   };
   return `${date} · ${start.toLocaleTimeString("en-US", timeOptions)}–${end.toLocaleTimeString("en-US", timeOptions)}`;
 }

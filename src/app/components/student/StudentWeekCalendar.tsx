@@ -9,7 +9,12 @@ import type {
   CalendarDay,
   ScheduleSession,
 } from "@/app/components/instructor/schedule/types";
-import { formatDateOnlyLocal, startOfWeekMonday } from "@/lib/scheduling/time";
+import {
+  addDays,
+  formatDateOnlyLocal,
+  parseIsoDateOnly,
+  startOfWeekMonday,
+} from "@/lib/scheduling/time";
 
 type WeekPayload = {
   weekStart: string;
@@ -58,8 +63,7 @@ export function StudentWeekCalendar({
   };
 
   const shiftWeek = (direction: -1 | 1) => {
-    const current = new Date(`${week.weekStart}T00:00:00`);
-    current.setDate(current.getDate() + direction * 7);
+    const current = addDays(parseIsoDateOnly(week.weekStart), direction * 7);
     void loadWeek(formatDateOnlyLocal(current)).catch((loadError) => {
       setError(
         loadError instanceof Error ? loadError.message : "Failed to load week.",

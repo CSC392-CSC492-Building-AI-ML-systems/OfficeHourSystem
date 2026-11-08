@@ -207,7 +207,7 @@ export function ScanInputPanel({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           disabled={processing}
-          placeholder="Tap or swipe T-Card, scan barcode, or enter student number / UTORid"
+          placeholder="Scan T-Card barcode, or enter student number / UTORid"
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="none"

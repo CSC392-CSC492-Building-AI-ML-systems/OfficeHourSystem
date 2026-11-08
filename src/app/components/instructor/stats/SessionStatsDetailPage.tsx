@@ -11,6 +11,7 @@ import type {
   SessionStatsStudentDto,
 } from "@/lib/types/queue";
 import { formatCourseLabel } from "@/lib/courseLabel";
+import { TORONTO_TIME_ZONE } from "@/lib/time/toronto";
 
 // Show a number, or "NA" when it couldn't be computed.
 function na(value: number | null): string {
@@ -22,10 +23,12 @@ function formatRange(startsAt: string, endsAt: string): string {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
+    timeZone: TORONTO_TIME_ZONE,
   };
   const date = new Date(startsAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    timeZone: TORONTO_TIME_ZONE,
   });
   const start = new Date(startsAt).toLocaleTimeString("en-US", opts);
   const end = new Date(endsAt).toLocaleTimeString("en-US", opts);

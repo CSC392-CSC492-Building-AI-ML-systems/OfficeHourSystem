@@ -32,7 +32,7 @@ export function ScanPage({ sessionPublicId }: ScanPageProps) {
             Scan to Check In
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            Tap or swipe TCard, scan barcode, or type student number / UTORid
+            Scan T-Card barcode, or type student number / UTORid
           </p>
         </div>
 
@@ -41,7 +41,7 @@ export function ScanPage({ sessionPublicId }: ScanPageProps) {
         {/* Identifier format hint */}
         <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-xs text-slate-500 space-y-1">
           <p>
-            <span className="font-semibold">TCard swipe / barcode scan</span> —
+            <span className="font-semibold">T-Card barcode scan</span> —
             detected automatically
           </p>
           <p>

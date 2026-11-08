@@ -31,7 +31,9 @@ import { SessionStatsSection } from "./SessionStatsSection";
 import type { CreateOneTimeSessionInput } from "@/lib/scheduling/types";
 import type { CreateRecurringBlockInput } from "@/lib/scheduling/types";
 import {
+  addDays,
   formatDateOnlyLocal,
+  parseIsoDateOnly,
   startOfWeekMonday,
   type WeekdayKey,
 } from "@/lib/scheduling/time";
@@ -140,9 +142,9 @@ export default function InstructorScheduleDashboard({
 
   const shiftWeek = (direction: -1 | 1) => {
     if (!weekStart) return;
-    const current = new Date(`${weekStart}T00:00:00`);
-    current.setDate(current.getDate() + direction * 7);
-    const next = current.toISOString().slice(0, 10);
+    const next = formatDateOnlyLocal(
+      addDays(parseIsoDateOnly(weekStart), direction * 7),
+    );
     void loadSchedule({ weekStart: next });
   };
 
@@ -385,7 +387,7 @@ export default function InstructorScheduleDashboard({
                     setSelectedSessionId(sessionId);
                     if (listed) {
                       const targetWeek = formatDateOnlyLocal(
-                        startOfWeekMonday(new Date(`${listed.date}T12:00:00`)),
+                        startOfWeekMonday(parseIsoDateOnly(listed.date)),
                       );
                       if (targetWeek !== weekStart) {
                         void loadSchedule({ weekStart: targetWeek });
@@ -466,7 +468,7 @@ export default function InstructorScheduleDashboard({
                   setSelectedSessionId(sessionId);
                   if (listed) {
                     const targetWeek = formatDateOnlyLocal(
-                      startOfWeekMonday(new Date(`${listed.date}T12:00:00`)),
+                      startOfWeekMonday(parseIsoDateOnly(listed.date)),
                     );
                     if (targetWeek !== weekStart) {
                       void loadSchedule({ weekStart: targetWeek });

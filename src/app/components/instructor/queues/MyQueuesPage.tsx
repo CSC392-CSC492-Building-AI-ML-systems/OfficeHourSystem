@@ -6,6 +6,7 @@ import { Navbar } from "../Navbar";
 import { showUpcomingOhAction } from "@/actions/show_upcoming_oh/show-upcoming-oh";
 import { QueueSessionCard } from "./QueueSessionCard";
 import type { QueueSession } from "./types";
+import { TORONTO_TIME_ZONE } from "@/lib/time/toronto";
 
 type Tab = "upcoming" | "active" | "ended";
 
@@ -15,6 +16,7 @@ function formatSessionTime(startsAt: string, endsAt: string): string {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
+    timeZone: TORONTO_TIME_ZONE,
   };
   const start = new Date(startsAt).toLocaleTimeString("en-US", opts);
   const end = new Date(endsAt).toLocaleTimeString("en-US", opts);

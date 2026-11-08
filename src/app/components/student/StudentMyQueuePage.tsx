@@ -6,6 +6,7 @@ import { Clock, MapPin, RefreshCw, Users } from "lucide-react";
 import { getStudentQueueAction } from "@/actions/student_queue/student-queue";
 import { LocationText } from "@/app/components/student/LocationText";
 import type { StudentQueueTicketDto } from "@/lib/types/queue";
+import { TORONTO_TIME_ZONE } from "@/lib/time/toronto";
 
 const AUTO_REFRESH_MS = 15_000;
 const MANUAL_COOLDOWN_MS = 5_000;
@@ -14,6 +15,7 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
+    timeZone: TORONTO_TIME_ZONE,
   });
 }
 
@@ -21,6 +23,7 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    timeZone: TORONTO_TIME_ZONE,
   });
 }
 

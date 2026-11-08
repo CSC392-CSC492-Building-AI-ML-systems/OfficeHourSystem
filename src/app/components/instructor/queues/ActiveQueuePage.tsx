@@ -158,19 +158,23 @@ export default function ActiveQueuePage({
 
     const AUTO_END_GRACE_MS = 30 * 60 * 1000; // 30 minutes
 
-    const check = setInterval(() => {
-      const overdue = Date.now() - new Date(endsAt).getTime();
-      if (overdue >= AUTO_END_GRACE_MS) {
-        clearInterval(check);
+    const msUntilAutoEnd =
+      new Date(endsAt).getTime() + AUTO_END_GRACE_MS - Date.now();
+    // setTimeout fires immediately for delays over 2^31-1 ms (~24.8 days).
+    if (msUntilAutoEnd > 2 ** 31 - 1) return;
+
+    const timer = setTimeout(
+      () => {
         void endSessionAction(sessionId).then(() => {
           setSessionEnded(true);
           setWaitingStudents([]);
           setHelpingStudents([]);
         });
-      }
-    }, 15 * 60_000); // check every 15 minutes
+      },
+      Math.max(0, msUntilAutoEnd),
+    );
 
-    return () => clearInterval(check);
+    return () => clearTimeout(timer);
   }, [sessionId, endsAt, sessionEnded]);
 
   // Reload queue state from the server and sync local state

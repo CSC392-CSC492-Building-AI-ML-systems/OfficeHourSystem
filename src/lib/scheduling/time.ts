@@ -1,3 +1,9 @@
+import {
+  TORONTO_TIME_ZONE,
+  torontoDateTime,
+  torontoParts,
+} from "@/lib/time/toronto";
+
 /** UI weekday keys used in schedule modals */
 export type WeekdayKey = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
 
@@ -255,7 +261,7 @@ export function assertWeekdayKeysAllowed(keys: WeekdayKey[]): void {
 }
 
 export function assertOfficeHourWeekday(date: Date): void {
-  const dayOfWeek = date.getDay();
+  const dayOfWeek = torontoParts(date).weekday;
   if (dayOfWeek === 0 || dayOfWeek === 6) {
     throw new Error("Office hours cannot be scheduled on weekends.");
   }
@@ -280,55 +286,65 @@ export function dayOfWeekToKey(dayOfWeek: number): WeekdayKey {
   return DOW_TO_KEY[dayOfWeek] ?? "mon";
 }
 
-/** Start of week (Monday 00:00 local) for the date containing `anchor`. */
+// All "local" helpers below mean Toronto wall-clock time, never the machine's
+// time zone, so server (UTC in Docker) and browser agree.
+
+export function startOfLocalDay(date: Date): Date {
+  const { year, month, day } = torontoParts(date);
+  return torontoDateTime(year, month, day);
+}
+
+/** Start of week (Monday 00:00 Toronto) for the date containing `anchor`. */
 export function startOfWeekMonday(anchor: Date): Date {
-  const d = new Date(anchor);
-  d.setHours(0, 0, 0, 0);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  return d;
+  const { year, month, day, weekday } = torontoParts(anchor);
+  const diff = weekday === 0 ? -6 : 1 - weekday;
+  return torontoDateTime(year, month, day + diff);
 }
 
+/** Same Toronto wall-clock time, `days` calendar days later (DST-safe). */
 export function addDays(date: Date, days: number): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
+  const p = torontoParts(date);
+  return torontoDateTime(
+    p.year,
+    p.month,
+    p.day + days,
+    p.hour,
+    p.minute,
+    p.second,
+    date.getUTCMilliseconds(),
+  );
 }
 
+/** `YYYY-MM-DD` → Toronto midnight of that date. */
 export function parseIsoDateOnly(iso: string): Date {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
   if (!match) {
     throw new Error(`Invalid date: ${iso}`);
   }
   const year = Number.parseInt(match[1], 10);
-  const month = Number.parseInt(match[2], 10) - 1;
+  const month = Number.parseInt(match[2], 10);
   const day = Number.parseInt(match[3], 10);
-  return new Date(year, month, day, 0, 0, 0, 0);
+  return torontoDateTime(year, month, day);
 }
 
 /** Next Mon–Fri on or after today, as `YYYY-MM-DD` for date inputs. */
 export function defaultOfficeHourDateInput(now = new Date()): string {
-  const date = new Date(now);
-  date.setHours(0, 0, 0, 0);
-  while (date.getDay() === 0 || date.getDay() === 6) {
-    date.setDate(date.getDate() + 1);
+  let date = startOfLocalDay(now);
+  while ([0, 6].includes(torontoParts(date).weekday)) {
+    date = addDays(date, 1);
   }
   return formatDateOnlyLocal(date);
 }
 
-/** `YYYY-MM-DD` in local time (for date inputs). */
+/** `YYYY-MM-DD` in Toronto time (for date inputs). */
 export function formatDateOnlyLocal(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const { year, month, day } = torontoParts(date);
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 export function endOfLocalDay(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(23, 59, 59, 999);
-  return d;
+  const { year, month, day } = torontoParts(date);
+  return torontoDateTime(year, month, day, 23, 59, 59, 999);
 }
 
 /**
@@ -363,27 +379,28 @@ export function datesForDayOfWeek(
   until: Date,
 ): Date[] {
   const results: Date[] = [];
-  const cursor = new Date(from);
-  cursor.setHours(0, 0, 0, 0);
+  const { year, month, day, weekday } = torontoParts(from);
+  const end = endOfLocalDay(until);
 
-  const end = new Date(until);
-  end.setHours(23, 59, 59, 999);
-
-  const offset = (dayOfWeek - cursor.getDay() + 7) % 7;
-  cursor.setDate(cursor.getDate() + offset);
-
-  while (cursor <= end) {
-    results.push(new Date(cursor));
-    cursor.setDate(cursor.getDate() + 7);
+  for (let d = day + ((dayOfWeek - weekday + 7) % 7); ; d += 7) {
+    const date = torontoDateTime(year, month, d);
+    if (date > end) break;
+    results.push(date);
   }
 
   return results;
 }
 
+/** Toronto calendar date of `day` at `minutes` past Toronto midnight. */
 export function combineDateAndMinutes(day: Date, minutes: number): Date {
-  const d = new Date(day);
-  d.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
-  return d;
+  const { year, month, day: date } = torontoParts(day);
+  return torontoDateTime(
+    year,
+    month,
+    date,
+    Math.floor(minutes / 60),
+    minutes % 60,
+  );
 }
 
 export function formatMinutesAsLabel(minutes: number): string {
@@ -394,29 +411,34 @@ export function formatMinutesAsLabel(minutes: number): string {
   return `${h12}:${min.toString().padStart(2, "0")} ${period}`;
 }
 
+/** Minutes past Toronto midnight. */
+export function minuteOfDay(date: Date): number {
+  const { hour, minute } = torontoParts(date);
+  return hour * 60 + minute;
+}
+
 export function formatDateTimeLabel(date: Date): string {
-  const h24 = date.getHours();
-  const min = date.getMinutes();
-  const period = h24 >= 12 ? "PM" : "AM";
-  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-  return `${h12}:${min.toString().padStart(2, "0")} ${period}`;
+  return formatMinutesAsLabel(minuteOfDay(date));
 }
 
 export function decimalHourFromDate(date: Date): number {
-  return date.getHours() + date.getMinutes() / 60;
+  return minuteOfDay(date) / 60;
 }
 
 export function isSameCalendarDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+  return formatDateOnlyLocal(a) === formatDateOnlyLocal(b);
+}
+
+function shortMonth(date: Date): string {
+  return date.toLocaleString("en-US", {
+    month: "short",
+    timeZone: TORONTO_TIME_ZONE,
+  });
 }
 
 export function formatCalendarDateLabel(date: Date): string {
-  const month = date.toLocaleString("en-US", { month: "short" });
-  return `${month} ${date.getDate()}, ${date.getFullYear()}`;
+  const { year, day } = torontoParts(date);
+  return `${shortMonth(date)} ${day}, ${year}`;
 }
 
 export function formatSessionDateLabel(
@@ -426,25 +448,24 @@ export function formatSessionDateLabel(
   if (isSameCalendarDay(startsAt, now)) {
     return "Today";
   }
-  const dow = DOW_SHORT[startsAt.getDay()];
-  const month = startsAt.toLocaleString("en-US", { month: "short" });
-  return `${dow}, ${month} ${startsAt.getDate()}`;
+  const { weekday, day } = torontoParts(startsAt);
+  return `${DOW_SHORT[weekday]}, ${shortMonth(startsAt)} ${day}`;
 }
 
 export function formatWeekRangeLabel(weekStart: Date): string {
   const weekEnd = addDays(weekStart, WEEK_ORDER.length - 1);
-  const startMonth = weekStart.toLocaleString("en-US", { month: "short" });
-  const endMonth = weekEnd.toLocaleString("en-US", { month: "short" });
-  const startYear = weekStart.getFullYear();
-  const endYear = weekEnd.getFullYear();
+  const startMonth = shortMonth(weekStart);
+  const endMonth = shortMonth(weekEnd);
+  const { year: startYear, day: startDay } = torontoParts(weekStart);
+  const { year: endYear, day: endDay } = torontoParts(weekEnd);
 
   if (startYear !== endYear) {
-    return `Week of ${startMonth} ${weekStart.getDate()}, ${startYear} - ${endMonth} ${weekEnd.getDate()}, ${endYear}`;
+    return `Week of ${startMonth} ${startDay}, ${startYear} - ${endMonth} ${endDay}, ${endYear}`;
   }
   if (startMonth === endMonth) {
-    return `Week of ${startMonth} ${weekStart.getDate()} - ${weekEnd.getDate()}, ${startYear}`;
+    return `Week of ${startMonth} ${startDay} - ${endDay}, ${startYear}`;
   }
-  return `Week of ${startMonth} ${weekStart.getDate()} - ${endMonth} ${weekEnd.getDate()}, ${startYear}`;
+  return `Week of ${startMonth} ${startDay} - ${endMonth} ${endDay}, ${startYear}`;
 }
 
 export function buildWeekCalendarDays(weekStart: Date) {
@@ -453,7 +474,7 @@ export function buildWeekCalendarDays(weekStart: Date) {
     return {
       key,
       label: key.toUpperCase(),
-      date: String(date.getDate()),
+      date: String(torontoParts(date).day),
     };
   });
 }
@@ -468,7 +489,7 @@ export function getTermBounds(
   const yearMatch = /^(\d{4})/.exec(termCode);
   const year = yearMatch
     ? Number.parseInt(yearMatch[1], 10)
-    : referenceDate.getFullYear();
+    : torontoParts(referenceDate).year;
   const season = termCode.slice(-1).toUpperCase();
 
   let validFrom: Date;
@@ -476,29 +497,26 @@ export function getTermBounds(
 
   switch (season) {
     case "W":
-      validFrom = new Date(year, 0, 1);
-      validUntil = new Date(year, 3, 30, 23, 59, 59, 999);
+      validFrom = torontoDateTime(year, 1, 1);
+      validUntil = torontoDateTime(year, 4, 30, 23, 59, 59, 999);
       break;
     case "S":
-      validFrom = new Date(year, 4, 1);
-      validUntil = new Date(year, 7, 31, 23, 59, 59, 999);
+      validFrom = torontoDateTime(year, 5, 1);
+      validUntil = torontoDateTime(year, 8, 31, 23, 59, 59, 999);
       break;
     case "F":
     default:
-      validFrom = new Date(year, 8, 1);
-      validUntil = new Date(year, 11, 31, 23, 59, 59, 999);
+      validFrom = torontoDateTime(year, 9, 1);
+      validUntil = torontoDateTime(year, 12, 31, 23, 59, 59, 999);
       break;
   }
 
-  const now = new Date(referenceDate);
-  if (now > validFrom) {
-    validFrom = new Date(now);
-    validFrom.setHours(0, 0, 0, 0);
+  if (referenceDate > validFrom) {
+    validFrom = startOfLocalDay(referenceDate);
   }
 
   if (validUntil < validFrom) {
-    validUntil = addDays(validFrom, 112);
-    validUntil.setHours(23, 59, 59, 999);
+    validUntil = endOfLocalDay(addDays(validFrom, 112));
   }
 
   return { validFrom, validUntil };
