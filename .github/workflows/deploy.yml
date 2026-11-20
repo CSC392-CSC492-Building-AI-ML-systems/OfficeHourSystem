@@ -3,6 +3,8 @@ name: Deploy
 on:
   push:
     branches: [master]
+  # Re-run deploy (e.g. to collect cache metrics) without a code change.
+  workflow_dispatch:
 
 jobs:
   deploy:
