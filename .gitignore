@@ -42,4 +42,7 @@ cookies.txt
 *.tsbuildinfo
 next-env.d.ts
 
+# per-deploy build timings written by scripts/deploy.sh on the runner
+.deploy-metrics/
+
 /app/generated/prisma
