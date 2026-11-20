@@ -32,8 +32,8 @@ if grep -A1 'pnpm run build' "$build_log" | grep -q CACHED; then
   app=hit
 fi
 
-# One line per deploy — stdout (Actions logs) + local history on the runner.
+# One line per deploy — stdout (Actions logs) + history outside the build context
+# (a log under the repo would invalidate COPY . . every run).
 metrics="DEPLOY_METRICS ts=$(date -u +%Y-%m-%dT%H:%M:%SZ) sha=$sha build_s=$build_secs deps=$deps app=$app cached_steps=$cached_steps"
 echo "$metrics"
-mkdir -p .deploy-metrics
-echo "$metrics" >> .deploy-metrics/builds.log
+echo "$metrics" >> "$HOME/.ohms-deploy-metrics.log"
